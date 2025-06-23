@@ -1,0 +1,15 @@
+[project]
+name = "POTATO"
+description = "Backend server for BW's needs"
+requires-python = "3.12"
+dependencies = [
+    "web.py",
+    "wsgilog",
+    "alembic",
+]
+authors = [
+    {name="Bailey Danyluk"}
+]
+maintainers = [
+    {name="Bailey Danyluk"}
+]
