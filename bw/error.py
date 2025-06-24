@@ -1,5 +1,17 @@
+from bw.response import WebResponse, JsonResponse
+
 class BwServerError(Exception):
-    pass
+    def status(self) -> int:
+        return 500
+
+    def as_json(self) -> JsonResponse:
+        return JsonResponse({
+            'status': self.status(),
+            'reason': str(self)
+        })
+
+    def as_response_code(self) -> WebResponse:
+        return WebResponse(status=self.status())
 
 class ConfigError(BwServerError):
     def __init__(self, reason: str):
@@ -17,9 +29,38 @@ class NoConfigLoaded(ConfigError):
     def __init__(self):
         super().__init__(f'Config not loaded')
 
-class AuthError(BwServerError):
+class ClientError(BwServerError):
+    def status(self) -> int:
+        return 400
+
+class DbError(ClientError):
+    def status(self) -> int:
+        return 400
+
+    def __init__(self):
+        super().__init__('An internal error occured')
+
+class AuthError(ClientError):
+    def status(self) -> int:
+        return 401
     def __init__(self, reason: str):
-        super().__init__(f'Authentication error: {reason}')
+        super().__init__(f'[Auth] Error: {reason}')
+
+class SessionInvalid(AuthError):
+    def __init__(self):
+        super().__init__('Session is not valid')
+
+class InvalidPermissions(AuthError):
+    def status(self) -> int:
+        return 403
+    def __init__(self):
+        super().__init__('User has invalid permissions'))
+
+class NoUserWithGivenCredentials(AuthError):
+    def status(self) -> int:
+        return 404
+    def __init__(self):
+        super().__init__('User does not exist')
 
 class NonLocalIpAccessingLocalOnlyAddress(AuthError):
     def __init__(self):
