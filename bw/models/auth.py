@@ -3,7 +3,7 @@ from bw.auth import AUTH_SETTINGS
 AUTH_SETTINGS.require('default_session_length')
 
 import datetime
-from sqlalchemy import ForeignKey, String, func
+from sqlalchemy import ForeignKey, String, func, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 
 NAME_LENGTH = 64
@@ -37,7 +37,7 @@ class Sessions(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
     token: Mapped[str] = mapped_column(String(16), nullable=False)
-    expire_time: Mapped[int] = mapped_column(nullable=False, server_default=func.current_timestamp() + AUTH_SETTINGS['default_session_length'])
+    expire_time: Mapped[int] = mapped_column(TIMESTAMP(timezone=False), nullable=False, server_default=func.current_timestamp() + AUTH_SETTINGS['default_session_length'])
 
 class GroupPermissions(Base):
     __tablename__ = 'group_permissions'
