@@ -15,6 +15,13 @@ class Local(Environment):
     def use_ssl(self):
         return False
 
+class Test(Environment):
+    def port(self):
+        return 8080
+
+    def use_ssl(self):
+        return False
+
 class Production(Environment):
     def port(self):
         return 12239
@@ -24,5 +31,7 @@ class Production(Environment):
 
 if GLOBAL_CONFIGURATION.get('environment', 'local') == 'prod':
     ENVIRONMENT = Production()
+elif GLOBAL_CONFIGURATION.get('environment', 'local') == 'test':
+    ENVIRONMENT = Test()
 else:
     ENVIRONMENT = Local()
