@@ -5,7 +5,7 @@ AUTH_SETTINGS.require('default_session_length')
 
 import datetime
 from typing import Optional
-from sqlalchemy import ForeignKey, String, func
+from sqlalchemy import ForeignKey, String, UniqueConstaint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Text, JSON, Enum
 
@@ -15,7 +15,7 @@ class MissionTypes(Base):
     __tablename__ = 'mission_types'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
+    name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
     signoffs_required: Mapped[int] = mapped_column(default=1, nullable=False)
 
 class Missions(Base):
@@ -40,7 +40,7 @@ class PassedMissions(Base):
     __tablename__ = 'passed_missions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
+    iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False, unique=True)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
     date_passed: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
@@ -48,6 +48,7 @@ class Iterations(Base):
     __tablename__ = 'mission_iterations'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
     min_player_count: Mapped[int] = mapped_column(nullable=False)
     max_player_count: Mapped[int] = mapped_column(nullable=False)
     desired_player_count: Mapped[int] = mapped_column(nullable=False)
@@ -56,6 +57,10 @@ class Iterations(Base):
     iteration: Mapped[int] = mapped_column(nullable=False)
     changelog: Mapped[str] = mapped_column(Text, nullable=False)
 
+    __tableargs__= (
+        UniqueConstaint('iteration', 'mission_id', name='mission_has_single_iteration'),
+    )
+
 class TestResults(Base):
     __tablename__ = 'test_results'
 
@@ -63,6 +68,10 @@ class TestResults(Base):
     review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'), nullable=False)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
+
+    __tableargs__= (
+        UniqueConstaint('review_id', 'iteration_id', name='review_maps_to_single_iteration'),
+    )
 
 class Reviews(Base):
     __tablename__ = 'reviews'
@@ -78,3 +87,7 @@ class TestCosigns(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     test_result_id: Mapped[int] = mapped_column(ForeignKey('test_results.id'), nullable=False)
     tester_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
+
+    __tableargs__= (
+        UniqueConstaint('test_result_id', 'tester_id', name='can_only_cosign_once'),
+    )
