@@ -2,8 +2,14 @@ import logging
 import web
 from web import webapi
 from error import NonLocalIpAccessingLocalOnlyAddress
+from configuration import Configuration
 
 logger = logging.getLogger('wsgilog.log')
+
+AUTH_SETTINGS = None
+if AUTH_SETTINGS is None:
+    AUTH_SETTINGS = Configuration.load('auth.txt')
+
 
 def verify_local(ctx: dict):
     valid_local_prefix = (
