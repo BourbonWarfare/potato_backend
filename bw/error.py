@@ -54,7 +54,7 @@ class InvalidPermissions(AuthError):
     def status(self) -> int:
         return 403
     def __init__(self):
-        super().__init__('User has invalid permissions'))
+        super().__init__('User has invalid permissions')
 
 class NoUserWithGivenCredentials(AuthError):
     def status(self) -> int:

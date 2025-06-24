@@ -4,7 +4,7 @@ from web import webapi
 from bw.error import NonLocalIpAccessingLocalOnlyAddress
 from bw.configuration import Configuration
 from bw.server import WebServer
-from bw.auth.validators import validate_local, validate_user
+from bw.auth.validators import validate_local
 
 logger = logging.getLogger('wsgilog.log')
 
@@ -25,6 +25,7 @@ def require_local(func):
 def require_session(func):
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
+    return wrapper
 
 def require_group_permission(*permissions):
     def decorator(func):

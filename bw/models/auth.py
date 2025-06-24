@@ -4,6 +4,7 @@ AUTH_SETTINGS.require('default_session_length')
 AUTH_SETTINGS.require('api_session_length')
 
 import datetime
+from typing import Optional
 from sqlalchemy import ForeignKey, String, func, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 

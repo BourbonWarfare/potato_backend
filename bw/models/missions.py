@@ -5,7 +5,7 @@ AUTH_SETTINGS.require('default_session_length')
 
 import datetime
 from typing import Optional
-from sqlalchemy import ForeignKey, String, UniqueConstaint, func
+from sqlalchemy import ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Text, JSON, Enum
 
@@ -58,7 +58,7 @@ class Iteration(Base):
     changelog: Mapped[str] = mapped_column(Text, nullable=False)
 
     __tableargs__= (
-        UniqueConstaint('iteration', 'mission_id', name='mission_has_single_iteration'),
+        UniqueConstraint('iteration', 'mission_id', name='mission_has_single_iteration'),
     )
 
 class TestResult(Base):
@@ -70,7 +70,7 @@ class TestResult(Base):
     date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
     __tableargs__= (
-        UniqueConstaint('review_id', 'iteration_id', name='review_maps_to_single_iteration'),
+        UniqueConstraint('review_id', 'iteration_id', name='review_maps_to_single_iteration'),
     )
 
 class Review(Base):
@@ -89,5 +89,5 @@ class TestCosign(Base):
     tester_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
 
     __tableargs__= (
-        UniqueConstaint('test_result_id', 'tester_id', name='can_only_cosign_once'),
+        UniqueConstraint('test_result_id', 'tester_id', name='can_only_cosign_once'),
     )
