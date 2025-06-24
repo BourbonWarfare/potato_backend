@@ -1,4 +1,4 @@
-from server import WebHandler
+from bw.server import WebHandler
 
 def main():
     server = WebHandler()

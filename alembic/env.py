@@ -1,3 +1,6 @@
+from bw.settings import GLOBAL_CONFIGURATION as GC
+GC.require('db_driver', 'db_username', 'db_password', 'db_address', 'db_name')
+
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -9,6 +12,11 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
+# overwrite the inifile sqlalchemy url path
+config.set_main_option(
+    'sqlalchemy.url',
+    f'{GC['db_driver']}://{GC['db_username']}:{GC['db_password']}@{GC['db_address']}/{GC['db_name']}')
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
@@ -18,10 +26,10 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-import models
-from models.auth import *
-from models.missions import *
-target_metadata = models.Base.metadata
+import bw.models
+from bw.models.auth import *
+from bw.models.missions import *
+target_metadata = bw.models.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

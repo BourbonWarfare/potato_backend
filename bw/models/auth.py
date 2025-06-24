@@ -1,5 +1,5 @@
-from models import Base
-from auth import AUTH_SETTINGS
+from bw.models import Base
+from bw.auth import AUTH_SETTINGS
 AUTH_SETTINGS.require('default_session_length')
 
 import datetime

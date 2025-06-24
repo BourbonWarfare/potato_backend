@@ -1,4 +1,4 @@
-from settings import GLOBAL_CONFIGURATION
+from bw.settings import GLOBAL_CONFIGURATION
 
 import atexit
 import web
@@ -6,10 +6,10 @@ import logging
 
 from cheroot.server import HTTPServer
 from cheroot.ssl.builtin import BuiltinSSLAdapter
-from environment import ENVIRONMENT
-from log import Logger
-from state import State
-from endpoints import Endpoints
+from bw.environment import ENVIRONMENT
+from bw.log import Logger
+from bw.state import State
+from bw.endpoints import Endpoints
 
 logger = logging.getLogger('wsgilog.log')
 

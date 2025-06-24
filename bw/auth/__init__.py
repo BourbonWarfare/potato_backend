@@ -1,8 +1,8 @@
 import logging
 import web
 from web import webapi
-from error import NonLocalIpAccessingLocalOnlyAddress
-from configuration import Configuration
+from bw.error import NonLocalIpAccessingLocalOnlyAddress
+from bw.configuration import Configuration
 
 logger = logging.getLogger('wsgilog.log')
 

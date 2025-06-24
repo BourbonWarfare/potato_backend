@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from settings import GLOBAL_CONFIGURATION
+from bw.settings import GLOBAL_CONFIGURATION
 
 class Environment:
     def port(self):

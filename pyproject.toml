@@ -5,6 +5,7 @@ version = "1.0.0"
 requires-python = "==3.12.*"
 dependencies = [
     "SQLAlchemy",
+    "pg8000",
     "web.py",
     "wsgilog",
     "alembic",
@@ -15,6 +16,10 @@ authors = [
 maintainers = [
     {name="Bailey Danyluk"}
 ]
+
+[tool.setuptools.packages.find]
+include = ["bw*"]
+namespaces = false
 
 [tool.alembic]
 

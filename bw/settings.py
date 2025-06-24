@@ -1,4 +1,4 @@
-from configuration import Configuration
+from bw.configuration import Configuration
 
 GLOBAL_CONFIGURATION = None
 if GLOBAL_CONFIGURATION is None:

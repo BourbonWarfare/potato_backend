@@ -1,4 +1,4 @@
-from state import State
+from bw.state import State
 from web import webapi
 
 class Endpoints:

@@ -1,4 +1,4 @@
-from error import DuplicateConfigKey, ConfigurationKeyNotPresent, NoConfigLoadedError
+from bw.error import DuplicateConfigKey, ConfigurationKeyNotPresent, NoConfigLoadedError
 
 class Configuration(dict):
     def __init__(self, *args):
