@@ -1,15 +1,15 @@
+from models import Base
 from auth import AUTH_SETTINGS
 from missions import TestStatus
 AUTH_SETTINGS.require('default_session_length')
 
+import datetime
 from typing import Optional
-from sqlalchemy import ForeignKey, String, DeclarativeBase, Mapped, mapped_column, func
-from sqlalchemy.types import DateTime, Text, JSON, Enum
+from sqlalchemy import ForeignKey, String, func
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import Text, JSON, Enum
 
 NAME_LENGTH = 256
-
-class Base(DeclarativeBase):
-    pass
 
 class MissionTypes(Base):
     __tablename__ = 'mission_types'
@@ -33,7 +33,7 @@ class PlayedMissions(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
-    play_date: Mapped[DateTime] = mapped_column(nullable=False, server_default=func.current_date())
+    play_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
     player_count: Mapped[int] = mapped_column(nullable=False)
 
 class PassedMissions(Base):
@@ -42,7 +42,7 @@ class PassedMissions(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
-    date_passed: Mapped[DateTime] = mapped_column(nullable=False, server_default=func.current_date())
+    date_passed: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
 class Iterations(Base):
     __tablename__ = 'mission_iterations'
@@ -51,10 +51,10 @@ class Iterations(Base):
     min_player_count: Mapped[int] = mapped_column(nullable=False)
     max_player_count: Mapped[int] = mapped_column(nullable=False)
     desired_player_count: Mapped[int] = mapped_column(nullable=False)
-    upload_date: Mapped[DateTime] = mapped_column(nullable=False, server_default=func.current_date())
+    upload_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
     bwmf_version: Mapped[int] = mapped_column(nullable=False)
     iteration: Mapped[int] = mapped_column(nullable=False)
-    changelog: Mapped[Text]
+    changelog: Mapped[str] = mapped_column(Text, nullable=False)
 
 class TestResults(Base):
     __tablename__ = 'test_results'
@@ -62,7 +62,7 @@ class TestResults(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'), nullable=False)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
-    date_tested: Mapped[DateTime] = mapped_column(nullable=False, server_default=func.current_date())
+    date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
 class Reviews(Base):
     __tablename__ = 'reviews'
@@ -70,7 +70,7 @@ class Reviews(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     tester_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
     status: Mapped[Enum] = mapped_column(Enum(TestStatus), nullable=False)
-    notes: Mapped[JSON] = mapped_column(nullable=False)
+    notes: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 class TestCosigns(Base):
     __tablename__ = 'test_cosigns'

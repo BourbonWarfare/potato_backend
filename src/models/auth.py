@@ -1,20 +1,19 @@
+from models import Base
 from auth import AUTH_SETTINGS
 AUTH_SETTINGS.require('default_session_length')
 
-from sqlalchemy import ForeignKey, String, DeclarativeBase, Mapped, mapped_column, func
-from sqlalchemy.types import DateTime
+import datetime
+from sqlalchemy import ForeignKey, String, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 NAME_LENGTH = 64
-
-class Base(DeclarativeBase):
-    pass
 
 class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     role: Mapped[int] = mapped_column(ForeignKey('user_roles.id'), nullable=False)
-    creation_date: Mapped[DateTime] = mapped_column(nullable=False, server_default=func.current_date())
+    creation_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
 class DiscordUser(Base):
     __tablename__ = 'discord_users'
