@@ -11,14 +11,14 @@ from sqlalchemy.types import Text, JSON, Enum
 
 NAME_LENGTH = 256
 
-class MissionTypes(Base):
+class MissionType(Base):
     __tablename__ = 'mission_types'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
     signoffs_required: Mapped[int] = mapped_column(default=1, nullable=False)
 
-class Missions(Base):
+class Mission(Base):
     __tablename__ = 'missions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -27,7 +27,7 @@ class Missions(Base):
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     mission_type: Mapped[int] = mapped_column(ForeignKey('mission_types.id'), nullable=False)
 
-class PlayedMissions(Base):
+class PlayedMission(Base):
     __tablename__ = 'played_missions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -36,7 +36,7 @@ class PlayedMissions(Base):
     play_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
     player_count: Mapped[int] = mapped_column(nullable=False)
 
-class PassedMissions(Base):
+class PassedMission(Base):
     __tablename__ = 'passed_missions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -44,7 +44,7 @@ class PassedMissions(Base):
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
     date_passed: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
-class Iterations(Base):
+class Iteration(Base):
     __tablename__ = 'mission_iterations'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -61,7 +61,7 @@ class Iterations(Base):
         UniqueConstaint('iteration', 'mission_id', name='mission_has_single_iteration'),
     )
 
-class TestResults(Base):
+class TestResult(Base):
     __tablename__ = 'test_results'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -73,7 +73,7 @@ class TestResults(Base):
         UniqueConstaint('review_id', 'iteration_id', name='review_maps_to_single_iteration'),
     )
 
-class Reviews(Base):
+class Review(Base):
     __tablename__ = 'reviews'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -81,7 +81,7 @@ class Reviews(Base):
     status: Mapped[Enum] = mapped_column(Enum(TestStatus), nullable=False)
     notes: Mapped[dict] = mapped_column(JSON, nullable=False)
 
-class TestCosigns(Base):
+class TestCosign(Base):
     __tablename__ = 'test_cosigns'
 
     id: Mapped[int] = mapped_column(primary_key=True)

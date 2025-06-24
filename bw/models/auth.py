@@ -24,7 +24,7 @@ class DiscordUser(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
     discord_id: Mapped[int] = mapped_column(unique=True)
 
-class Roles(Base):
+class Role(Base):
     __tablename__ = 'user_roles'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -33,7 +33,7 @@ class Roles(Base):
     can_create_role: Mapped[bool]
     can_create_group: Mapped[bool]
 
-class Sessions(Base):
+class Session(Base):
     __tablename__ = 'sessions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -48,7 +48,7 @@ class Sessions(Base):
     def api_session_length() -> int:
         return func.current_timestamp() + AUTH_SETTINGS['api_session_length']
 
-class GroupPermissions(Base):
+class GroupPermission(Base):
     __tablename__ = 'group_permissions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -57,14 +57,14 @@ class GroupPermissions(Base):
     can_upload_mission: Mapped[bool]
     can_test_mission: Mapped[bool]
 
-class Groups(Base):
+class Group(Base):
     __tablename__ = 'groups'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     permissions: Mapped[int] = mapped_column(ForeignKey('group_permissions.id'), nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
 
-class UserGroups(Base):
+class UserGroup(Base):
     __tablename__ = 'user_groups'
 
     id: Mapped[int] = mapped_column(primary_key=True)
