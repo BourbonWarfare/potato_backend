@@ -13,7 +13,7 @@ class ConfigurationKeyNotPresent(ConfigError):
     def __init__(self, key):
         super().__init__(f'Key not present: {key}')
 
-class NoConfigLoadedError(ConfigError):
+class NoConfigLoaded(ConfigError):
     def __init__(self):
         super().__init__(f'Config not loaded')
 

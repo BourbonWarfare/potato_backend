@@ -9,6 +9,7 @@ dependencies = [
     "web.py",
     "wsgilog",
     "alembic",
+    "pytest"
 ]
 authors = [
     {name="Bailey Danyluk"}
@@ -20,6 +21,13 @@ maintainers = [
 [tool.setuptools.packages.find]
 include = ["bw*"]
 namespaces = false
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = [
+    "tests",
+    "integrations"
+]
 
 [tool.alembic]
 

@@ -1,4 +1,4 @@
-from bw.error import DuplicateConfigKey, ConfigurationKeyNotPresent, NoConfigLoadedError
+from bw.error import DuplicateConfigKey, ConfigurationKeyNotPresent, NoConfigLoaded
 
 class Configuration(dict):
     def __init__(self, *args):
@@ -12,7 +12,7 @@ class Configuration(dict):
 
     def write(self):
         if self.file is None:
-            raise NoConfigLoadedError()
+            raise NoConfigLoaded()
 
         lines = []
 
