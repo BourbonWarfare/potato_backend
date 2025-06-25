@@ -1,5 +1,5 @@
 from bw.models import Base
-from bw.auth import AUTH_SETTINGS
+from bw.auth.settings import AUTH_SETTINGS
 AUTH_SETTINGS.require('default_session_length')
 AUTH_SETTINGS.require('api_session_length')
 
@@ -24,6 +24,13 @@ class DiscordUser(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
     discord_id: Mapped[int] = mapped_column(unique=True)
+
+class BotUser(Base):
+    __tablename__ = 'bot_users'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
+    bot_token: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
 
 class Role(Base):
     __tablename__ = 'user_roles'

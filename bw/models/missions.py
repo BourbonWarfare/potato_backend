@@ -1,5 +1,5 @@
 from bw.models import Base
-from bw.auth import AUTH_SETTINGS
+from bw.auth.settings import AUTH_SETTINGS
 from bw.missions import TestStatus
 AUTH_SETTINGS.require('default_session_length')
 
