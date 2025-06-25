@@ -13,6 +13,14 @@ class BwServerError(Exception):
     def as_response_code(self) -> WebResponse:
         return WebResponse(status=self.status())
 
+class ExpectedJson(BwServerError):
+    def __init__(self):
+        super().__init__(f'Expected JSON payload, got something else')
+
+class JsonPayloadError(BwServerError):
+    def __init__(self):
+        super().__init__(f'JSON payload malformed')
+
 class ConfigError(BwServerError):
     def __init__(self, reason: str):
         super().__init__(f'Configuration error: {reason}')

@@ -1,15 +1,25 @@
-from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
-
 from bw.state import State
 from bw.response import JsonResponse, Ok
-from bw.models.auth import DiscordUser, User
-from bw.error import NoUserWithGivenCredentials, DbError
+from bw.error import DbError
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
 
 class AuthApi:
-    def create_user_from_discord(
+    def create_new_user_bot(
+        self,
+        state: State
+    ) -> JsonResponse:
+        with state.Session.begin() as session:
+            savepoint = session.begin_nested()
+            user = UserStore().create_user(state)
+            try:
+                bot = UserStore().link_bot_user(state, user)
+            except DbError as e:
+                savepoint.rollback()
+                raise e
+        return JsonResponse({'bot_token': bot.bot_token})
+
+    def create_new_user_from_discord(
         self,
         state: State,
         discord_id: int
@@ -32,3 +42,17 @@ class AuthApi:
         user = UserStore().user_from_discord_id(state, discord_id)
         return SessionStore().start_session(user)
 
+    def login_with_bot(
+        self,
+        state: State,
+        bot_token: str
+    ) -> JsonResponse:
+        user = UserStore().user_from_bot_token(state, bot_token)
+        return SessionStore().start_session(user)
+    
+    def is_session_active(
+        self,
+        state: State,
+        session_token: str
+    ):
+        return SessionStore().is_session_active(state, session_token)

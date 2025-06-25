@@ -29,3 +29,10 @@ class JsonResponse(WebResponse):
 
     def __init__(self, json_payload: dict, headers: dict = {}):
         super().__init__(status=200, headers=headers, data=json.dumps(json_payload))
+
+class HtmlResponse(WebResponse):
+    def content_type(self) -> str:
+        return 'text/html'
+
+    def __init__(self, html: str, headers: dict = {}):
+        super().__init__(status=200, headers=headers, data=html)
