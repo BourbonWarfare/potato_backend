@@ -1,6 +1,7 @@
 # server-only conf
-conf.txt
-auth.txt
+conf.txt*
+auth.txt*
+server.log*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,7 +1,7 @@
 import logging
 import web
 from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionInvalid
-from bw.server import WebServer
+from bw.state import State
 from bw.auth.validators import validate_local, validate_session
 
 logger = logging.getLogger('wsgilog.log')
@@ -23,7 +23,7 @@ def require_session(func):
 
         session_token = kwargs['session_token']
         try:
-            validate_session(WebServer.state, session_token)
+            validate_session(State.state, session_token)
         except SessionInvalid as e:
             return e.as_response_code()
         return func(*args, **kwargs)

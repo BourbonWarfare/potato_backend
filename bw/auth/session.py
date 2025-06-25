@@ -15,7 +15,7 @@ class SessionStore:
     def start_api_session(self, state: State, user: User) -> dict:
         self.expire_session_from_user(state, user)
 
-        token = secrets.token_urlsafe(TOKEN_LENGTH)
+        token = secrets.token_urlsafe()[:TOKEN_LENGTH]
         with state.Session.begin() as session:
             query = insert(Session).values(
                     user_id=user.id,

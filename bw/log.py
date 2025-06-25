@@ -7,7 +7,7 @@ class Logger(WsgiLog):
             application,
             logformat='(%(asctime)s) %(levelname)s - %(message)s',
             tofile=True,
-            tostream=False,
+            tostream=True,
             toprint=True,
             file='server.log',
             interval='s',

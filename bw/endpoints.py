@@ -1,8 +1,6 @@
-from web import webapi
-
 from bw.state import State
 from bw.response import WebResponse, JsonResponse
-from bw.web_utils import convert_json_to_args
+from bw.web_utils import convert_json_to_args, web_response
 from bw.auth.decorators import require_local, require_session
 from bw.auth.api import AuthApi
 from bw.error import DbError
@@ -32,15 +30,17 @@ class Endpoints:
 
     class Home(StaticEndpoint):
         def path(self) -> str:
-            return f'{self.url()}/'
+            return f'{self.url()}'
 
-        def GET(self):
-            return webapi.ok()
+        @web_response
+        def GET(self) -> WebResponse:
+            return WebResponse(status=200, data="hi!")
     
     class RegisterNewBot(ApiEndpoint):
         def path(self) -> str:
             return f'{self.url()}/users/bot/register'
 
+        @web_response
         @convert_json_to_args
         @require_local
         def POST(self) -> JsonResponse:
@@ -53,6 +53,7 @@ class Endpoints:
         def path(self) -> str:
             return f'{self.url()}/users/discord/register'
         
+        @web_response
         @convert_json_to_args
         @require_session
         def POST(self, discord_id: int) -> WebResponse:

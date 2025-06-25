@@ -14,7 +14,7 @@ class AuthApi:
             user = UserStore().create_user(state)
             try:
                 bot = UserStore().link_bot_user(state, user)
-            except DbError as e:
+            except Exception as e:
                 savepoint.rollback()
                 raise e
         return JsonResponse({'bot_token': bot.bot_token})
@@ -29,7 +29,7 @@ class AuthApi:
             user = UserStore().create_user(state)
             try:
                 UserStore().link_discord_user(state, discord_id, user)
-            except DbError as e:
+            except Exception as e:
                 savepoint.rollback()
                 raise e
         return Ok()

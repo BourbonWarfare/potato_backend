@@ -18,13 +18,13 @@ class WebHandler:
 
     def namespace(self):
         return {
-            f'{endpoint.__name__}': endpoint for name,endpoint in Endpoints.__dict__.items()
+            f'{endpoint.__name__.lower()}': endpoint for name,endpoint in Endpoints.__dict__.items()
                 if '__' not in name and name != 'BASE_ENDPOINTS' and endpoint not in Endpoints.BASE_ENDPOINTS
         }
 
     def urls(self):
         return tuple([
-            (f'{endpoint().path()}', f'{endpoint.__name__}') for name,endpoint in Endpoints.__dict__.items()
+            (f'{endpoint().path().lower()}', f'{endpoint.__name__.lower()}') for name,endpoint in Endpoints.__dict__.items()
                 if '__' not in name and name != 'BASE_ENDPOINTS' and endpoint not in Endpoints.BASE_ENDPOINTS
         ])
 
@@ -33,8 +33,9 @@ class WebHandler:
             if '__' in name or name == 'BASE_ENDPOINTS':
                 continue
             endpoint.state = self.state
+        url_map = tuple([unpacked for url in self.urls() for unpacked in url])
         self.app = WebServer(
-            mapping=tuple([unpacked for url in self.urls() for unpacked in url]),
+            mapping=url_map,
             fvars=self.namespace()
         )
 

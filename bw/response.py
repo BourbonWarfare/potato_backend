@@ -5,8 +5,8 @@ class WebResponse:
     def content_type(self) -> str:
         return 'text/plain'
 
-    def __init__(self, status: int, headers: dict, data=""):
-        ctx.status = status
+    def __init__(self, status: int, headers: dict={}, data=""):
+        ctx.status = str(status)
 
         lower_headers = { key.lower(): value for key, value in headers.items() }
         if 'content-type' not in lower_headers:

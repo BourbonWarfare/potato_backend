@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from bw.settings import GLOBAL_CONFIGURATION as GC
 
 class State:
+    state = None
+
     def _setup_engine(self):
         GC.require(
             'db_driver',
@@ -18,6 +20,7 @@ class State:
     def __init__(self):
         self.sql_engine = self._setup_engine()
         self._session_maker = sessionmaker(self.sql_engine)
+        State.state = self
 
     @property
     def Session(self):
