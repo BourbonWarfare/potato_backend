@@ -27,7 +27,9 @@ class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'text/json'
 
-    def __init__(self, json_payload: dict, headers: dict = {}):
+    def __init__(self, json_payload: dict, headers: dict = {}, status=200):
+        if 'status' not in json_payload:
+            json_payload['status'] = status
         super().__init__(status=200, headers=headers, data=json.dumps(json_payload))
 
 class HtmlResponse(WebResponse):
