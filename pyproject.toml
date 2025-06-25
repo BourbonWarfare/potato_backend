@@ -10,7 +10,8 @@ dependencies = [
     "wsgilog",
     "alembic",
     "pytest",
-    "ruff"
+    "ruff",
+    "pre-commit"
 ]
 authors = [
     {name="Bailey Danyluk"}
