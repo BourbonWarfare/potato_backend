@@ -1,5 +1,6 @@
 from wsgilog import WsgiLog
 
+
 class Logger(WsgiLog):
     def __init__(self, application):
         WsgiLog.__init__(

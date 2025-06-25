@@ -1,5 +1,6 @@
 from bw.error import DuplicateConfigKey, ConfigurationKeyNotPresent, NoConfigLoaded
 
+
 class Configuration(dict):
     def __init__(self, *args):
         self.file = None
@@ -19,7 +20,7 @@ class Configuration(dict):
         key_line_numbers = {}
         with open(f'{self.file}.bak', 'w') as backup:
             with open(self.file, 'r') as file:
-                for line_num,line in enumerate(file):
+                for line_num, line in enumerate(file):
                     backup.write(line)
 
                     line = line.strip()
@@ -31,7 +32,7 @@ class Configuration(dict):
                     key = tuple(s.strip() for s in line.split('='))[0]
                     key_line_numbers[key] = line_num
 
-        for key,value in self.items():
+        for key, value in self.items():
             if key not in key_line_numbers:
                 lines.append(f'{key}{f"={value}" if value != "" else ""}')
             else:

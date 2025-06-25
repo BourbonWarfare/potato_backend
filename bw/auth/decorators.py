@@ -6,6 +6,7 @@ from bw.auth.validators import validate_local, validate_session
 
 logger = logging.getLogger('wsgilog.log')
 
+
 def require_local(func):
     def wrapper(*args, **kwargs):
         try:
@@ -14,7 +15,9 @@ def require_local(func):
             logger.warning(f'Non-local API called from abroad: {e}')
             return e.as_response_code()
         return func(*args, **kwargs)
+
     return wrapper
+
 
 def require_session(func):
     def wrapper(*args, **kwargs):
@@ -27,11 +30,15 @@ def require_session(func):
         except SessionInvalid as e:
             return e.as_response_code()
         return func(*args, **kwargs)
+
     return wrapper
+
 
 def require_group_permission(*permissions):
     def decorator(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator

@@ -9,7 +9,8 @@ dependencies = [
     "web.py",
     "wsgilog",
     "alembic",
-    "pytest"
+    "pytest",
+    "ruff"
 ]
 authors = [
     {name="Bailey Danyluk"}
@@ -105,3 +106,20 @@ prepend_sys_path = [
 # executable = "%(here)s/.venv/bin/ruff"
 # options = "check --fix REVISION_SCRIPT_FILENAME"
 
+[tool.ruff]
+# Set the maximum line length to 79.
+line-length = 130
+exclude = ["alembic"]
+
+[tool.ruff.lint]
+extend-select = [
+    "UP",
+    "E501"
+]
+
+[tool.ruff.format]
+# Prefer single quotes over double quotes.
+quote-style = "single"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"

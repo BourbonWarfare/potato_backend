@@ -8,6 +8,7 @@ from bw.response import Ok
 from bw.models.auth import User, DiscordUser, BotUser, TOKEN_LENGTH
 from bw.error import AuthError, NoUserWithGivenCredentials, DbError
 
+
 class UserStore:
     def create_user(self, state: State) -> User:
         with state.Session.begin() as session:
@@ -71,9 +72,9 @@ class UserStore:
             elif isinstance(user, User):
                 query = delete(DiscordUser).where(DiscordUser.user_id == user.id)
             else:
-                raise AuthError('attempting to delete user with bad arguments') 
+                raise AuthError('attempting to delete user with bad arguments')
             session.execute(query)
-    
+
     def delete_bot_user(self, state: State, user: BotUser | User):
         with state.Session.begin() as session:
             if isinstance(user, BotUser):
@@ -81,5 +82,5 @@ class UserStore:
             elif isinstance(user, User):
                 query = delete(BotUser).where(BotUser.user_id == user.id)
             else:
-                raise AuthError('attempting to delete user with bad arguments') 
+                raise AuthError('attempting to delete user with bad arguments')
             session.execute(query)

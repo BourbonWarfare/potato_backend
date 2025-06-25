@@ -5,17 +5,18 @@ from bw.auth.decorators import require_local, require_session
 from bw.auth.api import AuthApi
 from bw.error import DbError
 
+
 class Endpoints:
     class BaseEndpoint:
         @staticmethod
         def url() -> str:
             return '/'
-        
+
         def path(self) -> str:
             raise NotImplementedError()
-        
+
         state: State
-    
+
     class ApiEndpoint(BaseEndpoint):
         @staticmethod
         def url() -> str:
@@ -25,7 +26,7 @@ class Endpoints:
         @staticmethod
         def url() -> str:
             return '/static'
-    
+
     BASE_ENDPOINTS = [BaseEndpoint, ApiEndpoint, StaticEndpoint]
 
     class Home(StaticEndpoint):
@@ -34,8 +35,8 @@ class Endpoints:
 
         @web_response
         def GET(self) -> WebResponse:
-            return WebResponse(status=200, data="hi!")
-    
+            return WebResponse(status=200, data='hi!')
+
     class RegisterNewBot(ApiEndpoint):
         def path(self) -> str:
             return f'{self.url()}/users/bot/register'
@@ -48,11 +49,11 @@ class Endpoints:
                 return AuthApi().create_new_user_bot(self.state)
             except DbError as e:
                 return e.as_json()
-    
+
     class RegisterNewDiscordUser(ApiEndpoint):
         def path(self) -> str:
             return f'{self.url()}/users/discord/register'
-        
+
         @web_response
         @convert_json_to_args
         @require_session
