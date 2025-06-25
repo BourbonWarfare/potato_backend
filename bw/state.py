@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 from bw.settings import GLOBAL_CONFIGURATION as GC
 
@@ -18,5 +18,5 @@ class State:
         State.state = self
 
     @property
-    def Session(self):
+    def Session(self) -> sessionmaker[Session]:
         return self._session_maker
