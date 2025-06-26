@@ -85,5 +85,5 @@ class NoUserWithGivenCredentials(AuthError):
 
 
 class NonLocalIpAccessingLocalOnlyAddress(AuthError):
-    def __init__(self):
-        super().__init__('Attempting to access local-only endpoint from abroad')
+    def __init__(self, ip: str):
+        super().__init__(f'Attempting to access local-only endpoint from abroad ({ip})')
