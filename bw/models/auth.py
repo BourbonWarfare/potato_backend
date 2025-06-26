@@ -1,13 +1,13 @@
+import datetime
+
+from sqlalchemy import ForeignKey, String, func, TIMESTAMP
+from sqlalchemy.orm import Mapped, mapped_column
+
 from bw.models import Base
 from bw.auth.settings import AUTH_SETTINGS
 
 AUTH_SETTINGS.require('default_session_length')
 AUTH_SETTINGS.require('api_session_length')
-
-import datetime
-from typing import Optional
-from sqlalchemy import ForeignKey, String, func, TIMESTAMP
-from sqlalchemy.orm import Mapped, mapped_column
 
 NAME_LENGTH = 64
 TOKEN_LENGTH = 32
@@ -17,7 +17,7 @@ class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    role: Mapped[Optional[int]] = mapped_column(ForeignKey('user_roles.id'))
+    role: Mapped[int | None] = mapped_column(ForeignKey('user_roles.id'))
     creation_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
 
@@ -60,11 +60,15 @@ class Session(Base):
     )
 
     @staticmethod
-    def human_session_length() -> int:
+    def now():
+        return func.current_timestamp()
+
+    @staticmethod
+    def human_session_length():
         return func.current_timestamp() + AUTH_SETTINGS['default_session_length']
 
     @staticmethod
-    def api_session_length() -> int:
+    def api_session_length():
         return func.current_timestamp() + AUTH_SETTINGS['api_session_length']
 
 

@@ -14,12 +14,12 @@ class BwServerError(Exception):
 
 class ExpectedJson(BwServerError):
     def __init__(self):
-        super().__init__(f'Expected JSON payload, got something else')
+        super().__init__('Expected JSON payload, got something else')
 
 
 class JsonPayloadError(BwServerError):
     def __init__(self):
-        super().__init__(f'JSON payload malformed')
+        super().__init__('JSON payload malformed')
 
 
 class ConfigError(BwServerError):
@@ -39,7 +39,7 @@ class ConfigurationKeyNotPresent(ConfigError):
 
 class NoConfigLoaded(ConfigError):
     def __init__(self):
-        super().__init__(f'Config not loaded')
+        super().__init__('Config not loaded')
 
 
 class ClientError(BwServerError):

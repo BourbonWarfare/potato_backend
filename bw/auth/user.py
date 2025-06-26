@@ -12,7 +12,7 @@ from bw.error import AuthError, NoUserWithGivenCredentials, DbError
 class UserStore:
     def create_user(self, state: State) -> User:
         with state.Session.begin() as session:
-            user = session.execute(insert(User).returning(User)).one()[0]
+            user = session.execute(insert(User).returning(User)).one()
             session.expunge(user)
         return user
 

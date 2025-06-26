@@ -1,6 +1,6 @@
 import secrets
 
-from sqlalchemy import insert, delete, exists
+from sqlalchemy import insert, delete, select
 
 from bw.state import State
 from bw.models.auth import Session, User, TOKEN_LENGTH
@@ -32,5 +32,6 @@ class SessionStore:
 
     def is_session_active(self, state: State, session_token: str) -> bool:
         with state.Session.begin() as session:
-            query = exists(Session).where(State.token == session_token)
-            return session.scalar(query)
+            query = select(Session.expire_time).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
+            row = session.execute(query).first()
+            return row is not None

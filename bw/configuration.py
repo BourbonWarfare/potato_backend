@@ -19,7 +19,7 @@ class Configuration(dict):
 
         key_line_numbers = {}
         with open(f'{self.file}.bak', 'w') as backup:
-            with open(self.file, 'r') as file:
+            with open(self.file) as file:
                 for line_num, line in enumerate(file):
                     backup.write(line)
 
@@ -46,7 +46,7 @@ class Configuration(dict):
     @staticmethod
     def load(configuration_file: str):
         config = Configuration()
-        with open(configuration_file, 'r') as file:
+        with open(configuration_file) as file:
             for line in file:
                 line = line.strip()
                 if len(line) == 0:

@@ -1,6 +1,5 @@
 from bw.state import State
 from bw.response import JsonResponse, Ok
-from bw.error import DbError
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
 
@@ -8,24 +7,24 @@ from bw.auth.user import UserStore
 class AuthApi:
     def create_new_user_bot(self, state: State) -> JsonResponse:
         with state.Session.begin() as session:
-            savepoint = session.begin_nested()
-            user = UserStore().create_user(state)
-            try:
-                bot = UserStore().link_bot_user(state, user)
-            except Exception as e:
-                savepoint.rollback()
-                raise e
+            with session.begin_nested() as savepoint:
+                user = UserStore().create_user(state)
+                try:
+                    bot = UserStore().link_bot_user(state, user)
+                except Exception as e:
+                    savepoint.rollback()
+                    raise e
         return JsonResponse({'bot_token': bot.bot_token})
 
     def create_new_user_from_discord(self, state: State, discord_id: int) -> Ok:
         with state.Session.begin() as session:
-            savepoint = session.begin_nested()
-            user = UserStore().create_user(state)
-            try:
-                UserStore().link_discord_user(state, discord_id, user)
-            except Exception as e:
-                savepoint.rollback()
-                raise e
+            with session.begin_nested() as savepoint:
+                user = UserStore().create_user(state)
+                try:
+                    UserStore().link_discord_user(state, discord_id, user)
+                except Exception as e:
+                    savepoint.rollback()
+                    raise e
         return Ok()
 
     def login_with_discord(self, state: State, discord_id: int) -> JsonResponse:

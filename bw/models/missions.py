@@ -1,14 +1,14 @@
+import datetime
+
+from sqlalchemy import ForeignKey, String, UniqueConstraint, func
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import Text, JSON, Enum
+
 from bw.models import Base
 from bw.auth.settings import AUTH_SETTINGS
 from bw.missions import TestStatus
 
 AUTH_SETTINGS.require('default_session_length')
-
-import datetime
-from typing import Optional
-from sqlalchemy import ForeignKey, String, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import Text, JSON, Enum
 
 NAME_LENGTH = 256
 
@@ -25,7 +25,7 @@ class Mission(Base):
     __tablename__ = 'missions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    author: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'))
+    author: Mapped[int | None] = mapped_column(ForeignKey('users.id'))
     author_name: Mapped[str] = mapped_column(String(256), nullable=False)
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     mission_type: Mapped[int] = mapped_column(ForeignKey('mission_types.id'), nullable=False)
