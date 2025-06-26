@@ -1,7 +1,7 @@
 import pytest
 
 from bw import configuration
-from bw.error import NoConfigLoaded, DuplicateConfigKey, ConfigurationKeyNotPresent
+from bw.error import NoConfigLoaded, ConfigurationKeyNotPresent
 
 
 @pytest.fixture
