@@ -4,7 +4,6 @@ from sqlalchemy import select, delete, insert
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from bw.state import State
-from bw.response import Ok
 from bw.models.auth import User, DiscordUser, BotUser, TOKEN_LENGTH
 from bw.error import AuthError, NoUserWithGivenCredentials, DbError
 
@@ -12,13 +11,27 @@ from bw.error import AuthError, NoUserWithGivenCredentials, DbError
 class UserStore:
     def create_user(self, state: State) -> User:
         with state.Session.begin() as session:
-            user = session.execute(insert(User).returning(User)).one()
+            user = session.execute(insert(User).returning(User)).one()[0]
+            session.expunge(user)
+        return user
+
+    def user_from_id(self, state: State, user_id: int) -> User:
+        with state.Session.begin() as session:
+            query = select(User).where(User.id == user_id)
+            try:
+                user = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoUserWithGivenCredentials()
             session.expunge(user)
         return user
 
     def user_from_discord_id(self, state: State, discord_id: int) -> User:
         with state.Session.begin() as session:
-            query = select(User).join(User.id).where(DiscordUser.discord_id == discord_id)
+            query = (
+                select(User)
+                .join_from(DiscordUser, User, DiscordUser.user_id == User.id)
+                .where(DiscordUser.discord_id == discord_id)
+            )
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
@@ -28,7 +41,7 @@ class UserStore:
 
     def user_from_bot_token(self, state: State, bot_token: str) -> User:
         with state.Session.begin() as session:
-            query = select(User).join(User.id).where(BotUser.bot_token == bot_token)
+            query = select(User).join_from(BotUser, User, BotUser.user_id == User.id).where(BotUser.bot_token == bot_token)
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
@@ -37,6 +50,9 @@ class UserStore:
         return user
 
     def link_bot_user(self, state: State, user: User) -> BotUser:
+        if self.user_from_id(state, user.id) is None:
+            raise NoUserWithGivenCredentials()
+
         with state.Session.begin() as session:
             try:
                 token = secrets.token_urlsafe()[:TOKEN_LENGTH]
@@ -48,6 +64,9 @@ class UserStore:
         return user
 
     def link_discord_user(self, state: State, discord_id: int, user: User) -> DiscordUser:
+        if self.user_from_id(state, user.id) is None:
+            raise NoUserWithGivenCredentials()
+
         with state.Session.begin() as session:
             try:
                 query = insert(DiscordUser).values(user_id=user.id, discord_id=discord_id).returning(DiscordUser)
@@ -61,9 +80,8 @@ class UserStore:
         with state.Session.begin() as session:
             self.delete_discord_user(state, user)
             self.delete_bot_user(state, user)
-            query = delete(User).where(User.user_id == user.id)
+            query = delete(User).where(User.id == user.id)
             session.execute(query)
-        return Ok()
 
     def delete_discord_user(self, state: State, user: DiscordUser | User):
         with state.Session.begin() as session:
@@ -80,7 +98,7 @@ class UserStore:
             if isinstance(user, BotUser):
                 query = delete(BotUser).where(BotUser.id == user.id)
             elif isinstance(user, User):
-                query = delete(BotUser).where(BotUser.user_id == user.id)
+                query = delete(BotUser).where(BotUser.id == user.id)
             else:
                 raise AuthError('attempting to delete user with bad arguments')
             session.execute(query)

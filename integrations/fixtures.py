@@ -6,7 +6,7 @@ from sqlalchemy import insert
 from sqlalchemy.sql import text
 
 from bw.state import State
-from bw.models.auth import User, Session
+from bw.models.auth import DiscordUser, BotUser, User, Session
 
 
 @pytest.fixture(scope='session')
@@ -17,6 +17,11 @@ def token_1():
 @pytest.fixture(scope='session')
 def token_2():
     return 'token 2'
+
+
+@pytest.fixture(scope='session')
+def discord_id_1():
+    return 1
 
 
 @pytest.fixture(scope='session')
@@ -61,6 +66,12 @@ def session(request, state):
 
 
 @pytest.fixture(scope='function')
+def non_db_user_1():
+    user = User(id=1)
+    yield user
+
+
+@pytest.fixture(scope='function')
 def db_user_1(state, session):
     with state.Session.begin() as session:
         query = insert(User).values(id=1).returning(User)
@@ -76,3 +87,21 @@ def db_session_1(state, session, db_user_1, token_1):
         user_session = session.execute(query).first()[0]
         session.expunge(user_session)
     yield user_session
+
+
+@pytest.fixture(scope='function')
+def db_discord_user_1(state, session, db_user_1, discord_id_1):
+    with state.Session.begin() as session:
+        query = insert(DiscordUser).values(id=1, user_id=db_user_1.id, discord_id=discord_id_1).returning(DiscordUser)
+        user = session.execute(query).first()[0]
+        session.expunge(user)
+    yield user
+
+
+@pytest.fixture(scope='function')
+def db_bot_user_1(state, session, db_user_1, token_1):
+    with state.Session.begin() as session:
+        query = insert(BotUser).values(id=1, user_id=db_user_1.id, bot_token=token_1).returning(BotUser)
+        user = session.execute(query).first()[0]
+        session.expunge(user)
+    yield user
