@@ -9,15 +9,22 @@ dependencies = [
     "web.py",
     "wsgilog",
     "alembic",
-    "pytest",
-    "ruff",
-    "pre-commit"
 ]
 authors = [
     {name="Bailey Danyluk"}
 ]
 maintainers = [
     {name="Bailey Danyluk"}
+]
+
+[project.optional-dependencies]
+development = [
+    "ruff",
+    "pre-commit"
+]
+tests = [
+    "pytest",
+    "pytest-mock"
 ]
 
 [tool.setuptools.packages.find]

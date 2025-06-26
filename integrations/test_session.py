@@ -1,0 +1,32 @@
+# ruff: noqa: F811, F401
+
+from datetime import datetime
+
+from bw.auth.session import SessionStore
+from integrations.fixtures import state, session, db_user_1, db_session_1, token_1, expire_valid, expire_invalid
+
+
+def test__session_store__is_session_valid__no_session(state, session):
+    assert not SessionStore().is_session_active(state, 'no token')
+
+
+def test__session_store__is_session_valid__with_session(state, session, db_session_1, token_1):
+    assert SessionStore().is_session_active(state, token_1)
+
+
+def test__session_store__starting_session_return_correct(mocker, token_1, expire_valid, state, session, db_user_1):
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.api_session_length', return_value=expire_valid)
+
+    new_session = SessionStore().start_api_session(state, db_user_1)
+    assert new_session['status'] == 200
+    assert new_session['session_token'] == token_1
+    assert new_session['expire_time'] == datetime.fromisoformat(expire_valid)
+
+
+def test__session_store__starting_session_activates(mocker, token_1, expire_valid, state, session, db_user_1):
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.api_session_length', return_value=expire_valid)
+
+    new_session = SessionStore().start_api_session(state, db_user_1)
+    assert SessionStore().is_session_active(state, new_session['session_token'])
