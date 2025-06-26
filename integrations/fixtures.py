@@ -51,7 +51,6 @@ def session(request, state):
         alembic_cfg.attributes['connection'] = session
         alembic.command.upgrade(alembic_cfg, 'heads')
         yield session
-        session.rollback()
     state.Engine.dispose()
 
     # Drop database; unneeded after test
@@ -63,14 +62,17 @@ def session(request, state):
 
 @pytest.fixture(scope='function')
 def db_user_1(state, session):
-    user = session.execute(insert(User).values(id=1).returning(User)).first()
-    session.commit()
+    with state.Session.begin() as session:
+        query = insert(User).values(id=1).returning(User)
+        user = session.execute(query).first()[0]
+        session.expunge(user)
     yield user
 
 
 @pytest.fixture(scope='function')
 def db_session_1(state, session, db_user_1, token_1):
-    query = insert(Session).values(id=1, user_id=db_user_1.id, token=token_1).returning(Session)
-    user_session = session.execute(query).first()[0]
-    session.commit()
+    with state.Session.begin() as session:
+        query = insert(Session).values(id=1, user_id=db_user_1.id, token=token_1).returning(Session)
+        user_session = session.execute(query).first()[0]
+        session.expunge(user_session)
     yield user_session
