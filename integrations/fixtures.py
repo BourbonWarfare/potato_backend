@@ -15,6 +15,11 @@ def token_1():
 
 
 @pytest.fixture(scope='session')
+def token_2():
+    return 'token 2'
+
+
+@pytest.fixture(scope='session')
 def expire_valid():
     return '9999-12-23 02:11:06'
 
@@ -31,6 +36,7 @@ def state():
 
 @pytest.fixture(scope='function')
 def session(request, state):
+    # Create a temporary DB to do tests in. Per-test
     alembic_cfg = alembic.config.Config(toml_file='./pyproject.toml')
 
     test_db_name = f'bw_integration__{request.node.name}'
@@ -48,6 +54,7 @@ def session(request, state):
         session.rollback()
     state.Engine.dispose()
 
+    # Drop database; unneeded after test
     state.default_database = original_default
     with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
         conn.execute(text('COMMIT'))
