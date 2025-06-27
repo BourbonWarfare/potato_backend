@@ -5,10 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Text, JSON, Enum
 
 from bw.models import Base
-from bw.auth.settings import AUTH_SETTINGS
 from bw.missions import TestStatus
-
-AUTH_SETTINGS.require('default_session_length')
 
 NAME_LENGTH = 256
 

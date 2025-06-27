@@ -4,12 +4,12 @@ from sqlalchemy import ForeignKey, String, func, TIMESTAMP, Boolean, UniqueConst
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.models import Base
-from bw.auth.settings import AUTH_SETTINGS
+from bw.settings import GLOBAL_CONFIGURATION
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 
-AUTH_SETTINGS.require('default_session_length')
-AUTH_SETTINGS.require('api_session_length')
+GLOBAL_CONFIGURATION.require('default_session_length')
+GLOBAL_CONFIGURATION.require('api_session_length')
 
 NAME_LENGTH = 64
 TOKEN_LENGTH = 32
@@ -61,7 +61,7 @@ class Session(Base):
     expire_time: Mapped[int] = mapped_column(
         TIMESTAMP(timezone=False),
         nullable=False,
-        server_default=func.current_timestamp() + AUTH_SETTINGS['default_session_length'],
+        server_default=func.current_timestamp() + GLOBAL_CONFIGURATION['default_session_length'],
     )
 
     @staticmethod
@@ -70,11 +70,11 @@ class Session(Base):
 
     @staticmethod
     def human_session_length():
-        return func.current_timestamp() + AUTH_SETTINGS['default_session_length']
+        return func.current_timestamp() + GLOBAL_CONFIGURATION['default_session_length']
 
     @staticmethod
     def api_session_length():
-        return func.current_timestamp() + AUTH_SETTINGS['api_session_length']
+        return func.current_timestamp() + GLOBAL_CONFIGURATION['api_session_length']
 
 
 class GroupPermission(Base):
