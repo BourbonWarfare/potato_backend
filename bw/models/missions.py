@@ -26,6 +26,7 @@ class Mission(Base):
     author_name: Mapped[str] = mapped_column(String(256), nullable=False)
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     mission_type: Mapped[int] = mapped_column(ForeignKey('mission_types.id'), nullable=False)
+    special_flags: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class PlayedMission(Base):
