@@ -18,7 +18,7 @@ jobs:
           image: postgres:16.9-bullseye
           # Provide the password for postgres
           env:
-            POSTGRES_DB: testing
+            POSTGRES_DB: bw_backend
             POSTGRES_USER: tester
             POSTGRES_PASSWORD: tester
           # Set health checks to wait until postgres has started
