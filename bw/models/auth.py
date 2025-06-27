@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from bw.models import Base
 from bw.auth.settings import AUTH_SETTINGS
 from bw.auth.permissions import Permissions
+from bw.auth.roles import Roles
 
 AUTH_SETTINGS.require('default_session_length')
 AUTH_SETTINGS.require('api_session_length')
@@ -47,6 +48,9 @@ class Role(Base):
     can_create_role: Mapped[bool]
     can_create_group: Mapped[bool]
 
+    def into_roles(self) -> Roles:
+        return Roles(**{key: getattr(self, key) for key in Roles.__slots__})
+
 
 class Session(Base):
     __tablename__ = 'sessions'
@@ -83,7 +87,7 @@ class GroupPermission(Base):
     can_test_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
 
     def into_permissions(self) -> Permissions:
-        return Permissions(can_upload_mission=self.can_upload_mission, can_test_mission=self.can_test_mission)
+        return Permissions(**{key: getattr(self, key) for key in Permissions.__slots__})
 
 
 class Group(Base):

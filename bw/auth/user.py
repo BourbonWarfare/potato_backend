@@ -1,11 +1,12 @@
 import secrets
 
-from sqlalchemy import select, delete, insert
+from sqlalchemy import select, delete, insert, update
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from bw.state import State
-from bw.models.auth import User, DiscordUser, BotUser, TOKEN_LENGTH
-from bw.error import AuthError, NoUserWithGivenCredentials, DbError
+from bw.auth.roles import Roles
+from bw.models.auth import User, DiscordUser, BotUser, TOKEN_LENGTH, Role
+from bw.error import AuthError, NoUserWithGivenCredentials, DbError, RoleCreationFailed, NoRoleWithName
 
 
 class UserStore:
@@ -101,4 +102,58 @@ class UserStore:
                 query = delete(BotUser).where(BotUser.id == user.id)
             else:
                 raise AuthError('attempting to delete user with bad arguments')
+            session.execute(query)
+
+    def create_role(self, state: State, role_name: str, roles: Roles) -> Role:
+        with state.Session.begin() as session:
+            query = insert(Role).values(name=role_name, **roles.as_dict()).returning(Role)
+            try:
+                role = session.execute(query).one()[0]
+            except IntegrityError:
+                raise RoleCreationFailed(role_name)
+            session.expunge(role)
+        return role
+
+    def edit_role(self, state: State, role_name: str, new_roles: Roles) -> Role:
+        with state.Session.begin() as session:
+            query = select(Role).where(Role.name == role_name)
+            try:
+                permission = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoRoleWithName(role_name)
+
+            for grant, allowed in new_roles.as_dict().items():
+                setattr(permission, grant, allowed)
+
+            session.flush()
+            session.expunge(permission)
+        return permission
+
+    def delete_role(self, state: State, role_name: str):
+        with state.Session.begin() as session:
+            query = select(Role).where(Role.name == role_name)
+            try:
+                role = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoRoleWithName(role_name)
+
+            query = select(User).where(User.role == role.id)
+            users = session.execute(query).partitions()
+            for user_group in users:
+                for user in user_group:
+                    user[0].role = None
+            session.flush()
+
+            session.delete(role)
+
+    def assign_user_role(self, state: State, user: User, role_name: str):
+        with state.Session.begin() as session:
+            query = select(Role).where(Role.name == role_name)
+            try:
+                role = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoRoleWithName(role_name)
+            user.role = role.id
+
+            query = update(User).where(User.id == user.id).values(role=role.id)
             session.execute(query)

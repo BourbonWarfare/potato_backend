@@ -5,8 +5,8 @@ import pytest
 from sqlalchemy import select
 
 from bw.auth.user import UserStore
-from bw.models.auth import User, DiscordUser, BotUser
-from bw.error import DbError, NoUserWithGivenCredentials, AuthError
+from bw.models.auth import User, DiscordUser, BotUser, Role
+from bw.error import DbError, NoUserWithGivenCredentials, AuthError, RoleCreationFailed, NoRoleWithName
 from integrations.fixtures import (
     state,
     session,
@@ -16,6 +16,9 @@ from integrations.fixtures import (
     db_discord_user_1,
     db_bot_user_1,
     discord_id_1,
+    role_1,
+    role_2,
+    db_user_2,
 )
 
 
@@ -233,3 +236,68 @@ def test__delete_bot_user__deletes_bot_user_from_bot_user(state, session, db_bot
 def test__delete_bot_user__raises_on_bad_argument(state, session):
     with pytest.raises(AuthError):
         UserStore().delete_bot_user(state, None)
+
+
+def test__create_role__can_create_role(state, session, role_1):
+    UserStore().create_role(state, 'my_role', role_1)
+
+
+def test__create_role__create_duplicate_raises(state, session, role_1):
+    UserStore().create_role(state, 'my_role', role_1)
+    with pytest.raises(RoleCreationFailed):
+        UserStore().create_role(state, 'my_role', role_1)
+
+
+def test__edit_role__can_edit_role(state, session, role_1, role_2):
+    db_role_1 = UserStore().create_role(state, 'my_role', role_1)
+    new_role = UserStore().edit_role(state, 'my_role', role_2)
+    assert new_role.id == db_role_1.id
+    assert new_role.into_roles().as_dict() == role_2.as_dict()
+    with state.Session.begin() as session:
+        query = select(Role).where(Role.name == 'my_role')
+        db_role = session.execute(query).one()[0]
+        assert db_role.into_roles().as_dict() == role_2.as_dict()
+
+
+def test__edit_role__cant_edit_non_existing_role(state, session, role_1):
+    with pytest.raises(NoRoleWithName):
+        UserStore().edit_role(state, 'my_role', role_1)
+
+
+def test__delete_role__can_delete_role_simple(state, session, role_1):
+    UserStore().create_role(state, 'my_role', role_1)
+    UserStore().delete_role(state, 'my_role')
+
+
+def test__delete_role__can_delete_role_when_assigned(state, session, role_1, db_user_1, db_user_2):
+    UserStore().create_role(state, 'my_role', role_1)
+    UserStore().assign_user_role(state, db_user_1, 'my_role')
+    UserStore().assign_user_role(state, db_user_2, 'my_role')
+    UserStore().delete_role(state, 'my_role')
+
+
+def test__delete_role__cant_delete_non_existing(state, session):
+    with pytest.raises(NoRoleWithName):
+        UserStore().delete_role(state, 'my_role')
+
+
+def test__assign_user_role__can_assign_user(state, session, db_user_1, role_1):
+    UserStore().create_role(state, 'my_role', role_1)
+    UserStore().assign_user_role(state, db_user_1, 'my_role')
+
+
+def test__assign_user_role__can_assign_user_many_times(state, session, db_user_1, role_1, role_2):
+    UserStore().create_role(state, 'my_role', role_1)
+    expected_role = UserStore().create_role(state, 'my_role2', role_2)
+    UserStore().assign_user_role(state, db_user_1, 'my_role')
+    UserStore().assign_user_role(state, db_user_1, 'my_role2')
+
+    with state.Session.begin() as session:
+        query = select(User).where(User.id == db_user_1.id)
+        db_user = session.execute(query).one()[0]
+        assert db_user.role == expected_role.id
+
+
+def test__assign_user_role__cant_assign_invalid_role(state, session, db_user_1):
+    with pytest.raises(NoRoleWithName):
+        UserStore().assign_user_role(state, db_user_1, 'my_role')

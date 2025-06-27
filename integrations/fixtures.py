@@ -7,6 +7,7 @@ from sqlalchemy.sql import text
 
 from bw.state import State
 from bw.auth.permissions import Permissions
+from bw.auth.roles import Roles
 from bw.models.auth import DiscordUser, BotUser, User, Session, GroupPermission, Group
 
 
@@ -48,6 +49,16 @@ def permission_2() -> Permissions:
 @pytest.fixture(scope='session')
 def permission_3() -> Permissions:
     return Permissions(can_test_mission=False, can_upload_mission=False)
+
+
+@pytest.fixture(scope='session')
+def role_1() -> Roles:
+    return Roles(can_create_group=False, can_create_role=True)
+
+
+@pytest.fixture(scope='session')
+def role_2() -> Roles:
+    return Roles(can_create_group=True, can_create_role=False)
 
 
 @pytest.fixture(scope='session')

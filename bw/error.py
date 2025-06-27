@@ -107,3 +107,13 @@ class GroupAssignmentFailed(AuthError):
 class GroupPermissionCreationFailed(AuthError):
     def __init__(self, permission_name: str):
         super().__init__(f'Creation of permission "{permission_name}" failed.')
+
+
+class RoleCreationFailed(AuthError):
+    def __init__(self, role_name: str):
+        super().__init__(f'Creation of role "{role_name}" failed.')
+
+
+class NoRoleWithName(AuthError):
+    def __init__(self, role_name: str):
+        super().__init__(f'No role with name "{role_name}" exists.')
