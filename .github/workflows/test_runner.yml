@@ -1,0 +1,50 @@
+name: Test Runner
+
+on:
+  pull_request:
+    types: [ opened, edited, synchronize ]
+  push:
+    branches:
+      - main
+
+jobs:
+  runner:
+      runs-on: ubuntu-latest
+          # Service containers to run with `runner-job`
+      services:
+        # Label used to access the service container
+        postgres:
+          # Docker Hub image
+          image: tester
+          # Provide the password for postgres
+          env:
+            POSTGRES_DB: testing
+            POSTGRES_PASSWORD: tester
+          # Set health checks to wait until postgres has started
+          options: >-
+            --health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+          ports:
+            # Maps tcp port 5432 on service container to the host
+            - 5432:5432
+      steps:
+        - uses: actions/checkout@v4
+        - name: Setup Python
+          uses: actions/setup-python@v5.6.0
+          with:
+            # File containing the Python version to use. Example: .python-version
+            python-version-file: .python-version
+            # Used to specify a package manager for caching in the default directory. Supported values: pip, pipenv, poetry.
+            cache: pip
+            # The target architecture (x86, x64, arm64) of the Python or PyPy interpreter.
+            architecture: x64
+        - name: install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install .
+        - name: run tests
+          run: |
+            pytest
+        
