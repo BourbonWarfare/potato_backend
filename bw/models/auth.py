@@ -105,4 +105,4 @@ class UserGroup(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
     group_id: Mapped[int] = mapped_column(ForeignKey('groups.id'), nullable=False)
 
-    __tableargs__ = (UniqueConstraint('user_id', 'group_id', name='can_be_added_to_group_once'),)
+    __table_args__ = (UniqueConstraint('user_id', 'group_id', name='can_be_added_to_group_once'),)

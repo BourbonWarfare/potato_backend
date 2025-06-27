@@ -61,7 +61,7 @@ class Iteration(Base):
     iteration: Mapped[int] = mapped_column(nullable=False)
     changelog: Mapped[str] = mapped_column(Text, nullable=False)
 
-    __tableargs__ = (UniqueConstraint('iteration', 'mission_id', name='mission_has_single_iteration'),)
+    __table_args__ = (UniqueConstraint('iteration', 'mission_id', name='mission_has_single_iteration'),)
 
 
 class TestResult(Base):
@@ -72,7 +72,7 @@ class TestResult(Base):
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 
-    __tableargs__ = (UniqueConstraint('review_id', 'iteration_id', name='review_maps_to_single_iteration'),)
+    __table_args__ = (UniqueConstraint('review_id', 'iteration_id', name='review_maps_to_single_iteration'),)
 
 
 class Review(Base):
@@ -91,4 +91,4 @@ class TestCosign(Base):
     test_result_id: Mapped[int] = mapped_column(ForeignKey('test_results.id'), nullable=False)
     tester_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
 
-    __tableargs__ = (UniqueConstraint('test_result_id', 'tester_id', name='can_only_cosign_once'),)
+    __table_args__ = (UniqueConstraint('test_result_id', 'tester_id', name='can_only_cosign_once'),)
