@@ -16,6 +16,7 @@ class MissionType(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
     signoffs_required: Mapped[int] = mapped_column(default=1, nullable=False)
+    tag_map: Mapped[str] = mapped_column(nullable=False, unique=True)
 
 
 class Mission(Base):
