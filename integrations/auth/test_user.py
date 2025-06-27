@@ -7,7 +7,7 @@ from sqlalchemy import select
 from bw.auth.user import UserStore
 from bw.models.auth import User, DiscordUser, BotUser, Role
 from bw.error import DbError, NoUserWithGivenCredentials, AuthError, RoleCreationFailed, NoRoleWithName
-from integrations.fixtures import (
+from integrations.auth.fixtures import (
     state,
     session,
     non_db_user_1,

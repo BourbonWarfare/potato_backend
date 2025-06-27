@@ -7,7 +7,7 @@ from bw.auth.roles import Roles
 from bw.auth.permissions import Permissions
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
-from integrations.fixtures import (
+from integrations.auth.fixtures import (
     state,
     session,
     db_user_1,

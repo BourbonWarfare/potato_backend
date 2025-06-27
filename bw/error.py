@@ -117,3 +117,18 @@ class RoleCreationFailed(AuthError):
 class NoRoleWithName(AuthError):
     def __init__(self, role_name: str):
         super().__init__(f'No role with name "{role_name}" exists.')
+
+
+class MissionError(ClientError):
+    def __init__(self, reason: str):
+        super().__init__(f'An issue with the mission api occured: {reason}')
+
+
+class CouldNotCreateMissionType(MissionError):
+    def __init__(self):
+        super().__init__('couldnt create mission type')
+
+
+class NoMissionTypeWithName(MissionError):
+    def __init__(self, name: str):
+        super().__init__('no mission type called "{name}" exists')

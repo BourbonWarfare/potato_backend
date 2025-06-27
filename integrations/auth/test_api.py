@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime
 
-from integrations.fixtures import (
+from integrations.auth.fixtures import (
     state,
     session,
     token_1,

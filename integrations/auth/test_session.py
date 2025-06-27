@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from bw.auth.session import SessionStore
-from integrations.fixtures import (
+from integrations.auth.fixtures import (
     state,
     session,
     db_user_1,

@@ -8,7 +8,7 @@ from bw.auth.permissions import Permissions
 from bw.error import GroupPermissionCreationFailed, GroupCreationFailed, NoGroupPermissionWithCredentials, GroupAssignmentFailed
 from bw.models.auth import GroupPermission, Group, UserGroup
 from bw.auth.group import GroupStore
-from integrations.fixtures import (
+from integrations.auth.fixtures import (
     state,
     session,
     db_user_1,
