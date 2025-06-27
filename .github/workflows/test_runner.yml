@@ -46,6 +46,6 @@ jobs:
             pip install .[tests]
         - name: run tests
           run: |
-            echo ${{ secrets.TEST_CONF }} >> conf.txt
+            echo "${{ secrets.TEST_CONF }}" >> conf.txt
             pytest
         
