@@ -87,3 +87,23 @@ class NoUserWithGivenCredentials(AuthError):
 class NonLocalIpAccessingLocalOnlyAddress(AuthError):
     def __init__(self, ip: str):
         super().__init__(f'Attempting to access local-only endpoint from abroad ({ip})')
+
+
+class NoGroupPermissionWithCredentials(AuthError):
+    def __init__(self, group_name: str):
+        super().__init__(f'No group permission called "{group_name}" exists.')
+
+
+class GroupCreationFailed(AuthError):
+    def __init__(self, group_name: str):
+        super().__init__(f'Creation of group "{group_name}" failed.')
+
+
+class GroupAssignmentFailed(AuthError):
+    def __init__(self):
+        super().__init__('Failed to assign user to group.')
+
+
+class GroupPermissionCreationFailed(AuthError):
+    def __init__(self, permission_name: str):
+        super().__init__(f'Creation of permission "{permission_name}" failed.')
