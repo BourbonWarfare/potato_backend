@@ -63,17 +63,17 @@ class AuthError(ClientError):
         super().__init__(f'[Auth] Error: {reason}')
 
 
-class SessionInvalid(AuthError):
+class NotEnoughPermissions(PermissionError):
     def __init__(self):
-        super().__init__('Session is not valid')
+        super().__init__('User does not have enough permissions to access this resource')
 
 
-class InvalidPermissions(AuthError):
+class SessionInvalid(AuthError):
     def status(self) -> int:
         return 403
 
     def __init__(self):
-        super().__init__('User has invalid permissions')
+        super().__init__('Session is not valid')
 
 
 class NoUserWithGivenCredentials(AuthError):

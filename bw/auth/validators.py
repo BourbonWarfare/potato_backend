@@ -1,6 +1,18 @@
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionInvalid
+from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionInvalid, NotEnoughPermissions
 from bw.state import State
 from bw.auth import api
+from bw.auth.roles import Roles
+from bw.auth.permissions import Permissions
+
+
+def validate_user_has_permissions(state: State, session_token: str, permissions: Permissions):
+    if not api.AuthApi().does_user_have_permissions(state, session_token, permissions):
+        raise NotEnoughPermissions()
+
+
+def validate_user_has_role(state: State, session_token: str, roles: Roles):
+    if not api.AuthApi().does_user_have_roles(state, session_token, roles):
+        raise NotEnoughPermissions()
 
 
 def validate_session(state: State, session_token: str):

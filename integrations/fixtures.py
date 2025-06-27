@@ -156,6 +156,24 @@ def db_session_1(state, session, db_user_1, token_1):
 
 
 @pytest.fixture(scope='function')
+def db_session_2(state, session, db_user_2, token_2):
+    with state.Session.begin() as session:
+        query = insert(Session).values(id=2, user_id=db_user_2.id, token=token_2).returning(Session)
+        user_session = session.execute(query).first()[0]
+        session.expunge(user_session)
+    yield user_session
+
+
+@pytest.fixture(scope='function')
+def db_expired_session_1(state, session, db_user_1, token_1, expire_invalid):
+    with state.Session.begin() as session:
+        query = insert(Session).values(id=1, user_id=db_user_1.id, token=token_1, expire_time=expire_invalid).returning(Session)
+        user_session = session.execute(query).first()[0]
+        session.expunge(user_session)
+    yield user_session
+
+
+@pytest.fixture(scope='function')
 def db_discord_user_1(state, session, db_user_1, discord_id_1):
     with state.Session.begin() as session:
         query = insert(DiscordUser).values(id=1, user_id=db_user_1.id, discord_id=discord_id_1).returning(DiscordUser)

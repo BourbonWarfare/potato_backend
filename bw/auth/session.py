@@ -35,3 +35,14 @@ class SessionStore:
             query = select(Session.expire_time).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
             row = session.execute(query).first()
             return row is not None
+
+    def get_user_from_session_token(self, state: State, session_token: str) -> User:
+        with state.Session.begin() as session:
+            query = select(Session.user_id).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
+            user_id = session.execute(query).first()
+            if user_id is None:
+                return None
+            query = select(User).where(User.id == user_id[0])
+            user = session.execute(query).one()[0]
+            session.expunge(user)
+        return user

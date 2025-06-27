@@ -2,6 +2,9 @@ from bw.state import State
 from bw.response import JsonResponse, Ok
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
+from bw.auth.group import GroupStore
+from bw.auth.roles import Roles
+from bw.auth.permissions import Permissions
 
 
 class AuthApi:
@@ -35,5 +38,35 @@ class AuthApi:
         user = UserStore().user_from_bot_token(state, bot_token)
         return SessionStore().start_session(user)
 
-    def is_session_active(self, state: State, session_token: str):
+    def is_session_active(self, state: State, session_token: str) -> bool:
         return SessionStore().is_session_active(state, session_token)
+
+    def does_user_have_roles(self, state: State, session_token: str, wanted_roles: Roles) -> bool:
+        user = SessionStore().get_user_from_session_token(state, session_token)
+        if user is None:
+            return False
+
+        user_roles = UserStore().get_users_role(state, user)
+        if user_roles is None:
+            return False
+
+        test_roles = user_roles.into_roles().as_dict()
+        for role, expecting_role in wanted_roles.as_dict().items():
+            if expecting_role and not test_roles[role]:
+                return False
+        return True
+
+    def does_user_have_permissions(self, state: State, session_token: str, wanted_perms: Permissions) -> bool:
+        user = SessionStore().get_user_from_session_token(state, session_token)
+        if user is None:
+            return False
+
+        user_perms = GroupStore().get_all_permissions_user_has(state, user)
+        if user_perms is None:
+            return False
+
+        test_permss = user_perms.as_dict()
+        for perms, expecting_perms in wanted_perms.as_dict().items():
+            if expecting_perms and not test_permss[perms]:
+                return False
+        return True

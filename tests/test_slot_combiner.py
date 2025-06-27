@@ -5,7 +5,7 @@ from bw.combined_dataclass import SlotCombiner
 
 
 @dataclass(slots=True)
-class TestDataclass(SlotCombiner):
+class MyTestDataclass(SlotCombiner):
     a: bool = True
     b: bool = False
     c: bool = False
@@ -13,12 +13,12 @@ class TestDataclass(SlotCombiner):
 
 @pytest.fixture
 def data_1():
-    return TestDataclass()
+    return MyTestDataclass()
 
 
 @pytest.fixture
 def data_2():
-    return TestDataclass(c=True)
+    return MyTestDataclass(c=True)
 
 
 def test__slot_combiner__correct_dict_return(data_1):
@@ -27,13 +27,13 @@ def test__slot_combiner__correct_dict_return(data_1):
 
 
 def test__slot_combiner__combine_from_many_identity(data_1):
-    combined = TestDataclass.from_many(data_1)
+    combined = MyTestDataclass.from_many(data_1)
 
     assert combined.as_dict() == data_1.as_dict()
 
 
 def test__slot_combiner__combine_from_many(data_1, data_2):
-    combined = TestDataclass.from_many(data_1, data_2)
+    combined = MyTestDataclass.from_many(data_1, data_2)
 
     assert combined.a
     assert combined.c
