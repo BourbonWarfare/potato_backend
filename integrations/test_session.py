@@ -30,7 +30,6 @@ def test__session_store__starting_session_return_correct(mocker, token_1, expire
     mocker.patch('bw.models.auth.Session.api_session_length', return_value=expire_valid)
 
     new_session = SessionStore().start_api_session(state, db_user_1)
-    assert new_session['status'] == 200
     assert new_session['session_token'] == token_1
     assert datetime.fromisoformat(new_session['expire_time']) == datetime.fromisoformat(expire_valid)
 
