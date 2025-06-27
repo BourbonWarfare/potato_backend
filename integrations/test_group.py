@@ -157,6 +157,33 @@ def test__remove_user_from_group__nothing_if_cant_remove_user(state, session, db
     GroupStore().remove_user_from_group(state, db_user_1, db_group_1)
 
 
+def test__delete_group__can_delete_empty(state, session, db_group_1):
+    GroupStore().delete_group(state, db_group_1.name)
+
+
+def test__delete_group__can_delete_with_user(state, session, db_group_1, db_user_1):
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    GroupStore().delete_group(state, db_group_1.name)
+
+
+def test__delete_group__can_delete_with_users(state, session, db_group_1, db_user_1, db_user_2):
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    GroupStore().assign_user_to_group(state, db_user_2, db_group_1)
+    GroupStore().delete_group(state, db_group_1.name)
+
+
+def test__delete_group__can_delete_with_user_only_one_group(state, session, db_group_1, db_user_1, db_group_2):
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_2)
+    GroupStore().delete_group(state, db_group_1.name)
+
+    with state.Session.begin() as session:
+        query = select(UserGroup).where(UserGroup.user_id == db_user_1.id).where(UserGroup.group_id == db_group_2.id)
+        row = session.execute(query).first()
+        assert row is not None
+        assert len(row) == 1
+
+
 def test__get_all_permissions_user_has__no_permissions_if_not_in_group(state, session, db_user_1):
     permissions = GroupStore().get_all_permissions_user_has(state, db_user_1)
     assert not any(permissions.as_dict().values())

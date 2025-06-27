@@ -71,6 +71,14 @@ class GroupStore:
             query = delete(UserGroup).where(UserGroup.user_id == user.id).where(UserGroup.group_id == group.id)
             session.execute(query)
 
+    def delete_group(self, state: State, group_name: str):
+        with state.Session.begin() as session:
+            query = delete(UserGroup).where(Group.id == UserGroup.group_id).where(Group.name == group_name)
+            session.execute(query)
+
+            query = delete(Group).where(Group.name == group_name)
+            session.execute(query)
+
     def get_all_permissions_user_has(self, state: State, user: User) -> Permissions:
         with state.Session.begin() as session:
             query = (
