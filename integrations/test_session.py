@@ -32,7 +32,7 @@ def test__session_store__starting_session_return_correct(mocker, token_1, expire
     new_session = SessionStore().start_api_session(state, db_user_1)
     assert new_session['status'] == 200
     assert new_session['session_token'] == token_1
-    assert new_session['expire_time'] == datetime.fromisoformat(expire_valid)
+    assert datetime.fromisoformat(new_session['expire_time']) == datetime.fromisoformat(expire_valid)
 
 
 def test__session_store__starting_session_activates(mocker, token_1, expire_valid, state, session, db_user_1):

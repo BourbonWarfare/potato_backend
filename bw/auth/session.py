@@ -28,7 +28,7 @@ class SessionStore:
         if expire_time is None:
             raise SessionInvalid()
 
-        return {'status': 200, 'session_token': token, 'expire_time': expire_time}
+        return {'session_token': token, 'expire_time': str(expire_time)}
 
     def is_session_active(self, state: State, session_token: str) -> bool:
         with state.Session.begin() as session:

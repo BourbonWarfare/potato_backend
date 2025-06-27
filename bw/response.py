@@ -7,6 +7,7 @@ class WebResponse:
         return 'text/plain'
 
     def __init__(self, status: int, headers: dict = {}, data=''):
+        self.status = status
         ctx.status = str(status)
 
         lower_headers = {key.lower(): value for key, value in headers.items()}
@@ -16,6 +17,9 @@ class WebResponse:
         for key, value in lower_headers.items():
             header(key, value)
         self.data = data
+
+    def status(self) -> int:
+        return self.status
 
     def into(self) -> str:
         return self.data
@@ -33,6 +37,7 @@ class JsonResponse(WebResponse):
     def __init__(self, json_payload: dict, headers: dict = {}, status=200):
         if 'status' not in json_payload:
             json_payload['status'] = status
+        self.json = json_payload
         super().__init__(status=200, headers=headers, data=json.dumps(json_payload))
 
 
