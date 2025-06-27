@@ -15,7 +15,7 @@ jobs:
         # Label used to access the service container
         postgres:
           # Docker Hub image
-          image: tester
+          image: postgres:16.9-bullseye
           # Provide the password for postgres
           env:
             POSTGRES_DB: testing
