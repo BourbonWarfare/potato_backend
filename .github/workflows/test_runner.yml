@@ -19,6 +19,7 @@ jobs:
           # Provide the password for postgres
           env:
             POSTGRES_DB: testing
+            POSTGRES_USER: tester
             POSTGRES_PASSWORD: tester
           # Set health checks to wait until postgres has started
           options: >-
@@ -47,5 +48,5 @@ jobs:
         - name: run tests
           run: |
             echo "${{ secrets.TEST_CONF }}" >> conf.txt
-            pytest
+            pytest --cov=bw
         
