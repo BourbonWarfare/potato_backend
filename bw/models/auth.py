@@ -1,10 +1,11 @@
 import datetime
 
-from sqlalchemy import ForeignKey, String, func, TIMESTAMP
+from sqlalchemy import ForeignKey, String, func, TIMESTAMP, Boolean, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.models import Base
 from bw.auth.settings import AUTH_SETTINGS
+from bw.auth.permissions import Permissions
 
 AUTH_SETTINGS.require('default_session_length')
 AUTH_SETTINGS.require('api_session_length')
@@ -78,8 +79,11 @@ class GroupPermission(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
 
-    can_upload_mission: Mapped[bool]
-    can_test_mission: Mapped[bool]
+    can_upload_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
+    can_test_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
+
+    def into_permissions(self) -> Permissions:
+        return Permissions(can_upload_mission=self.can_upload_mission, can_test_mission=self.can_test_mission)
 
 
 class Group(Base):
@@ -96,3 +100,5 @@ class UserGroup(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
     group_id: Mapped[int] = mapped_column(ForeignKey('groups.id'), nullable=False)
+
+    __tableargs__ = (UniqueConstraint('user_id', 'group_id', name='can_be_added_to_group_once'),)
