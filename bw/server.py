@@ -5,8 +5,7 @@ from logging.config import dictConfig
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.environment import ENVIRONMENT, Local
 from bw.state import State
-from bw.response import JsonResponse
-from bw.web_utils import json_api
+import bw.response  # noqa: F401
 
 if not os.path.exists('./logs'):
     os.makedirs('./logs')
@@ -63,10 +62,3 @@ def run():
     )
     GLOBAL_CONFIGURATION.write()
     app.logger.info("that's all, folks")
-
-
-@app.post('/')
-@json_api
-async def test(test: int):
-    print(test)
-    return JsonResponse({'test': test})
