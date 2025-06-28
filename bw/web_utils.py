@@ -1,33 +1,34 @@
-import web
-import json
+from quart import request
 
-from bw.error import ExpectedJson, JsonPayloadError
+from bw.error import ExpectedJson, JsonPayloadError, BwServerError
 
 
-def web_response(func):
+def url_api(func):
     def wrapper(*args, **kwargs):
-        return func(*args, **kwargs).into()
+        try:
+            return func(*args, **kwargs)
+        except BwServerError as e:
+            return e.as_response_code()
 
     return wrapper
 
 
-def convert_json_to_args(func):
-    def wrapper(*args, **kwargs):
-        is_json = 'text/json' == web.ctx.get('content-type', 'text/plain')
-        if is_json:
-            data = web.data()
-            try:
-                payload = json.loads(data)
-            except json.JSONDecodeError:
-                return ExpectedJson().as_response_code()
-
-            for key in payload.keys():
+def json_api(func):
+    async def wrapper(*args, **kwargs):
+        converted_json = await request.get_json()
+        if converted_json is not None:
+            for key in converted_json.keys():
                 if key in kwargs:
-                    return JsonPayloadError().as_response_code()
+                    return JsonPayloadError().as_json()
 
-            kwargs.update(payload)
-            return func(*args, **kwargs)
+            kwargs.update(converted_json)
+            try:
+                return await func(*args, **kwargs)
+            except TypeError:
+                return JsonPayloadError().as_json()
+            except BwServerError as e:
+                return e.as_json()
         else:
-            return func(*args, **kwargs)
+            return ExpectedJson().as_json()
 
     return wrapper

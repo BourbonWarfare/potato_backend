@@ -1,67 +1,72 @@
+import os
+from quart import Quart
+from logging.config import dictConfig
+
 from bw.settings import GLOBAL_CONFIGURATION
-
-import atexit
-import web
-import logging
-
-from cheroot.server import HTTPServer
-from cheroot.ssl.builtin import BuiltinSSLAdapter
-from bw.environment import ENVIRONMENT
-from bw.log import Logger
+from bw.environment import ENVIRONMENT, Local
 from bw.state import State
-from bw.endpoints import Endpoints
+from bw.response import JsonResponse
+from bw.web_utils import json_api
 
-logger = logging.getLogger('wsgilog.log')
+if not os.path.exists('./logs'):
+    os.makedirs('./logs')
 
+dictConfig(
+    {
+        'version': 1,
+        'formatters': {
+            'default': {'format': '[%(asctime)s] [%(module)s] %(levelname)s: %(message)s', 'datefmt': '%Y-%m-%d %H:%M:%S'}
+        },
+        'handlers': {
+            'wsgi': {
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://flask.logging.wsgi_errors_stream',
+                'formatter': 'default',
+            },
+            'file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'default',
+                'filename': 'logs/server.log',
+                'backupCount': 2,
+                'maxBytes': 1024 * 1024 * 1,
+            },
+        },
+        'root': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
+        'loggers': {
+            'quart.app': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
+        },
+    }
+)
 
-class WebHandler:
-    state = State()
-
-    def namespace(self):
-        return {
-            f'{endpoint.__name__.lower()}': endpoint
-            for name, endpoint in Endpoints.__dict__.items()
-            if '__' not in name and name != 'BASE_ENDPOINTS' and endpoint not in Endpoints.BASE_ENDPOINTS
-        }
-
-    def urls(self):
-        return tuple(
-            [
-                (f'{endpoint().path().lower()}', f'{endpoint.__name__.lower()}')
-                for name, endpoint in Endpoints.__dict__.items()
-                if '__' not in name and name != 'BASE_ENDPOINTS' and endpoint not in Endpoints.BASE_ENDPOINTS
-            ]
-        )
-
-    def __init__(self):
-        for name, endpoint in Endpoints.__dict__.items():
-            if '__' in name or name == 'BASE_ENDPOINTS':
-                continue
-            endpoint.state = self.state
-        url_map = tuple([unpacked for url in self.urls() for unpacked in url])
-        self.app = WebServer(mapping=url_map, fvars=self.namespace())
-
-    def _exit(self):
-        GLOBAL_CONFIGURATION.write()
-        logger.info('thats all folks')
-
-    def run(self):
-        if ENVIRONMENT.use_ssl():
-            logger.info('using ssl...')
-            GLOBAL_CONFIGURATION.require('certificate_path', 'private_key_path')
-            HTTPServer.ssl_adapter = BuiltinSSLAdapter(
-                certificate=GLOBAL_CONFIGURATION['certificate_path'], private_key=GLOBAL_CONFIGURATION['private_key_path']
-            )
-        else:
-            print('ignoring ssl [LOCAL ONLY]')
-            logger.info('ignoring ssl [LOCAL ONLY]')
-        atexit.register(WebHandler._exit, self)
-        self.app.run(port=ENVIRONMENT.port())
+app = Quart(__name__)
+state = State()
 
 
-class WebServer(web.application):
-    def run(self, port=8080, *_middleware):
-        func = self.wsgifunc(Logger)
-        logger.info('starting BW backend')
-        logger.info('-' * 50)
-        return web.httpserver.runsimple(func, ('0.0.0.0', port))
+def run():
+    if ENVIRONMENT.use_ssl():
+        app.logger.info('using ssl...')
+        GLOBAL_CONFIGURATION.require('ssl_ca_certs_path', 'ssl_certfile_path', 'ssl_keyfile_path')
+    else:
+        app.logger.info('ignoring ssl [LOCAL ONLY]')
+    ssl_ca_certs_path = GLOBAL_CONFIGURATION.get('ssl_ca_certs_path', None)
+    ssl_certfile_path = GLOBAL_CONFIGURATION.get('ssl_certfile_path', None)
+    ssl_keyfile_path = GLOBAL_CONFIGURATION.get('ssl_keyfile_path', None)
+
+    app.logger.info('starting BW backend')
+    app.logger.info('-' * 50)
+    app.run(
+        host='0.0.0.0',
+        port=ENVIRONMENT.port(),
+        ca_certs=ssl_ca_certs_path,
+        certfile=ssl_certfile_path,
+        keyfile=ssl_keyfile_path,
+    )
+    GLOBAL_CONFIGURATION.write()
+    app.logger.info("that's all, folks")
+
+
+@app.post('/')
+@json_api
+async def test(test: int):
+    print(test)
+    return JsonResponse({'test': test})

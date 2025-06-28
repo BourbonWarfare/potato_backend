@@ -1,33 +1,33 @@
-from web.webapi import ctx, header
+from quart import Response
+from werkzeug.datastructures.headers import Headers
+import quart
 import json
 
 
-class WebResponse:
+class WebResponse(Response):
     def content_type(self) -> str:
         return 'text/plain'
 
-    def __init__(self, status: int, headers: dict = {}, data=''):
-        self.status = status
-        ctx.status = str(status)
-
+    def __init__(self, status: int, headers: dict = {}, response='', **kwargs):
         lower_headers = {key.lower(): value for key, value in headers.items()}
         if 'content-type' not in lower_headers:
             lower_headers['content-type'] = self.content_type()
 
-        for key, value in lower_headers.items():
-            header(key, value)
-        self.data = data
+        super().__init__(
+            response=response,
+            status=status,
+            headers=Headers([(k, v) for k, v in lower_headers.items()]),
+            mimetype=self.content_type(),
+            **kwargs,
+        )
 
-    def status(self) -> int:
-        return self.status
 
-    def into(self) -> str:
-        return self.data
+quart.response_class = WebResponse
 
 
 class Ok(WebResponse):
-    def __init__(self):
-        super().__init__(200, {})
+    def __init__(self, data: str = ''):
+        super().__init__(200, response=data)
 
 
 class JsonResponse(WebResponse):
@@ -37,8 +37,7 @@ class JsonResponse(WebResponse):
     def __init__(self, json_payload: dict, headers: dict = {}, status=200):
         if 'status' not in json_payload:
             json_payload['status'] = status
-        self.json = json_payload
-        super().__init__(status=200, headers=headers, data=json.dumps(json_payload))
+        super().__init__(status=200, headers=headers, response=json.dumps(json_payload))
 
 
 class HtmlResponse(WebResponse):
@@ -46,4 +45,4 @@ class HtmlResponse(WebResponse):
         return 'text/html'
 
     def __init__(self, html: str, headers: dict = {}):
-        super().__init__(status=200, headers=headers, data=html)
+        super().__init__(status=200, headers=headers, response=html)

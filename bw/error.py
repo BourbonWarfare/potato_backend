@@ -13,11 +13,17 @@ class BwServerError(Exception):
 
 
 class ExpectedJson(BwServerError):
+    def status(self) -> int:
+        return 400
+
     def __init__(self):
         super().__init__('Expected JSON payload, got something else')
 
 
 class JsonPayloadError(BwServerError):
+    def status(self) -> int:
+        return 400
+
     def __init__(self):
         super().__init__('JSON payload malformed')
 
