@@ -132,3 +132,28 @@ class CouldNotCreateMissionType(MissionError):
 class NoMissionTypeWithName(MissionError):
     def __init__(self, name: str):
         super().__init__('no mission type called "{name}" exists')
+
+
+class CouldNotCreateTestResult(MissionError):
+    def __init__(self):
+        super().__init__('couldnt create test result')
+
+
+class CouldNotCosignResult(MissionError):
+    def __init__(self):
+        super().__init__('couldnt cosign test result')
+
+
+class NoReviewFound(MissionError):
+    def __init__(self):
+        super().__init__('couldnt find review')
+
+
+class CouldNotCreateIteration(MissionError):
+    def __init__(self):
+        super().__init__('could not create mission iteration')
+
+
+class MissionDoesNotExist(MissionError):
+    def __init__(self):
+        super().__init__('mission does not exist')

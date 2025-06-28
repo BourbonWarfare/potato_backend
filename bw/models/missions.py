@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Text, JSON, Enum
 
 from bw.models import Base
-from bw.missions import TestStatus
+from bw.missions.test_status import TestStatus
 
 NAME_LENGTH = 256
 
@@ -24,8 +24,8 @@ class Mission(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     author: Mapped[int | None] = mapped_column(ForeignKey('users.id'))
-    author_name: Mapped[str] = mapped_column(String(256), nullable=False)
-    title: Mapped[str] = mapped_column(String(256), nullable=False)
+    author_name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
+    title: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
     mission_type: Mapped[int] = mapped_column(ForeignKey('mission_types.id'), nullable=False)
     special_flags: Mapped[dict] = mapped_column(JSON, nullable=False)
 
@@ -53,12 +53,13 @@ class Iteration(Base):
     __tablename__ = 'mission_iterations'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    file_name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
     min_player_count: Mapped[int] = mapped_column(nullable=False)
     max_player_count: Mapped[int] = mapped_column(nullable=False)
     desired_player_count: Mapped[int] = mapped_column(nullable=False)
     upload_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
-    bwmf_version: Mapped[int] = mapped_column(nullable=False)
+    bwmf_version: Mapped[str] = mapped_column(nullable=False)
     iteration: Mapped[int] = mapped_column(nullable=False)
     changelog: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -69,7 +70,7 @@ class TestResult(Base):
     __tablename__ = 'test_results'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'), nullable=False)
+    review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'), nullable=False, unique=True)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
 

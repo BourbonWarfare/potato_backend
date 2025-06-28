@@ -1,14 +1,13 @@
-import alembic
-import alembic.config
+# ruff: noqa: F811, F401
+
 import pytest
 
 from sqlalchemy import insert
-from sqlalchemy.sql import text
 
-from bw.state import State
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.models.auth import DiscordUser, BotUser, User, Session, GroupPermission, Group
+from integrations.fixtures import session, state
 
 
 @pytest.fixture(scope='session')
@@ -89,37 +88,6 @@ def group_name_2() -> str:
 @pytest.fixture(scope='session')
 def group_name_3() -> str:
     return 'group 3'
-
-
-@pytest.fixture(scope='function')
-def state():
-    return State()
-
-
-@pytest.fixture(scope='function')
-def session(request, state):
-    # Create a temporary DB to do tests in. Per-test
-    alembic_cfg = alembic.config.Config(toml_file='./pyproject.toml')
-
-    test_db_name = f'bw_integration__{request.node.name}'
-    with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
-        conn.execute(text('COMMIT'))
-        conn.execute(text(f'CREATE DATABASE {test_db_name}'))
-
-    original_default = state.default_database
-    state.register_database(test_db_name)
-    state.default_database = test_db_name
-    with state.Engine.connect() as session:
-        alembic_cfg.attributes['connection'] = session
-        alembic.command.upgrade(alembic_cfg, 'heads')
-        yield session
-    state.Engine.dispose()
-
-    # Drop database; unneeded after test
-    state.default_database = original_default
-    with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
-        conn.execute(text('COMMIT'))
-        conn.execute(text(f'DROP DATABASE {test_db_name}'))
 
 
 @pytest.fixture(scope='function')
