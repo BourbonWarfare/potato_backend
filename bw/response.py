@@ -37,6 +37,7 @@ class JsonResponse(WebResponse):
     def __init__(self, json_payload: dict, headers: dict = {}, status=200):
         if 'status' not in json_payload:
             json_payload['status'] = status
+        self.contained_json = json_payload
         super().__init__(status=200, headers=headers, response=json.dumps(json_payload))
 
 
