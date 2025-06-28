@@ -15,6 +15,8 @@ from integrations.missions.fixtures import (
     db_mission_1,
     db_iteration_1,
     db_iteration_2,
+    db_mission_1_1,
+    db_mission_1_2,
 )
 
 
@@ -171,3 +173,22 @@ def test__mission_store__add_iteration__invalid_mission_raises(state, session):
 def test__mission_store__create_mission__invalid_args_raises(state, session, db_user_1, db_mission_type_1):
     with pytest.raises(Exception):
         MissionStore().create_mission(state, creator=db_user_1, author=None, title=None, type=db_mission_type_1, flags=None)
+
+
+def test__mission_store__get_missions_by_author__returns_missions(
+    state, session, db_user_1, db_mission_1, db_mission_1_1, db_mission_1_2
+):
+    missions = MissionStore().get_missions_by_author(state, author='me')
+    assert len(missions) == 3
+    assert missions[0].id == db_mission_1.id
+    assert missions[1].id == db_mission_1_1.id
+    assert missions[2].id == db_mission_1_2.id
+
+
+def test__mission_store__get_missions_by_author_with_title__returns_missions_only_with_title(
+    state, session, db_user_1, db_mission_1, db_mission_1_1, db_mission_1_2
+):
+    missions = MissionStore().get_existing_missions_by_author_with_title(state, author='me', title=db_mission_1.title)
+    assert len(missions) == 2
+    assert missions[0].id == db_mission_1.id
+    assert missions[1].id == db_mission_1_2.id

@@ -1,6 +1,5 @@
 from sqlalchemy import delete, select
 from sqlalchemy.exc import NoResultFound, IntegrityError
-from uuid import UUID
 
 from bw.state import State
 from bw.models.auth import User
@@ -128,24 +127,44 @@ class MissionStore:
             session.expunge(mission)
         return mission
 
-    def does_mission_exist(self, state: State, uuid: UUID) -> bool:
+    def get_missions_by_author(self, state: State, author: str) -> list[Mission]:
         """
-        ### Check if a mission exists by it's UUID
+        ### Retrieve missions by author
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.
-        - `uuid` (`UUID`): The UUID of the mission to check.
+        - `author` (`str`): The name of the author.
 
         **Returns:**
-        - `bool`: True if the mission exists, False otherwise.
+        - `list[Mission]`: A list of missions authored by the specified author.
         """
         with state.Session.begin() as session:
-            query = select(Mission).where(Mission.uuid == uuid)
-            try:
-                session.execute(query).one()
-            except NoResultFound:
-                return False
-        return True
+            query = select(Mission).where(Mission.author_name == author).order_by(Mission.creation_date)
+            missions = session.execute(query).all()
+            for mission in missions:
+                session.expunge(mission[0])
+        return [mission[0] for mission in missions]
+
+    def get_existing_missions_by_author_with_title(self, state: State, author: str, title: str) -> list[Mission]:
+        """
+        ### Retrieve existing missions by author and title
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `author` (`str`): The name of the author.
+        - `title` (`str`): The title of the mission.
+
+        **Returns:**
+        - `list[Mission]`: A list of existing missions matching the author and title.
+        """
+        with state.Session.begin() as session:
+            query = (
+                select(Mission).where(Mission.author_name == author).where(Mission.title == title).order_by(Mission.creation_date)
+            )
+            missions = session.execute(query).all()
+            for mission in missions:
+                session.expunge(mission[0])
+        return [mission[0] for mission in missions]
 
     def add_iteration(
         self,

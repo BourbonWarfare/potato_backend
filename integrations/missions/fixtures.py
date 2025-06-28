@@ -66,6 +66,40 @@ def db_mission_1(state, session, db_user_1, db_mission_type_1):
 
 
 @pytest.fixture(scope='function')
+def db_mission_1_1(state, session, db_user_1, db_mission_type_2):
+    with state.Session.begin() as session:
+        mission = Mission(
+            id=2,
+            author=db_user_1.id,
+            author_name='me',
+            title='foobar 2',
+            mission_type=db_mission_type_2.id,
+            special_flags={'is_night': True},
+        )
+        session.add(mission)
+        session.flush()
+        session.expunge(mission)
+    yield mission
+
+
+@pytest.fixture(scope='function')
+def db_mission_1_2(state, session, db_user_1, db_mission_type_1):
+    with state.Session.begin() as session:
+        mission = Mission(
+            id=3,
+            author=db_user_1.id,
+            author_name='me',
+            title='foobar',
+            mission_type=db_mission_type_1.id,
+            special_flags={'is_night': True},
+        )
+        session.add(mission)
+        session.flush()
+        session.expunge(mission)
+    yield mission
+
+
+@pytest.fixture(scope='function')
 def db_iteration_1(state, session, db_mission_1):
     with state.Session.begin() as session:
         iteration = Iteration(

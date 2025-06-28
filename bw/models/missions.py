@@ -25,7 +25,7 @@ class Mission(Base):
     __tablename__ = 'missions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4())
+    uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     creation_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
     author: Mapped[int | None] = mapped_column(ForeignKey('users.id'))
     author_name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
