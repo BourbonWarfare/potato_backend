@@ -1,5 +1,6 @@
 from sqlalchemy import delete, select
 from sqlalchemy.exc import NoResultFound, IntegrityError
+from uuid import UUID
 
 from bw.state import State
 from bw.models.auth import User
@@ -126,6 +127,25 @@ class MissionStore:
             session.flush()
             session.expunge(mission)
         return mission
+
+    def does_mission_exist(self, state: State, uuid: UUID) -> bool:
+        """
+        ### Check if a mission exists by it's UUID
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `uuid` (`UUID`): The UUID of the mission to check.
+
+        **Returns:**
+        - `bool`: True if the mission exists, False otherwise.
+        """
+        with state.Session.begin() as session:
+            query = select(Mission).where(Mission.uuid == uuid)
+            try:
+                session.execute(query).one()
+            except NoResultFound:
+                return False
+        return True
 
     def add_iteration(
         self,
