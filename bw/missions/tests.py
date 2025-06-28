@@ -11,16 +11,16 @@ from bw.missions.test_status import TestStatus, Review as IterationReview
 class TestStore:
     def create_review(self, state: State, tester: User, test_status: TestStatus, notes: dict) -> Review:
         """
-        Creates a new review for a mission iteration by a tester.
+        ### Create a new review for a mission iteration
 
-        Args:
-            state (State): The application state containing the database connection.
-            tester (User): The user performing the review.
-            test_status (TestStatus): The status of the test (e.g., passed, failed).
-            notes (dict): Additional notes for the review.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tester` (`User`): The user performing the review.
+        - `test_status` (`TestStatus`): The status of the test (e.g., passed, failed).
+        - `notes` (`dict`): Additional notes for the review.
 
-        Returns:
-            Review: The created review object.
+        **Returns:**
+        - `Review`: The created review object.
         """
         with state.Session.begin() as session:
             review = Review(tester_id=tester.id, status=test_status, notes=notes)
@@ -31,17 +31,19 @@ class TestStore:
 
     def change_review_status(self, state: State, tester: User, iteration: Iteration, new_status: TestStatus):
         """
+        ### Change the status of a review
+
         Changes the status of a review for a given tester and iteration.
-        Raises NoReviewFound if no review exists for the tester and iteration.
+        Raises `NoReviewFound` if no review exists for the tester and iteration.
 
-        Args:
-            state (State): The application state containing the database connection.
-            tester (User): The user whose review status is to be changed.
-            iteration (Iteration): The mission iteration being reviewed.
-            new_status (TestStatus): The new status to set for the review.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tester` (`User`): The user whose review status is to be changed.
+        - `iteration` (`Iteration`): The mission iteration being reviewed.
+        - `new_status` (`TestStatus`): The new status to set for the review.
 
-        Raises:
-            NoReviewFound: If no review exists for the tester and iteration.
+        **Raises:**
+        - `NoReviewFound`: If no review exists for the tester and iteration.
         """
         with state.Session.begin() as session:
             query = (
@@ -58,19 +60,21 @@ class TestStore:
 
     def create_result(self, state: State, iteration: Iteration, review: Review) -> TestResult:
         """
+        ### Create a new test result
+
         Creates a new test result for a given iteration and review.
-        Raises CouldNotCreateTestResult if a result cannot be created due to a constraint violation.
+        Raises `CouldNotCreateTestResult` if a result cannot be created due to a constraint violation.
 
-        Args:
-            state (State): The application state containing the database connection.
-            iteration (Iteration): The mission iteration being tested.
-            review (Review): The review associated with the test result.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `iteration` (`Iteration`): The mission iteration being tested.
+        - `review` (`Review`): The review associated with the test result.
 
-        Returns:
-            TestResult: The created test result object.
+        **Returns:**
+        - `TestResult`: The created test result object.
 
-        Raises:
-            CouldNotCreateTestResult: If a result cannot be created due to a constraint violation.
+        **Raises:**
+        - `CouldNotCreateTestResult`: If a result cannot be created due to a constraint violation.
         """
         with state.Session.begin() as session:
             result = TestResult(review_id=review.id, iteration_id=iteration.id)
@@ -84,19 +88,21 @@ class TestStore:
 
     def cosign_result(self, state: State, tester: User, test_result: TestResult) -> TestCosign:
         """
+        ### Add a cosign to a test result
+
         Adds a cosign to a test result by a tester.
-        Raises CouldNotCosignResult if the tester is the original reviewer or if a cosign constraint is violated.
+        Raises `CouldNotCosignResult` if the tester is the original reviewer or if a cosign constraint is violated.
 
-        Args:
-            state (State): The application state containing the database connection.
-            tester (User): The user cosigning the test result.
-            test_result (TestResult): The test result to cosign.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tester` (`User`): The user cosigning the test result.
+        - `test_result` (`TestResult`): The test result to cosign.
 
-        Returns:
-            TestCosign: The created cosign object.
+        **Returns:**
+        - `TestCosign`: The created cosign object.
 
-        Raises:
-            CouldNotCosignResult: If the tester is the original reviewer or a cosign constraint is violated.
+        **Raises:**
+        - `CouldNotCosignResult`: If the tester is the original reviewer or a cosign constraint is violated.
         """
         if test_result.review_id == tester.id:
             raise CouldNotCosignResult()
@@ -113,12 +119,12 @@ class TestStore:
 
     def remove_cosign(self, state: State, tester: User, test_result: TestResult):
         """
-        Removes a cosign from a test result for a given tester.
+        ### Remove a cosign from a test result
 
-        Args:
-            state (State): The application state containing the database connection.
-            tester (User): The user whose cosign is to be removed.
-            test_result (TestResult): The test result from which to remove the cosign.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tester` (`User`): The user whose cosign is to be removed.
+        - `test_result` (`TestResult`): The test result from which to remove the cosign.
         """
         with state.Session.begin() as session:
             query = delete(TestCosign).where(TestCosign.tester_id == tester.id).where(TestCosign.test_result_id == test_result.id)
@@ -126,14 +132,16 @@ class TestStore:
 
     def iteration_reviews(self, state: State, iteration: Iteration) -> list[IterationReview]:
         """
-        Retrieves all reviews and cosigns for the reviews given a mission iteration.
+        ### Retrieve all reviews and cosigns for a mission iteration
 
-        Args:
-            state (State): The application state containing the database connection.
-            iteration (Iteration): The mission iteration for which to retrieve reviews.
+        Returns all reviews and cosigns for the reviews given a mission iteration.
 
-        Returns:
-            list[test_status.Review]: A list of test_status.Review objects containing review and cosign information.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `iteration` (`Iteration`): The mission iteration for which to retrieve reviews.
+
+        **Returns:**
+        - `list[test_status.Review]`: A list of `test_status.Review` objects containing review and cosign information.
         """
         with state.Session.begin() as session:
             query = (

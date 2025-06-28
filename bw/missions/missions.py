@@ -10,19 +10,19 @@ from bw.error import CouldNotCreateMissionType, NoMissionTypeWithName, CouldNotC
 class MissionTypeStore:
     def create_mission_type(self, state: State, name: str, signoff_requirement: int, tag: str) -> MissionType:
         """
-        Creates a new mission type in the database.
+        ### Create a new mission type
 
-        Args:
-            state (State): The application state containing the database connection.
-            name (str): The name of the mission type.
-            signoff_requirement (int): The number of signoffs required for the mission type.
-            tag (str): The tag for the mission type.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `name` (`str`): The name of the mission type.
+        - `signoff_requirement` (`int`): The number of signoffs required for the mission type.
+        - `tag` (`str`): The tag for the mission type.
 
-        Returns:
-            MissionType: The created mission type object.
+        **Returns:**
+        - `MissionType`: The created mission type object.
 
-        Raises:
-            CouldNotCreateMissionType: If a mission type with the same name or tag already exists.
+        **Raises:**
+        - `CouldNotCreateMissionType`: If a mission type with the same name or tag already exists.
         """
         with state.Session.begin() as session:
             mission_type = MissionType(name=name, signoffs_required=signoff_requirement, tag_map=tag)
@@ -38,19 +38,19 @@ class MissionTypeStore:
         self, state: State, name: str, *, new_signoff_requirement: int | None = None, new_tag: str | None = None
     ) -> MissionType:
         """
-        Updates the signoff requirement and/or tag for an existing mission type.
+        ### Update an existing mission type
 
-        Args:
-            state (State): The application state containing the database connection.
-            name (str): The name of the mission type to update.
-            new_signoff_requirement (int | None): The new signoff requirement, if updating.
-            new_tag (str | None): The new tag, if updating.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `name` (`str`): The name of the mission type to update.
+        - `new_signoff_requirement` (`int | None`): The new signoff requirement, if updating.
+        - `new_tag` (`str | None`): The new tag, if updating.
 
-        Returns:
-            MissionType: The updated mission type object.
+        **Returns:**
+        - `MissionType`: The updated mission type object.
 
-        Raises:
-            NoMissionTypeWithName: If no mission type with the given name exists.
+        **Raises:**
+        - `NoMissionTypeWithName`: If no mission type with the given name exists.
         """
         with state.Session.begin() as session:
             query = select(MissionType).where(MissionType.name == name)
@@ -70,11 +70,11 @@ class MissionTypeStore:
 
     def delete_mission_type(self, state: State, name: str) -> MissionType:
         """
-        Deletes a mission type from the database by name.
+        ### Delete a mission type by name
 
-        Args:
-            state (State): The application state containing the database connection.
-            name (str): The name of the mission type to delete.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `name` (`str`): The name of the mission type to delete.
         """
         with state.Session.begin() as session:
             query = delete(MissionType).where(MissionType.name == name)
@@ -82,17 +82,17 @@ class MissionTypeStore:
 
     def mission_type_from_name(self, state: State, name: str) -> MissionType:
         """
-        Retrieves a mission type from the database by name.
+        ### Retrieve a mission type by name
 
-        Args:
-            state (State): The application state containing the database connection.
-            name (str): The name of the mission type to retrieve.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `name` (`str`): The name of the mission type to retrieve.
 
-        Returns:
-            MissionType: The mission type object with the given name.
+        **Returns:**
+        - `MissionType`: The mission type object with the given name.
 
-        Raises:
-            NoMissionTypeWithName: If no mission type with the given name exists.
+        **Raises:**
+        - `NoMissionTypeWithName`: If no mission type with the given name exists.
         """
         with state.Session.begin() as session:
             query = select(MissionType).where(MissionType.name == name)
@@ -107,18 +107,18 @@ class MissionTypeStore:
 class MissionStore:
     def create_mission(self, state: State, creator: User, author: str, title: str, type: MissionType, flags: dict) -> Mission:
         """
-        Creates a new mission in the database.
+        ### Create a new mission
 
-        Args:
-            state (State): The application state containing the database connection.
-            creator (User): The user creating the mission.
-            author (str): The name of the author.
-            title (str): The title of the mission.
-            type (MissionType): The mission type.
-            flags (dict): Special flags for the mission.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `creator` (`User`): The user creating the mission.
+        - `author` (`str`): The name of the author.
+        - `title` (`str`): The title of the mission.
+        - `type` (`MissionType`): The mission type.
+        - `flags` (`dict`): Special flags for the mission.
 
-        Returns:
-            Mission: The created mission object.
+        **Returns:**
+        - `Mission`: The created mission object.
         """
         with state.Session.begin() as session:
             mission = Mission(author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags)
@@ -139,25 +139,27 @@ class MissionStore:
         changelog: dict,
     ) -> Iteration:
         """
-        Adds a new iteration to a mission, incrementing the iteration number.
-        Raises CouldNotCreateIteration if a constraint is violated or the mission does not exist.
+        ### Add a new iteration to a mission
 
-        Args:
-            state (State): The application state containing the database connection.
-            mission (Mission): The mission which has a new iteration.
-            mission_file (str): The file name of the mission iteration.
-            min_players (int): Minimum player count.
-            desired_players (int): Desired player count.
-            max_players (int): Maximum player count.
-            bwmf_version (str): The bwmf version.
-            changelog (dict): The changelog for this iteration.
+        Adds a new iteration, incrementing the iteration number.
+        Raises `CouldNotCreateIteration` if a constraint is violated or the mission does not exist.
 
-        Returns:
-            Iteration: The created iteration object.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `mission` (`Mission`): The mission which has a new iteration.
+        - `mission_file` (`str`): The file name of the mission iteration.
+        - `min_players` (`int`): Minimum player count.
+        - `desired_players` (`int`): Desired player count.
+        - `max_players` (`int`): Maximum player count.
+        - `bwmf_version` (`str`): The bwmf version.
+        - `changelog` (`dict`): The changelog for this iteration.
 
-        Raises:
-            MissionDoesNotExist: If the mission does not exist.
-            CouldNotCreateIteration: If a constraint is violated when creating the iteration.
+        **Returns:**
+        - `Iteration`: The created iteration object.
+
+        **Raises:**
+        - `MissionDoesNotExist`: If the mission does not exist.
+        - `CouldNotCreateIteration`: If a constraint is violated when creating the iteration.
         """
         with state.Session.begin() as session:
             query = select(Mission).where(Mission.id == mission.id)
@@ -191,14 +193,16 @@ class MissionStore:
 
     def all_mission_iterations(self, state: State, mission: Mission) -> list[Iteration]:
         """
-        Retrieves all iterations for a given mission, ordered by iteration number (ascending).
+        ### Retrieve all iterations for a mission
 
-        Args:
-            state (State): The application state containing the database connection.
-            mission (Mission): The mission whose iterations to retrieve.
+        Returns all iterations for a given mission, ordered by iteration number (ascending).
 
-        Returns:
-            list[Iteration]: A list of all Iteration objects for the mission.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `mission` (`Mission`): The mission whose iterations to retrieve.
+
+        **Returns:**
+        - `list[Iteration]`: A list of all `Iteration` objects for the mission.
         """
         with state.Session.begin() as session:
             query = select(Iteration).where(Iteration.mission_id == mission.id).order_by(Iteration.iteration)

@@ -9,6 +9,8 @@ logger = logging.getLogger('wsgilog.log')
 
 def require_local(func):
     """
+    ### Restrict access to local network requests
+
     Decorator that restricts access to the decorated function to local network requests only.
     If the request is not from a local IP, returns a 401 response and logs a warning.
     """
@@ -26,6 +28,8 @@ def require_local(func):
 
 def require_session(func):
     """
+    ### Require a valid session token
+
     Decorator that ensures the decorated function is called with a valid session token.
     If the session token is missing or invalid, returns a 403 response.
     """
@@ -45,6 +49,12 @@ def require_session(func):
 
 
 def require_group_permission(*permissions):
+    """
+    ### Require group permissions
+
+    Decorator factory for requiring group permissions. (Implementation placeholder)
+    """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)

@@ -11,19 +11,23 @@ from bw.error import NoUserWithGivenCredentials, DbError
 class AuthApi:
     def create_new_user_bot(self, state: State) -> JsonResponse:
         """
+        ### Create a new user and link a bot user
+
         Creates a new user and links a bot user to it, returning the bot token.
         Rolls back the transaction and returns an error response if user or bot creation fails.
 
-        Args:
-            state (State): The application state containing the database connection.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
 
-        Returns:
-            JsonResponse: A JSON response containing the bot token or an error message.
+        **Returns:**
+        - `JsonResponse`: A JSON response containing the bot token or an error message.
 
-        Example:
-            response = AuthApi().create_new_user_bot(state)
-            # Success: JsonResponse({'bot_token': 'potato', 'status': 200})
-            # Error: JsonResponse({'status': 400, 'reason': 'An internal error occured'})
+        **Example:**
+        ```python
+        response = AuthApi().create_new_user_bot(state)
+        # Success: JsonResponse({'bot_token': 'potato', 'status': 200})
+        # Error: JsonResponse({'status': 400, 'reason': 'An internal error occured'})
+        ```
         """
         with state.Session.begin() as session:
             with session.begin_nested() as savepoint:
@@ -37,20 +41,24 @@ class AuthApi:
 
     def create_new_user_from_discord(self, state: State, discord_id: int) -> Ok:
         """
+        ### Create a new user and link a Discord user
+
         Creates a new user and links a Discord user to it using the provided Discord ID.
         Rolls back the transaction and returns an error response if user or Discord user creation fails.
 
-        Args:
-            state (State): The application state containing the database connection.
-            discord_id (int): The Discord ID to link to the new user.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `discord_id` (`int`): The Discord ID to link to the new user.
 
-        Returns:
-            Ok: An OK response if successful, or an error response if failed.
+        **Returns:**
+        - `Ok`: An OK response if successful, or an error response if failed.
 
-        Example:
-            response = AuthApi().create_new_user_from_discord(state, 123456)
-            # Success: Ok() (status 200)
-            # Error: WebResponse(status=400) or WebResponse(status=401)
+        **Example:**
+        ```python
+        response = AuthApi().create_new_user_from_discord(state, 123456)
+        # Success: Ok() (status 200)
+        # Error: WebResponse(status=400) or WebResponse(status=401)
+        ```
         """
         with state.Session.begin() as session:
             with session.begin_nested() as savepoint:
@@ -64,20 +72,24 @@ class AuthApi:
 
     def login_with_discord(self, state: State, discord_id: int) -> JsonResponse:
         """
+        ### Log in with Discord ID
+
         Logs in a user using their Discord ID and starts a new API session for them.
         Returns an error response if the user does not exist.
 
-        Args:
-            state (State): The application state containing the database connection.
-            discord_id (int): The Discord ID of the user to log in.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `discord_id` (`int`): The Discord ID of the user to log in.
 
-        Returns:
-            JsonResponse: A JSON response containing session information or an error message.
+        **Returns:**
+        - `JsonResponse`: A JSON response containing session information or an error message.
 
-        Example:
-            response = AuthApi().login_with_discord(state, 123456)
-            # Success: JsonResponse({'session_token': 'potato', 'expire_time': '1999-12-23T00:00:00Z', 'status': 200})
-            # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
+        **Example:**
+        ```python
+        response = AuthApi().login_with_discord(state, 123456)
+        # Success: JsonResponse({'session_token': 'potato', 'expire_time': '1999-12-23T00:00:00Z', 'status': 200})
+        # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
+        ```
         """
         try:
             user = UserStore().user_from_discord_id(state, discord_id)
@@ -87,20 +99,24 @@ class AuthApi:
 
     def login_with_bot(self, state: State, bot_token: str) -> JsonResponse:
         """
+        ### Log in with bot token
+
         Logs in a user using their bot token and starts a new API session for them.
         Returns an error response if the user does not exist.
 
-        Args:
-            state (State): The application state containing the database connection.
-            bot_token (str): The bot token of the user to log in.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `bot_token` (`str`): The bot token of the user to log in.
 
-        Returns:
-            JsonResponse: A JSON response containing session information or an error message.
+        **Returns:**
+        - `JsonResponse`: A JSON response containing session information or an error message.
 
-        Example:
-            response = AuthApi().login_with_bot(state, 'potato')
-            # Success: JsonResponse({'session_token': 'potato', 'expire_time': '1999-12-23T00:00:00Z', 'status': 200})
-            # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
+        **Example:**
+        ```python
+        response = AuthApi().login_with_bot(state, 'potato')
+        # Success: JsonResponse({'session_token': 'potato', 'expire_time': '1999-12-23T00:00:00Z', 'status': 200})
+        # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
+        ```
         """
         try:
             user = UserStore().user_from_bot_token(state, bot_token)
@@ -110,39 +126,47 @@ class AuthApi:
 
     def is_session_active(self, state: State, session_token: str) -> bool:
         """
+        ### Check if a session is active
+
         Checks if a session with the given token is currently active (not expired or revoked).
 
-        Args:
-            state (State): The application state containing the database connection.
-            session_token (str): The session token to check.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `session_token` (`str`): The session token to check.
 
-        Returns:
-            bool: True if the session is active, False otherwise.
+        **Returns:**
+        - `bool`: True if the session is active, False otherwise.
 
-        Example:
-            is_active = AuthApi().is_session_active(state, 'potato')
-            # is_active = True (if session is valid)
-            # is_active = False (if session is expired, revoked, or invalid)
+        **Example:**
+        ```python
+        is_active = AuthApi().is_session_active(state, 'potato')
+        # is_active = True (if session is valid)
+        # is_active = False (if session is expired, revoked, or invalid)
+        ```
         """
         return SessionStore().is_session_active(state, session_token)
 
     def does_user_have_roles(self, state: State, session_token: str, wanted_roles: Roles) -> bool:
         """
+        ### Check if user has all specified roles
+
         Checks if the user associated with the session token has all the specified roles.
         Returns False if the session is invalid, the user has no roles, or any required role is missing.
 
-        Args:
-            state (State): The application state containing the database connection.
-            session_token (str): The session token of the user.
-            wanted_roles (Roles): The roles to check for.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `session_token` (`str`): The session token of the user.
+        - `wanted_roles` (`Roles`): The roles to check for.
 
-        Returns:
-            bool: True if the user has all the specified roles, False otherwise.
+        **Returns:**
+        - `bool`: True if the user has all the specified roles, False otherwise.
 
-        Example:
-            has_roles = AuthApi().does_user_have_roles(state, 'potato', wanted_roles)
-            # has_roles = True (if user has all roles)
-            # has_roles = False (if user is missing any role, session is invalid, or user has no roles)
+        **Example:**
+        ```python
+        has_roles = AuthApi().does_user_have_roles(state, 'potato', wanted_roles)
+        # has_roles = True (if user has all roles)
+        # has_roles = False (if user is missing any role, session is invalid, or user has no roles)
+        ```
         """
         user = SessionStore().get_user_from_session_token(state, session_token)
         if user is None:
@@ -160,21 +184,25 @@ class AuthApi:
 
     def does_user_have_permissions(self, state: State, session_token: str, wanted_perms: Permissions) -> bool:
         """
+        ### Check if user has all specified permissions
+
         Checks if the user associated with the session token has all the specified permissions through their group memberships.
         Returns False if the session is invalid, the user has no permissions, or any required permission is missing.
 
-        Args:
-            state (State): The application state containing the database connection.
-            session_token (str): The session token of the user.
-            wanted_perms (Permissions): The permissions to check for.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `session_token` (`str`): The session token of the user.
+        - `wanted_perms` (`Permissions`): The permissions to check for.
 
-        Returns:
-            bool: True if the user has all the specified permissions, False otherwise.
+        **Returns:**
+        - `bool`: True if the user has all the specified permissions, False otherwise.
 
-        Example:
-            has_perms = AuthApi().does_user_have_permissions(state, 'potato', wanted_perms)
-            # has_perms = True (if user has all permissions)
-            # has_perms = False (if user is missing any permission, session is invalid, or user has no permissions)
+        **Example:**
+        ```python
+        has_perms = AuthApi().does_user_have_permissions(state, 'potato', wanted_perms)
+        # has_perms = True (if user has all permissions)
+        # has_perms = False (if user is missing any permission, session is invalid, or user has no permissions)
+        ```
         """
         user = SessionStore().get_user_from_session_token(state, session_token)
         if user is None:
@@ -192,19 +220,23 @@ class AuthApi:
 
     def revoke_discord_user_session(self, state: State, discord_id: int) -> Ok:
         """
+        ### Revoke all sessions for a Discord user
+
         Revokes (expires) all active sessions for the user associated with the given Discord ID.
 
-        Args:
-            state (State): The application state containing the database connection.
-            discord_id (int): The Discord ID of the user whose sessions should be revoked.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `discord_id` (`int`): The Discord ID of the user whose sessions should be revoked.
 
-        Returns:
-            Ok: An OK response indicating the user's sessions have been revoked, or a 404 response if the user does not exist.
+        **Returns:**
+        - `Ok`: An OK response indicating the user's sessions have been revoked, or a 404 response if the user does not exist.
 
-        Example:
-            response = AuthApi().revoke_discord_user_session(state, 123456)
-            # Success: Ok() (status 200)
-            # Error: WebResponse(status=404)
+        **Example:**
+        ```python
+        response = AuthApi().revoke_discord_user_session(state, 123456)
+        # Success: Ok() (status 200)
+        # Error: WebResponse(status=404)
+        ```
         """
         try:
             user = UserStore().user_from_discord_id(state, discord_id)
@@ -215,19 +247,23 @@ class AuthApi:
 
     def revoke_bot_user_session(self, state: State, bot_token: str) -> Ok:
         """
+        ### Revoke all sessions for a bot user
+
         Revokes (expires) all active sessions for the user associated with the given bot token.
 
-        Args:
-            state (State): The application state containing the database connection.
-            bot_token (str): The bot token of the user whose sessions should be revoked.
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `bot_token` (`str`): The bot token of the user whose sessions should be revoked.
 
-        Returns:
-            Ok: An OK response indicating the user's sessions have been revoked, or a 404 response if the user does not exist.
+        **Returns:**
+        - `Ok`: An OK response indicating the user's sessions have been revoked, or a 404 response if the user does not exist.
 
-        Example:
-            response = AuthApi().revoke_bot_user_session(state, 'potato')
-            # Success: Ok() (status 200)
-            # Error: WebResponse(status=404)
+        **Example:**
+        ```python
+        response = AuthApi().revoke_bot_user_session(state, 'potato')
+        # Success: Ok() (status 200)
+        # Error: WebResponse(status=404)
+        ```
         """
         try:
             user = UserStore().user_from_bot_token(state, bot_token)
