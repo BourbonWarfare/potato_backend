@@ -204,7 +204,7 @@ class AuthApi:
         Example:
             response = AuthApi().revoke_discord_user_session(state, 123456)
             # Success: Ok() (status 200)
-            # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
+            # Error: WebResponse(status=404)
         """
         try:
             user = UserStore().user_from_discord_id(state, discord_id)
@@ -227,7 +227,7 @@ class AuthApi:
         Example:
             response = AuthApi().revoke_bot_user_session(state, 'potato')
             # Success: Ok() (status 200)
-            # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
+            # Error: WebResponse(status=404)
         """
         try:
             user = UserStore().user_from_bot_token(state, bot_token)
