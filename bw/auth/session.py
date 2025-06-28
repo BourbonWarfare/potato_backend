@@ -9,11 +9,32 @@ from bw.error import SessionInvalid
 
 class SessionStore:
     def expire_session_from_user(self, state: State, user: User):
+        """
+        Expires (removes) all sessions associated with the given user.
+
+        Args:
+            state (State): The application state containing the database connection.
+            user (User): The user whose sessions should be expired.
+        """
         with state.Session.begin() as session:
             query = delete(Session).where(Session.user_id == user.id)
             session.execute(query)
 
     def start_api_session(self, state: State, user: User) -> dict:
+        """
+        Starts a new API session for the given user, expiring any existing sessions.
+        Used for bots to communicate with the API; they have a shorter lives session.
+
+        Args:
+            state (State): The application state containing the database connection.
+            user (User): The user for whom to start a new session.
+
+        Returns:
+            dict: A dictionary containing session-specific information.
+
+        Raises:
+            SessionInvalid: If the session could not be created.
+        """
         self.expire_session_from_user(state, user)
 
         token = secrets.token_urlsafe()[:TOKEN_LENGTH]
@@ -31,12 +52,32 @@ class SessionStore:
         return {'session_token': token, 'expire_time': str(expire_time)}
 
     def is_session_active(self, state: State, session_token: str) -> bool:
+        """
+        Checks if a session with the given token is currently active (not expired).
+
+        Args:
+            state (State): The application state containing the database connection.
+            session_token (str): The session token to check.
+
+        Returns:
+            bool: True if the session is active, False otherwise.
+        """
         with state.Session.begin() as session:
             query = select(Session.expire_time).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
             row = session.execute(query).first()
             return row is not None
 
     def get_user_from_session_token(self, state: State, session_token: str) -> User:
+        """
+        Retrieves the user associated with the given session token, if the session is active.
+
+        Args:
+            state (State): The application state containing the database connection.
+            session_token (str): The session token to look up.
+
+        Returns:
+            User: The user associated with the session token, or None if not found or expired.
+        """
         with state.Session.begin() as session:
             query = select(Session.user_id).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
             user_id = session.execute(query).first()

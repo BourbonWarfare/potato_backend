@@ -8,6 +8,11 @@ logger = logging.getLogger('wsgilog.log')
 
 
 def require_local(func):
+    """
+    Decorator that restricts access to the decorated function to local network requests only.
+    If the request is not from a local IP, returns a 401 response and logs a warning.
+    """
+
     def wrapper(*args, **kwargs):
         try:
             validate_local(web.ctx)
@@ -20,6 +25,11 @@ def require_local(func):
 
 
 def require_session(func):
+    """
+    Decorator that ensures the decorated function is called with a valid session token.
+    If the session token is missing or invalid, returns a 403 response.
+    """
+
     def wrapper(*args, **kwargs):
         if 'session_token' not in kwargs:
             return SessionInvalid().as_response_code()
