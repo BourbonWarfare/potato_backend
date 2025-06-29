@@ -4,6 +4,7 @@ auth.txt*
 server.log*
 logs/
 bin/
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
