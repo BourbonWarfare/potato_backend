@@ -1,5 +1,6 @@
 import copy
 import subprocess
+import asyncio
 from typing import Any
 
 from bw.subprocess.helpers import can_call_as_command
@@ -85,18 +86,33 @@ class Command:
         return stderr_result
 
     @classmethod
-    def call(cls, *args, **kwargs) -> Any:
+    def _get_command(cls, *args, **kwargs) -> str:
         cls._validate_arguments(*args, **kwargs)
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
 
-        to_run = cls._COMMAND + [f'--{k}={v}' if len(k) > 1 else f'-{k} {v}' for k, v in string_options.items()] + list(args)
+        return cls._COMMAND + [f'--{k}={v}' if len(k) > 1 else f'-{k} {v}' for k, v in string_options.items()] + list(args)
 
-        result = subprocess.run(args=to_run, capture_output=True)
+    @classmethod
+    def call(cls, *args, **kwargs) -> Any:
+        result = subprocess.run(args=cls._get_command(*args, **kwargs), capture_output=True)
         try:
             result.check_returncode()
         except subprocess.CalledProcessError as e:
             raise SubprocessFailed(cls.COMMAND, e.output.decode())
         return cls._interpret_results(result.stdout.decode(), result.stderr.decode())
+
+    @classmethod
+    async def acall(cls, *args, **kwargs) -> Any:
+        process = await asyncio.create_subprocess_shell(
+            args=cls._get_command(*args, **kwargs),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            raise SubprocessFailed(cls.COMMAND, stderr.decode())
+        return cls._interpret_results(stdout.decode(), stderr.decode())
 
     def __call__(self, *args, **kwargs) -> Any:
         return self.call(*args, **kwargs)
