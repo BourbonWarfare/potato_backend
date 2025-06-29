@@ -30,36 +30,33 @@ class Command:
 
     @classmethod
     def _validate_arguments(cls, *args, **kwargs):
+        full_command = f'"{" ".join(cls._COMMAND)}"'
         required_arguments = len([t for t in cls.POSITIONAL_ARGUMENTS if not isinstance(None, t)])
         if len(args) < required_arguments:
-            raise TypeError(f'{cls._COMMAND}() takes at least {required_arguments} positional arguments ({len(args)} given)')
+            raise TypeError(f'{full_command} takes at least {required_arguments} positional arguments ({len(args)} given)')
 
         if len(args) > len(cls.POSITIONAL_ARGUMENTS):
             raise TypeError(
-                f'{cls._COMMAND}() takes at most {len(cls.POSITIONAL_ARGUMENTS)} positional arguments ({len(args)} given)'
+                f'{full_command} takes at most {len(cls.POSITIONAL_ARGUMENTS)} positional arguments ({len(args)} given)'
             )
 
         for idx, arg in enumerate(args):
             expected_type = cls.POSITIONAL_ARGUMENTS[idx]
             gotten_type = type(arg)
             if not isinstance(arg, expected_type):
-                raise TypeError(
-                    f"{cls._COMMAND}() argument {idx} must be '{expected_type.__name__}', not '{gotten_type.__name__}'"
-                )
+                raise TypeError(f"{full_command} argument {idx} must be '{expected_type.__name__}', not '{gotten_type.__name__}'")
 
         if len(kwargs) > len(cls.KEYWORD_ARGUMENTS):
-            raise TypeError(
-                f'{cls._COMMAND}() takes at most {len(cls.KEYWORD_ARGUMENTS)} keyword arguments ({len(kwargs)} given)'
-            )
+            raise TypeError(f'{full_command} takes at most {len(cls.KEYWORD_ARGUMENTS)} keyword arguments ({len(kwargs)} given)')
 
         for option, arg in kwargs.items():
             if option not in cls.KEYWORD_ARGUMENTS:
-                raise TypeError(f"{cls._COMMAND}() does not have an argument of name '{option}'")
+                raise TypeError(f"{full_command} does not have an argument of name '{option}'")
 
             expected_type = cls.KEYWORD_ARGUMENTS[option]
             given_type = type(arg)
             if not isinstance(arg, expected_type):
-                raise TypeError(f"{cls._COMMAND}() Expected '{arg}={expected_type.__name__}, {arg}={given_type.__name__} given'")
+                raise TypeError(f"{full_command} Expected '{arg}={expected_type.__name__}, {arg}={given_type.__name__} given'")
 
     @classmethod
     def _interpret_results(cls, stdout: str, stderr: str) -> Any:
@@ -86,7 +83,7 @@ class Command:
         return stderr_result
 
     @classmethod
-    def _get_command(cls, *args, **kwargs) -> str:
+    def _get_command(cls, *args, **kwargs) -> list[str]:
         cls._validate_arguments(*args, **kwargs)
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
 
@@ -103,8 +100,9 @@ class Command:
 
     @classmethod
     async def acall(cls, *args, **kwargs) -> Any:
-        process = await asyncio.create_subprocess_shell(
-            args=cls._get_command(*args, **kwargs),
+        command = cls._get_command(*args, **kwargs)
+        process = await asyncio.create_subprocess_exec(
+            *command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )

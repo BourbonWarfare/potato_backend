@@ -1,4 +1,5 @@
 import re
+from typing import Any
 from bw.subprocess.semver import Semver
 from bw.subprocess.command import Command, define_process
 
@@ -29,6 +30,18 @@ class Version(Hemtt):
 
 class Utils(Hemtt):
     COMMAND = 'utils'
+
+
+class Pbo(Utils):
+    COMMAND = 'pbo'
+
+
+class Unpack(Pbo):
+    COMMAND = 'unpack'
+    POSITIONAL_ARGUMENTS = [str, str | None]
+    KEYWORD_ARGUMENTS = {
+        'derap': Any,
+    }
 
 
 class Config(Utils):

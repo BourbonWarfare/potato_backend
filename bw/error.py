@@ -178,3 +178,13 @@ class SubprocessNotFound(SubprocessError):
 class SubprocessFailed(SubprocessError):
     def __init__(self, subprocess: str, reason: str):
         super().__init__(f"process '{subprocess}' didn't exist successfully\n\t{reason}")
+
+
+class MissionFileError(BwServerError):
+    def __init__(self, reason: str):
+        super().__init__(f'Some IO went wrong with the mission file: {reason}')
+
+
+class MissionFileDoesNotExist(MissionFileError):
+    def __init__(self, directory: str):
+        super().__init__("mission does not exist at directory '{directory}'")
