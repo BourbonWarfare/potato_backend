@@ -172,7 +172,7 @@ class SubprocessError(BwServerError):
 
 class SubprocessNotFound(SubprocessError):
     def __init__(self, subprocess: str):
-        super().__init__('could not find an executible version of "{subproc}"')
+        super().__init__("could not find an executible version of 'subprocess}'")
 
 
 class SubprocessFailed(SubprocessError):
