@@ -3,6 +3,7 @@ conf.txt*
 auth.txt*
 server.log*
 logs/
+bin/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
