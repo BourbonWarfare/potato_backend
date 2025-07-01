@@ -32,6 +32,8 @@ jobs:
             - 5432:5432
       steps:
         - uses: actions/checkout@v4
+        - name: Setup HEMTT (Needed for subprocess)
+          uses: arma-actions/hemtt@v1
         - name: Setup Python
           uses: actions/setup-python@v5.6.0
           with:
