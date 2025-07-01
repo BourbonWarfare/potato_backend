@@ -136,11 +136,17 @@ class CouldNotCreateMissionType(MissionError):
 
 
 class NoMissionTypeWithName(MissionError):
+    def status(self) -> int:
+        return 404
+
     def __init__(self, name: str):
         super().__init__('no mission type called "{name}" exists')
 
 
 class NoMissionTypeWithTag(MissionError):
+    def status(self) -> int:
+        return 404
+
     def __init__(self, tag: int):
         super().__init__('no mission type with tag "{tag}" exists')
 
@@ -156,6 +162,9 @@ class CouldNotCosignResult(MissionError):
 
 
 class NoReviewFound(MissionError):
+    def status(self) -> int:
+        return 404
+
     def __init__(self):
         super().__init__('couldnt find review')
 
@@ -166,6 +175,9 @@ class CouldNotCreateIteration(MissionError):
 
 
 class MissionDoesNotExist(MissionError):
+    def status(self) -> int:
+        return 404
+
     def __init__(self):
         super().__init__('mission does not exist')
 
@@ -176,8 +188,11 @@ class SubprocessError(BwServerError):
 
 
 class SubprocessNotFound(SubprocessError):
+    def status(self) -> int:
+        return 404
+
     def __init__(self, subprocess: str):
-        super().__init__("could not find an executible version of 'subprocess}'")
+        super().__init__("could not find an executible version of '{subprocess}'")
 
 
 class SubprocessFailed(SubprocessError):
@@ -191,6 +206,9 @@ class MissionFileError(BwServerError):
 
 
 class MissionFileDoesNotExist(MissionFileError):
+    def status(self) -> int:
+        return 404
+
     def __init__(self, directory: str):
         super().__init__("mission does not exist at directory '{directory}'")
 

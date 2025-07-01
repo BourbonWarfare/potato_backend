@@ -33,7 +33,10 @@ class MissionsApi:
         ```python
         response = await MissionsApi().upload_mission_to_main(state, token, "/missions/mission1.pbo", {"changes": "Initial"})
         # Success: JsonResponse({'iteration_number': 1, 'status': 200})
-        # Error: JsonResponse({'status': 422, 'reason': 'Something went wrong with the upload: ...'})
+        # Error: JsonResponse({'status': 422, 'reason': 'mission does not have attached mission testing attributes'})
+        # Error: JsonResponse({'status': 422, 'reason': 'no mission type with tag "{tag}" exists'})
+        # Error: JsonResponse({'status': 422, 'reason': 'could not create mission iteration'})
+        # Error: JsonResponse({'status': 403, 'reason': 'Session is not valid'})
         ```
         """
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
@@ -46,9 +49,14 @@ class MissionsApi:
             return MissionDoesNotHaveMetadata().as_json()
 
         if 'potato_missionMaking_metadata' in mission.custom_attributes:
-            uuid = mission.custom_attributes['potato_missionMaking_metadata']['potato_missionMaking_uuid']['Value']['data'][
-                'value'
-            ]
+            uuid = (
+                mission.custom_attributes
+                    ['potato_missionMaking_metadata']
+                    ['potato_missionMaking_uuid']
+                    ['Value']
+                    ['data']
+                    ['value']
+            )  # fmt: skip
             uuid = UUID(hex=uuid)
         else:
             uuid = None
@@ -59,7 +67,7 @@ class MissionsApi:
             existing_mission = None
 
         if existing_mission is None:
-            tag = int(info['potato_missiontesting_missionType'])
+            tag = int(info['potato_missiontesting_missionType']['Value']['data']['value'])
             try:
                 mission_type = MissionTypeStore().mission_type_from_tag(state, tag)
             except NoMissionTypeWithTag as e:
@@ -67,7 +75,7 @@ class MissionsApi:
 
             try:
                 creator = SessionStore().get_user_from_session_token(state, session_token=user_session_token)
-            except SessionInvalid() as e:
+            except SessionInvalid as e:
                 return e.as_json()
 
             flags = {}
@@ -92,12 +100,19 @@ class MissionsApi:
         min_players = 0
         max_players = 0
         desired_players = 0
+        safe_start_length = 0
+        mission_length = 0
         if 'potato_missiontesting_playerCountMinimum' in info:
             min_players = int(info['potato_missiontesting_playerCountMinimum']['Value']['data']['value'])
         if 'potato_missiontesting_playerCountMaximum' in info:
             max_players = int(info['potato_missiontesting_playerCountMaximum']['Value']['data']['value'])
         if 'potato_missiontesting_playerCountRecommended' in info:
             desired_players = int(info['potato_missiontesting_playerCountRecommended']['Value']['data']['value'])
+        if 'potato_missiontesting_safeStartLength' in info:
+            safe_start_length = int(info['potato_missiontesting_safeStartLength']['Value']['data']['value'])
+        if 'potato_missiontesting_missionLength' in info:
+            safe_start_length = int(info['potato_missiontesting_missionLength']['Value']['data']['value'])
+
         try:
             iteration = MissionStore().add_iteration(
                 state,
@@ -106,6 +121,8 @@ class MissionsApi:
                 min_players=min_players,
                 desired_players=desired_players,
                 max_players=max_players,
+                safe_start_length=safe_start_length,
+                mission_length=mission_length,
                 bwmf_version=mission.bwmf,
                 changelog=changelog,
             )

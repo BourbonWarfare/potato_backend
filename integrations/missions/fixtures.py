@@ -10,6 +10,40 @@ from bw.missions.test_status import TestStatus
 from integrations.fixtures import session, state
 
 
+@pytest.fixture
+def fake_mission():
+    class FakeMission:
+        def __init__(self):
+            self.custom_attributes = {
+                'potato_missiontesting_missionTestingInfo': {
+                    'potato_missiontesting_missionType': {'Value': {'data': {'value': 1}}},
+                },
+                'potato_missiontesting_metadata': {
+                    'potato_missionMaking_uuid': {'Value': {'data': {'value': 'b3d7e343-d244-45fd-a614-a40e3da5de90'}}},
+                },
+            }
+            self.author = 'author_name'
+            self.source_name = 'mission_v1'
+            self.bwmf = '1.0.0'
+
+    return FakeMission()
+
+
+@pytest.fixture
+def fake_changelog():
+    return {'changes': 'Initial commit'}
+
+
+@pytest.fixture
+def fake_iteration_1():
+    return type('FakeIteration', (), {'iteration': 1})()
+
+
+@pytest.fixture
+def fake_iteration_2():
+    return type('FakeIteration', (), {'iteration': 2})()
+
+
 @pytest.fixture(scope='function')
 def db_user_1(state, session):
     with state.Session.begin() as session:
