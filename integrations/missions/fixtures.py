@@ -109,6 +109,7 @@ def db_iteration_1(state, session, db_mission_1):
             max_player_count=10,
             desired_player_count=5,
             iteration=1,
+            mission_length=70,
             bwmf_version='1.0.0',
             changelog={'changes': 'Updated mission file'},
         )
@@ -128,6 +129,7 @@ def db_iteration_2(state, session, db_mission_1):
             max_player_count=10,
             desired_player_count=5,
             iteration=2,
+            mission_length=70,
             bwmf_version='1.0.0',
             changelog={'changes': 'Updated mission file again'},
         )

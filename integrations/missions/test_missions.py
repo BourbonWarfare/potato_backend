@@ -113,6 +113,8 @@ def test__mission_store__add_iteration__first_iteration_is_one(state, session, d
         min_players=5,
         desired_players=10,
         max_players=15,
+        safe_start_length=10,
+        mission_length=30,
         bwmf_version='1.0.0',
         changelog={},
     )
@@ -138,6 +140,8 @@ def test__mission_store__add_iteration__increments_iteration(state, session, db_
         min_players=6,
         desired_players=12,
         max_players=18,
+        safe_start_length=10,
+        mission_length=30,
         bwmf_version='1.1.0',
         changelog={},
     )
@@ -165,6 +169,8 @@ def test__mission_store__add_iteration__invalid_mission_raises(state, session):
             min_players=1,
             desired_players=1,
             max_players=1,
+            safe_start_length=10,
+            mission_length=30,
             bwmf_version='0.0.1',
             changelog={},
         )

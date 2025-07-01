@@ -136,7 +136,7 @@ class MissionTypeStore:
 
 class MissionStore:
     def create_mission(
-        self, state: State, creator: User, author: str, title: str, type: MissionType, flags: dict, uuid: UUID | None
+        self, state: State, creator: User, author: str, title: str, type: MissionType, flags: dict, uuid: UUID | None = None
     ) -> Mission:
         """
         ### Create a new mission
@@ -231,6 +231,8 @@ class MissionStore:
         min_players: int,
         desired_players: int,
         max_players: int,
+        safe_start_length: int,
+        mission_length: int,
         bwmf_version: str,
         changelog: dict,
     ) -> Iteration:
@@ -276,6 +278,8 @@ class MissionStore:
                 max_player_count=max_players,
                 desired_player_count=desired_players,
                 bwmf_version=bwmf_version,
+                safe_start_length=safe_start_length,
+                mission_length=mission_length,
                 iteration=previous_iteration + 1,
                 changelog=changelog,
             )

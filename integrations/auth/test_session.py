@@ -1,8 +1,10 @@
 # ruff: noqa: F811, F401
 
+import pytest
 from datetime import datetime
 
 from bw.auth.session import SessionStore
+from bw.error import SessionInvalid
 from integrations.auth.fixtures import (
     state,
     session,
@@ -83,5 +85,6 @@ def test__session_store__correct_user_returned_from_token(state, session, db_ses
     assert SessionStore().get_user_from_session_token(state, db_session_1.token).id == db_user_1.id
 
 
-def test__session_store__returns_none_on_invalid_token(state, session):
-    assert SessionStore().get_user_from_session_token(state, 'invalid token') is None
+def test__session_store__raises_on_invalid_token(state, session):
+    with pytest.raises(SessionInvalid):
+        assert SessionStore().get_user_from_session_token(state, 'invalid token') is None
