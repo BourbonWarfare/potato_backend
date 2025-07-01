@@ -249,6 +249,8 @@ class MissionStore:
         - `min_players` (`int`): Minimum player count.
         - `desired_players` (`int`): Desired player count.
         - `max_players` (`int`): Maximum player count.
+        - `safe_start_length` (`int`): Safe start length in minutes.
+        - `mission_length` (`int`): Mission length in minutes.
         - `bwmf_version` (`str`): The bwmf version.
         - `changelog` (`dict`): The changelog for this iteration.
 

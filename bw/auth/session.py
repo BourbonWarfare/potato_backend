@@ -84,7 +84,10 @@ class SessionStore:
         - `session_token` (`str`): The session token to look up.
 
         **Returns:**
-        - `User`: The user associated with the session token, or None if not found or expired.
+        - `User`: The user associated with the session token.
+
+        **Raises:**
+        - `SessionInvalid`: If the session token is not found or is expired.
         """
         with state.Session.begin() as session:
             query = select(Session.user_id).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
