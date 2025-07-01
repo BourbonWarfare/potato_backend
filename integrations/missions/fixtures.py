@@ -31,7 +31,7 @@ def db_user_2(state, session):
 @pytest.fixture(scope='function')
 def db_mission_type_1(state, session):
     with state.Session.begin() as session:
-        mission_type = MissionType(name='TVT', signoffs_required=1, tag_map='tvt')
+        mission_type = MissionType(name='TVT', signoffs_required=1, numeric_tag=1)
         session.add(mission_type)
         session.flush()
         session.expunge(mission_type)
@@ -41,7 +41,7 @@ def db_mission_type_1(state, session):
 @pytest.fixture(scope='function')
 def db_mission_type_2(state, session):
     with state.Session.begin() as session:
-        mission_type = MissionType(name='LONG COOP', signoffs_required=2, tag_map='lc')
+        mission_type = MissionType(name='LONG COOP', signoffs_required=2, numeric_tag=3)
         session.add(mission_type)
         session.flush()
         session.expunge(mission_type)

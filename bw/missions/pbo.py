@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 import shutil
 import tempfile
@@ -43,12 +44,13 @@ class Attribute:
 
 
 class MissionFile:
-    def __init__(self, mission_as_json: dict):
+    def __init__(self, mission_as_json: dict, bwmf_version: str):
         self.json = mission_as_json
         self.custom_attributes = {}
         self.author = self.json['ScenarioData'].get('author', '')
-        self.mission_name = self.json['sourceName']
+        self.source_name = self.json['sourceName']
         self.addons = self.json['addons']
+        self.bwmf = bwmf_version
 
         intel = self.json['Mission']['Intel']
         self.intel = Intel(
@@ -81,6 +83,7 @@ class MissionFile:
                 attribute_name = attribute['property']
                 attribute_expression = attribute.get('expression', '')
                 attribute_data = attribute.get('Value', {})
+
                 category_attributes[attribute_name] = Attribute(attribute_name, attribute_expression, attribute_data)
 
             self.custom_attributes[category_name] = category_attributes
@@ -97,8 +100,16 @@ class MissionLoader:
         shutil.copyfile(pbo_path, temp_path / pbo_name)
 
         mission_name = pbo_name.split('.')[0]
-        await hemtt.utils.pbo.unpack.acall(str(temp_path / pbo_name), str(temp_path / mission_name))
-        await hemtt.utils.config.derapify.acall(str(temp_path / mission_name / 'mission.sqm'), format='json')
+        mission_path = temp_path / mission_name
+        await hemtt.utils.pbo.unpack.acall(str(temp_path / pbo_name), str(mission_path))
+        derap_task = asyncio.task(hemtt.utils.config.derapify.acall(str(mission_path / 'mission.sqm'), format='json'))
 
-        json_path = temp_path / mission_name / 'mission.json'
-        return MissionFile(json.load(open(json_path)))
+        bwmf_version = '2016/01/19'
+        with open(mission_path / 'description.ext') as file:
+            for line in file:
+                if 'bwmfDate' in line:
+                    bwmf_version = line.split('=')[1]
+                    break
+
+        await derap_task
+        return MissionFile(json.load(open(mission_path / 'mission.json')), bwmf_version=bwmf_version)

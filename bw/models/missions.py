@@ -18,7 +18,7 @@ class MissionType(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
     signoffs_required: Mapped[int] = mapped_column(default=1, nullable=False)
-    tag_map: Mapped[str] = mapped_column(nullable=False, unique=True)
+    numeric_tag: Mapped[int] = mapped_column(nullable=False, unique=True)
 
 
 class Mission(Base):
@@ -62,6 +62,8 @@ class Iteration(Base):
     min_player_count: Mapped[int] = mapped_column(nullable=False)
     max_player_count: Mapped[int] = mapped_column(nullable=False)
     desired_player_count: Mapped[int] = mapped_column(nullable=False)
+    safe_start_length: Mapped[int] = mapped_column(nullable=False, default=10)
+    mission_length: Mapped[int] = mapped_column(nullable=False)
     upload_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
     bwmf_version: Mapped[str] = mapped_column(nullable=False)
     iteration: Mapped[int] = mapped_column(nullable=False)

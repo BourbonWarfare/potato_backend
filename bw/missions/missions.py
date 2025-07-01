@@ -1,14 +1,21 @@
+from uuid import UUID
 from sqlalchemy import delete, select
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from bw.state import State
 from bw.models.auth import User
 from bw.models.missions import MissionType, Mission, Iteration
-from bw.error import CouldNotCreateMissionType, NoMissionTypeWithName, CouldNotCreateIteration, MissionDoesNotExist
+from bw.error import (
+    CouldNotCreateMissionType,
+    NoMissionTypeWithName,
+    CouldNotCreateIteration,
+    MissionDoesNotExist,
+    NoMissionTypeWithTag,
+)
 
 
 class MissionTypeStore:
-    def create_mission_type(self, state: State, name: str, signoff_requirement: int, tag: str) -> MissionType:
+    def create_mission_type(self, state: State, name: str, signoff_requirement: int, tag: int) -> MissionType:
         """
         ### Create a new mission type
 
@@ -25,7 +32,7 @@ class MissionTypeStore:
         - `CouldNotCreateMissionType`: If a mission type with the same name or tag already exists.
         """
         with state.Session.begin() as session:
-            mission_type = MissionType(name=name, signoffs_required=signoff_requirement, tag_map=tag)
+            mission_type = MissionType(name=name, signoffs_required=signoff_requirement, numeric_tag=tag)
             try:
                 session.add(mission_type)
                 session.flush()
@@ -35,7 +42,7 @@ class MissionTypeStore:
         return mission_type
 
     def update_mission_type(
-        self, state: State, name: str, *, new_signoff_requirement: int | None = None, new_tag: str | None = None
+        self, state: State, name: str, *, new_signoff_requirement: int | None = None, new_tag: int | None = None
     ) -> MissionType:
         """
         ### Update an existing mission type
@@ -62,7 +69,7 @@ class MissionTypeStore:
             if new_signoff_requirement is not None:
                 mission_type.signoffs_required = new_signoff_requirement
             if new_tag is not None:
-                mission_type.tag_map = new_tag
+                mission_type.numeric_tag = new_tag
 
             session.flush()
             session.expunge(mission_type)
@@ -103,9 +110,34 @@ class MissionTypeStore:
             session.expunge(mission_type)
         return mission_type
 
+    def mission_type_from_tag(self, state: State, tag: int) -> MissionType:
+        """
+        ### Retrieve a mission type by tag
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tag` (`intn`): The tag of the mission.
+
+        **Returns:**
+        - `MissionType`: The mission type object with the given tag.
+
+        **Raises:**
+        - `NoMissionTypeWithTag`: If no mission type with the given tag exists.
+        """
+        with state.Session.begin() as session:
+            query = select(MissionType).where(MissionType.numeric_tag == tag)
+            try:
+                mission_type = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoMissionTypeWithTag(tag)
+            session.expunge(mission_type)
+        return mission_type
+
 
 class MissionStore:
-    def create_mission(self, state: State, creator: User, author: str, title: str, type: MissionType, flags: dict) -> Mission:
+    def create_mission(
+        self, state: State, creator: User, author: str, title: str, type: MissionType, flags: dict, uuid: UUID | None
+    ) -> Mission:
         """
         ### Create a new mission
 
@@ -121,7 +153,12 @@ class MissionStore:
         - `Mission`: The created mission object.
         """
         with state.Session.begin() as session:
-            mission = Mission(author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags)
+            if uuid is not None:
+                mission = Mission(
+                    author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags, uuid=uuid
+                )
+            else:
+                mission = Mission(author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags)
             session.add(mission)
             session.flush()
             session.expunge(mission)
@@ -165,6 +202,26 @@ class MissionStore:
             for mission in missions:
                 session.expunge(mission[0])
         return [mission[0] for mission in missions]
+
+    def mission_with_uuid(self, state: State, uuid: UUID) -> Mission | None:
+        """
+        ### Retrieve existing mission via it's UUID
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `uuid` (`UUID`): The UUID a mission may have.
+
+        **Returns:**
+        - `Mission | None`: The mission, if the UUID is in the database; otherwise `None`.
+        """
+        with state.Session.begin() as session:
+            query = select(Mission).where(Mission.uuid == uuid)
+            try:
+                mission = session.execute(query).one()[0]
+            except NoResultFound:
+                return None
+            session.expunge(mission)
+        return mission
 
     def add_iteration(
         self,

@@ -14,7 +14,7 @@ class BwServerError(Exception):
 
 class ExpectedJson(BwServerError):
     def status(self) -> int:
-        return 400
+        return 415
 
     def __init__(self):
         super().__init__('Expected JSON payload, got something else')
@@ -140,6 +140,11 @@ class NoMissionTypeWithName(MissionError):
         super().__init__('no mission type called "{name}" exists')
 
 
+class NoMissionTypeWithTag(MissionError):
+    def __init__(self, tag: int):
+        super().__init__('no mission type with tag "{tag}" exists')
+
+
 class CouldNotCreateTestResult(MissionError):
     def __init__(self):
         super().__init__('couldnt create test result')
@@ -188,3 +193,16 @@ class MissionFileError(BwServerError):
 class MissionFileDoesNotExist(MissionFileError):
     def __init__(self, directory: str):
         super().__init__("mission does not exist at directory '{directory}'")
+
+
+class UploadError(ClientError):
+    def status(self) -> int:
+        return 422
+
+    def __init__(self, reason: str):
+        super().__init__('Something went wrong with the upload: {reason}')
+
+
+class MissionDoesNotHaveMetadata(UploadError):
+    def __init__(self):
+        super().__init__('mission does not have attached mission testing attributes')

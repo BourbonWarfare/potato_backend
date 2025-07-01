@@ -90,7 +90,7 @@ class SessionStore:
             query = select(Session.user_id).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
             user_id = session.execute(query).first()
             if user_id is None:
-                return None
+                raise SessionInvalid()
             query = select(User).where(User.id == user_id[0])
             user = session.execute(query).one()[0]
             session.expunge(user)

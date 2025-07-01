@@ -21,10 +21,10 @@ from integrations.missions.fixtures import (
 
 
 def test__mission_type_store__create_mission_type__can_create_mission_type(state, session):
-    mission_type = MissionTypeStore().create_mission_type(state, 'mission', 5, 'tvt')
+    mission_type = MissionTypeStore().create_mission_type(state, 'mission', 5, 1)
     assert mission_type.name == 'mission'
     assert mission_type.signoffs_required == 5
-    assert mission_type.tag_map == 'tvt'
+    assert mission_type.numeric_tag == 1
 
     with state.Session.begin() as session:
         query = select(MissionType).where(MissionType.id == mission_type.id)
@@ -33,9 +33,9 @@ def test__mission_type_store__create_mission_type__can_create_mission_type(state
 
 
 def test__mission_type_store__create_mission_type__cant_create_duplicate(state, session):
-    MissionTypeStore().create_mission_type(state, 'mission', 5, 'tvt')
+    MissionTypeStore().create_mission_type(state, 'mission', 5, 1)
     with pytest.raises(CouldNotCreateMissionType):
-        MissionTypeStore().create_mission_type(state, 'mission', 5, 'tvt')
+        MissionTypeStore().create_mission_type(state, 'mission', 5, 1)
 
 
 def test__mission_type_store__update_mission_type__can_update_mission(state, session, db_mission_type_1, db_mission_type_2):
@@ -45,15 +45,15 @@ def test__mission_type_store__update_mission_type__can_update_mission(state, ses
         row = session.execute(query).first()
         assert row is not None
         assert row[0].signoffs_required == 50
-        assert row[0].tag_map == db_mission_type_1.tag_map
+        assert row[0].numeric_tag == db_mission_type_1.numeric_tag
 
-    MissionTypeStore().update_mission_type(state, name=db_mission_type_2.name, new_tag='foobar')
+    MissionTypeStore().update_mission_type(state, name=db_mission_type_2.name, new_tag=2)
     with state.Session.begin() as session:
         query = select(MissionType).where(MissionType.id == db_mission_type_2.id)
         row = session.execute(query).first()
         assert row is not None
         assert row[0].signoffs_required == db_mission_type_2.signoffs_required
-        assert row[0].tag_map == 'foobar'
+        assert row[0].numeric_tag == 2
 
 
 def test__mission_type_store__update_mission_type__updating_none_raises(state, session):
@@ -82,7 +82,7 @@ def test__mission_type_store__mission_type_from_name__can_retrieve(state, sessio
     assert mission_type.id == db_mission_type_1.id
     assert mission_type.name == db_mission_type_1.name
     assert mission_type.signoffs_required == db_mission_type_1.signoffs_required
-    assert mission_type.tag_map == db_mission_type_1.tag_map
+    assert mission_type.numeric_tag == db_mission_type_1.numeric_tag
 
 
 def test__mission_type_store__mission_type_from_name__retrieve_none_raises(state, session):
