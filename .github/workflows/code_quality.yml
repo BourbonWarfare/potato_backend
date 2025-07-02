@@ -26,6 +26,7 @@ jobs:
   
   type_checker:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -40,4 +41,3 @@ jobs:
         run: uv sync --locked --extra development --dev
       - name: run type checker
         run: uv run ty check
-        continue-on-error: true
