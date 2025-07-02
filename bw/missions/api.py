@@ -96,7 +96,6 @@ class MissionsApi:
                 uuid=uuid,
             )
 
-        # => uuid is some
         min_players = 0
         max_players = 0
         desired_players = 0

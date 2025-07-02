@@ -20,6 +20,7 @@ maintainers = [
 [project.optional-dependencies]
 development = [
     "ruff",
+    "ty",
     "pre-commit"
 ]
 tests = [
@@ -133,3 +134,13 @@ quote-style = "single"
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "single"
+
+[tool.ty.environment]
+python = "./.venv"
+
+[tool.ty.src]
+include = [
+    "bw",
+    "tests",
+    "integrations"
+]

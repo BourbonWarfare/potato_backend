@@ -9,46 +9,41 @@ on:
 
 jobs:
   runner:
-      runs-on: ubuntu-latest
-          # Service containers to run with `runner-job`
-      services:
-        # Label used to access the service container
-        postgres:
-          # Docker Hub image
-          image: postgres:16.9-bullseye
-          # Provide the password for postgres
-          env:
-            POSTGRES_DB: bw_backend
-            POSTGRES_USER: tester
-            POSTGRES_PASSWORD: tester
-          # Set health checks to wait until postgres has started
-          options: >-
-            --health-cmd pg_isready
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
-          ports:
-            # Maps tcp port 5432 on service container to the host
-            - 5432:5432
-      steps:
-        - uses: actions/checkout@v4
-        - name: Setup HEMTT (Needed for subprocess)
-          uses: arma-actions/hemtt@v1
-        - name: Setup Python
-          uses: actions/setup-python@v5.6.0
-          with:
-            # File containing the Python version to use. Example: .python-version
-            python-version-file: .python-version
-            # Used to specify a package manager for caching in the default directory. Supported values: pip, pipenv, poetry.
-            cache: pip
-            # The target architecture (x86, x64, arm64) of the Python or PyPy interpreter.
-            architecture: x64
-        - name: install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install .[tests]
-        - name: run tests
-          run: |
-            echo "${{ secrets.TEST_CONF }}" >> conf.txt
-            pytest --cov=bw
-        
+    runs-on: ubuntu-latest
+        # Service containers to run with `runner-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:16.9-bullseye
+        # Provide the password for postgres
+        env:
+          POSTGRES_DB: bw_backend
+          POSTGRES_USER: tester
+          POSTGRES_PASSWORD: tester
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml" 
+      - name: install project
+        run: uv sync --locked --extra tests --dev
+      - name: Setup HEMTT (Needed for subprocess)
+        uses: arma-actions/hemtt@v1
+      - name: run tests
+        run: |
+          echo "${{ secrets.TEST_CONF }}" >> conf.txt
+          uv run pytest --cov=bw
+      
