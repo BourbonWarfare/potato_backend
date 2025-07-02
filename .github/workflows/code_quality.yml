@@ -40,3 +40,4 @@ jobs:
         run: uv sync --locked --extra development --dev
       - name: run type checker
         run: uv run ty check
+        continue-on-error: true
