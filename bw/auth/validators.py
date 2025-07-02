@@ -61,7 +61,7 @@ def validate_session(state: State, session_token: str):
         raise SessionInvalid()
 
 
-def validate_local(ctx: dict):
+def validate_local(ip: str | None):
     """
     ### Validate local IP address
 
@@ -69,11 +69,14 @@ def validate_local(ctx: dict):
     Raises `NonLocalIpAccessingLocalOnlyAddress` if the request is not from a local IP.
 
     **Args:**
-    - `ctx` (`dict`): The request context, expected to contain an 'ip' key.
+    - `ip` (`str | None`): The IP address to validate.
 
     **Raises:**
     - `NonLocalIpAccessingLocalOnlyAddress`: If the request is not from a local IP address.
     """
+    if ip is None:
+        raise NonLocalIpAccessingLocalOnlyAddress('IP address not present')
+
     valid_local_prefix = (
         '0.',
         '10.',
@@ -82,6 +85,5 @@ def validate_local(ctx: dict):
         '192.0.0.',
         '192.168.',
     )
-    ip = ctx.get('ip', '255.255.255.255')
     if not any([ip.startswith(prefix) for prefix in valid_local_prefix]):
         raise NonLocalIpAccessingLocalOnlyAddress(ip)

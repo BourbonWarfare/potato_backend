@@ -5,18 +5,17 @@ from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionInvalid, NotEno
 
 
 def test__validate_local__non_local_ip_raises():
-    ctx = {'ip': '8.8.8.8'}
     with pytest.raises(NonLocalIpAccessingLocalOnlyAddress):
-        validators.validate_local(ctx)
+        validators.validate_local('8.8.8.8')
 
 
 def test__validate_local__local_ip_fine():
-    validators.validate_local({'ip': '0.0.0.0'})
-    validators.validate_local({'ip': '10.0.0.1'})
-    validators.validate_local({'ip': '127.0.0.1'})
-    validators.validate_local({'ip': '172.16.5.1'})
-    validators.validate_local({'ip': '192.0.0.1'})
-    validators.validate_local({'ip': '192.168.56.1'})
+    validators.validate_local('0.0.0.0')
+    validators.validate_local('10.0.0.1')
+    validators.validate_local('127.0.0.1')
+    validators.validate_local('172.16.5.1')
+    validators.validate_local('192.0.0.1')
+    validators.validate_local('192.168.56.1')
 
 
 def test__validate_session__invalid_session_raises(mocker):

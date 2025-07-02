@@ -1,6 +1,7 @@
 import copy
 import subprocess
 import asyncio
+import asyncio.subprocess
 from typing import Any
 
 from bw.subprocess.helpers import can_call_as_command
@@ -9,7 +10,7 @@ from bw.error import SubprocessNotFound, SubprocessFailed
 
 class Command:
     COMMAND: str = ''
-    POSITIONAL_ARGUMENTS: tuple[type, ...] = []
+    POSITIONAL_ARGUMENTS: tuple[type, ...] = ()
     KEYWORD_ARGUMENTS: dict[str, type] = {}
 
     @classmethod
@@ -105,7 +106,7 @@ class Command:
             *command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-        )
+        )  # ty: ignore[missing-argument]
 
         stdout, stderr = await process.communicate()
         if process.returncode != 0:

@@ -15,9 +15,9 @@ class Configuration(dict):
         if self.file is None:
             raise NoConfigLoaded()
 
-        lines = []
+        lines: list[str] = []
 
-        key_line_numbers = {}
+        key_line_numbers: dict[str, int] = {}
         with open(f'{self.file}.bak', 'w') as backup:
             with open(self.file) as file:
                 for line_num, line in enumerate(file):
@@ -36,7 +36,7 @@ class Configuration(dict):
             if key not in key_line_numbers:
                 lines.append(f'{key}{f"={value}" if value != "" else ""}')
             else:
-                idx = key_line_numbers.get(key)
+                idx = key_line_numbers[key]
                 lines[idx] = f'{key}{f"={value}" if value != "" else ""}'
 
         with open(self.file, 'w') as file:

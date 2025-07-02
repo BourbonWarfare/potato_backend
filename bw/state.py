@@ -1,3 +1,4 @@
+from typing import Self
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -12,7 +13,7 @@ class DatabaseConnection:
 
 
 class State:
-    state = None
+    state: Self = None  # ty: ignore[invalid-assignment]
 
     def _connection(self) -> str:
         return ENVIRONMENT.db_connection()

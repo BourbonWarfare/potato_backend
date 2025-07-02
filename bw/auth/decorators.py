@@ -1,8 +1,8 @@
 import logging
-import web
 from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionInvalid
 from bw.state import State
 from bw.auth.validators import validate_local, validate_session
+from quart import request
 
 logger = logging.getLogger('wsgilog.log')
 
@@ -17,7 +17,7 @@ def require_local(func):
 
     def wrapper(*args, **kwargs):
         try:
-            validate_local(web.ctx)
+            validate_local(request.remote_addr)
         except NonLocalIpAccessingLocalOnlyAddress as e:
             logger.warning(f'Non-local API called from abroad: {e}')
             return e.as_response_code()

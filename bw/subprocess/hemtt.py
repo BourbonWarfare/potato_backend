@@ -15,6 +15,8 @@ class Version(Hemtt):
     def _map_stderr(result):
         pattern = '[^0-9]*([\\.0-9]*)-([a-zA-Z0-9]*)[^0-9]'
         version_tuple = re.match(pattern, result)
+        if version_tuple is None:
+            return Semver(0, 0, 0)
 
         groups = version_tuple.groups()
         if len(groups) == 1:

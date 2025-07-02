@@ -337,7 +337,7 @@ class UserStore:
             query = update(User).where(User.id == user.id).values(role=role.id)
             session.execute(query)
 
-    def get_users_role(self, state: State, user: User) -> Role:
+    def get_users_role(self, state: State, user: User) -> Role | None:
         """
         ### Retrieve a user's role
 

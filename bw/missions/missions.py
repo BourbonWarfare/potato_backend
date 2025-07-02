@@ -75,7 +75,7 @@ class MissionTypeStore:
             session.expunge(mission_type)
         return mission_type
 
-    def delete_mission_type(self, state: State, name: str) -> MissionType:
+    def delete_mission_type(self, state: State, name: str):
         """
         ### Delete a mission type by name
 

@@ -141,6 +141,4 @@ python = "./.venv"
 [tool.ty.src]
 include = [
     "bw",
-    "tests",
-    "integrations"
 ]

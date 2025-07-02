@@ -49,7 +49,7 @@ class Role(Base):
     can_create_group: Mapped[bool]
 
     def into_roles(self) -> Roles:
-        return Roles(**{key: getattr(self, key) for key in Roles.__slots__})
+        return Roles(**{key: getattr(self, key) for key in Roles.__slots__})  # ty: ignore[missing-argument, unresolved-attribute]
 
 
 class Session(Base):
@@ -87,7 +87,7 @@ class GroupPermission(Base):
     can_test_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
 
     def into_permissions(self) -> Permissions:
-        return Permissions(**{key: getattr(self, key) for key in Permissions.__slots__})
+        return Permissions(**{key: getattr(self, key) for key in Permissions.__slots__})  # ty: ignore[missing-argument, unresolved-attribute]
 
 
 class Group(Base):

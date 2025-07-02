@@ -1,5 +1,5 @@
 from bw.state import State
-from bw.response import JsonResponse, Ok
+from bw.response import JsonResponse, Ok, WebResponse
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
@@ -39,7 +39,7 @@ class AuthApi:
                     return e.as_json()
         return JsonResponse({'bot_token': bot.bot_token})
 
-    def create_new_user_from_discord(self, state: State, discord_id: int) -> Ok:
+    def create_new_user_from_discord(self, state: State, discord_id: int) -> WebResponse:
         """
         ### Create a new user and link a Discord user
 
@@ -218,7 +218,7 @@ class AuthApi:
                 return False
         return True
 
-    def revoke_discord_user_session(self, state: State, discord_id: int) -> Ok:
+    def revoke_discord_user_session(self, state: State, discord_id: int) -> WebResponse:
         """
         ### Revoke all sessions for a Discord user
 
@@ -245,7 +245,7 @@ class AuthApi:
         SessionStore().expire_session_from_user(state, user)
         return Ok()
 
-    def revoke_bot_user_session(self, state: State, bot_token: str) -> Ok:
+    def revoke_bot_user_session(self, state: State, bot_token: str) -> WebResponse:
         """
         ### Revoke all sessions for a bot user
 

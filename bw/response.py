@@ -1,6 +1,5 @@
 from quart import Response
 from werkzeug.datastructures.headers import Headers
-import quart
 import json
 
 
@@ -20,9 +19,6 @@ class WebResponse(Response):
             mimetype=self.content_type(),
             **kwargs,
         )
-
-
-quart.response_class = WebResponse
 
 
 class Ok(WebResponse):
