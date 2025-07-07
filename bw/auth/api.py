@@ -1,11 +1,11 @@
 from bw.state import State
-from bw.response import JsonResponse, Ok, WebResponse
+from bw.response import JsonResponse, Ok, Created, WebResponse
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.permissions import Permissions
-from bw.error import NoUserWithGivenCredentials, DbError
+from bw.error import NoUserWithGivenCredentials, DbError, SessionInvalid
 
 
 class AuthApi:
@@ -37,7 +37,7 @@ class AuthApi:
                 except (NoUserWithGivenCredentials, DbError) as e:
                     savepoint.rollback()
                     return e.as_json()
-        return JsonResponse({'bot_token': bot.bot_token})
+        return JsonResponse({'bot_token': bot.bot_token}, status=201)
 
     def create_new_user_from_discord(self, state: State, discord_id: int) -> WebResponse:
         """
@@ -68,7 +68,7 @@ class AuthApi:
                 except (NoUserWithGivenCredentials, DbError) as e:
                     savepoint.rollback()
                     return e.as_response_code()
-        return Ok()
+        return Created()
 
     def login_with_discord(self, state: State, discord_id: int) -> JsonResponse:
         """
@@ -168,8 +168,9 @@ class AuthApi:
         # has_roles = False (if user is missing any role, session is invalid, or user has no roles)
         ```
         """
-        user = SessionStore().get_user_from_session_token(state, session_token)
-        if user is None:
+        try:
+            user = SessionStore().get_user_from_session_token(state, session_token)
+        except SessionInvalid:
             return False
 
         user_roles = UserStore().get_users_role(state, user)
@@ -204,8 +205,9 @@ class AuthApi:
         # has_perms = False (if user is missing any permission, session is invalid, or user has no permissions)
         ```
         """
-        user = SessionStore().get_user_from_session_token(state, session_token)
-        if user is None:
+        try:
+            user = SessionStore().get_user_from_session_token(state, session_token)
+        except SessionInvalid:
             return False
 
         user_perms = GroupStore().get_all_permissions_user_has(state, user)

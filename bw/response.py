@@ -26,6 +26,11 @@ class Ok(WebResponse):
         super().__init__(200, response=data)
 
 
+class Created(WebResponse):
+    def __init__(self, data: str = ''):
+        super().__init__(201, response=data)
+
+
 class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'text/json'

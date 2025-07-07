@@ -6,7 +6,7 @@ from uuid import UUID
 from pathlib import Path
 
 from bw.state import State
-from bw.response import JsonResponse, WebResponse, Ok
+from bw.response import JsonResponse, WebResponse, Created
 from bw.error import BwServerError, MissionDoesNotHaveMetadata, NoMissionTypeWithTag, SessionInvalid, CouldNotCreateIteration
 from bw.auth.session import SessionStore
 from bw.missions.pbo import MissionLoader
@@ -135,7 +135,7 @@ class MissionsApi:
                 writer.writeheader()
             writer.writerow(data.as_dict())
 
-        return Ok()
+        return Created()
 
     async def upload_mission_to_main(
         self, state: State, user_session_token: str, stored_pbo_path: str, changelog: dict
@@ -255,4 +255,4 @@ class MissionsApi:
         except CouldNotCreateIteration as e:
             return e.as_json()
 
-        return JsonResponse({'iteration_number': iteration.iteration})
+        return JsonResponse({'iteration_number': iteration.iteration}, status=201)

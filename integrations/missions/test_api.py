@@ -28,7 +28,7 @@ async def test__missions_api__upload_mission_to_main__success_with_new_upload(
 
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
     assert resp.contained_json['iteration_number'] == 1
-    assert resp.contained_json['status'] == 200
+    assert resp.contained_json['status'] == 201
 
 
 @pytest.mark.asyncio
@@ -85,7 +85,7 @@ async def test__missions_api__upload_mission_to_main__creates_new_mission(
     mocker.patch.object(MissionStore, 'add_iteration', return_value=fake_iteration_1)
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
     assert resp.contained_json['iteration_number'] == 1
-    assert resp.contained_json['status'] == 200
+    assert resp.contained_json['status'] == 201
 
 
 @pytest.mark.asyncio
@@ -100,7 +100,7 @@ async def test__missions_api__upload_mission_to_main__updates_existing_mission(
     mocker.patch.object(MissionStore, 'mission_with_uuid', return_value=db_mission_1)
     mocker.patch.object(MissionStore, 'add_iteration', return_value=fake_iteration_2)
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
-    assert resp.contained_json['status'] == 200
+    assert resp.contained_json['status'] == 201
     assert resp.contained_json['iteration_number'] == 2
 
 
@@ -120,7 +120,7 @@ async def test__missions_api__upload_mission_metadata__success(mocker, fake_miss
     mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
     api = MissionsApi()
     resp = await api.upload_mission_metadata('fake_path')
-    assert resp.status == '200 OK'
+    assert resp.status == '201 CREATED'
     assert mock_open.called
 
 
