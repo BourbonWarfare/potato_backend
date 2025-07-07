@@ -26,8 +26,8 @@ dictConfig(
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'default',
                 'filename': 'logs/server.log',
-                'backupCount': 2,
-                'maxBytes': 1024 * 1024 * 1,
+                'backupCount': int(GLOBAL_CONFIGURATION.get('log_backup_count', 3)),
+                'maxBytes': int(GLOBAL_CONFIGURATION.get('single_log_size', 1 * 1024 * 1024)),
             },
         },
         'root': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
@@ -38,6 +38,7 @@ dictConfig(
 )
 
 app = Quart(__name__)
+app.config.update(TESTING=False, PROPAGATE_EXCEPTIONS=False)
 state = State()
 
 

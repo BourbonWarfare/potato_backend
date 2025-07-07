@@ -3,7 +3,13 @@ from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from bw.state import State
 from bw.models.auth import User, Group, GroupPermission, UserGroup
-from bw.error import GroupCreationFailed, GroupPermissionCreationFailed, NoGroupPermissionWithCredentials, GroupAssignmentFailed
+from bw.error import (
+    GroupCreationFailed,
+    GroupPermissionCreationFailed,
+    NoGroupPermissionWithCredentials,
+    GroupAssignmentFailed,
+    NoGroupWithName,
+)
 from bw.auth.permissions import Permissions
 
 
@@ -173,6 +179,25 @@ class GroupStore:
 
             query = delete(Group).where(Group.name == group_name)
             session.execute(query)
+
+    def get_group(self, state: State, group_name: str) -> Group:
+        """
+        ### Get a group
+
+        Gets a group from it's name.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `group_name` (`str`): The name of the group to get.
+        """
+        with state.Session.begin() as session:
+            query = select(Group).where(Group.name == group_name)
+            try:
+                permission = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoGroupWithName(group_name)
+            session.expunge(permission)
+        return permission
 
     def get_all_permissions_user_has(self, state: State, user: User) -> Permissions:
         """

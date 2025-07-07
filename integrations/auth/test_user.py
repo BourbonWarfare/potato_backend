@@ -5,8 +5,8 @@ import pytest
 from sqlalchemy import select
 
 from bw.auth.user import UserStore
-from bw.models.auth import User, DiscordUser, BotUser, Role
-from bw.error import DbError, NoUserWithGivenCredentials, AuthError, RoleCreationFailed, NoRoleWithName
+from bw.models.auth import User, DiscordUser, BotUser, Role, Session, UserGroup
+from bw.error import DbError, NoUserWithGivenCredentials, AuthError, RoleCreationFailed, NoRoleWithName, DiscordUserAlreadyExists
 from integrations.auth.fixtures import (
     state,
     session,
@@ -19,6 +19,11 @@ from integrations.auth.fixtures import (
     role_1,
     role_2,
     db_user_2,
+    db_group_1,
+    db_permission_1,
+    group_name_1,
+    permission_1,
+    permission_name_1,
 )
 
 
@@ -104,7 +109,7 @@ def test__link_discord_user__linking_valid_user_no_except(mocker, state, session
 
 def test__link_discord_user__cant_link_many(state, session, discord_id_1, db_user_1):
     UserStore().link_discord_user(state, discord_id_1, db_user_1)
-    with pytest.raises(DbError):
+    with pytest.raises(DiscordUserAlreadyExists):
         UserStore().link_discord_user(state, discord_id_1, db_user_1)
 
 
@@ -274,6 +279,11 @@ def test__delete_role__can_delete_role_when_assigned(state, session, role_1, db_
     UserStore().assign_user_role(state, db_user_1, 'my_role')
     UserStore().assign_user_role(state, db_user_2, 'my_role')
     UserStore().delete_role(state, 'my_role')
+    with state.Session.begin() as session:
+        db_user1 = session.execute(select(User).where(User.id == db_user_1.id)).one()[0]
+        db_user2 = session.execute(select(User).where(User.id == db_user_2.id)).one()[0]
+        assert db_user1.role is None
+        assert db_user2.role is None
 
 
 def test__delete_role__cant_delete_non_existing(state, session):
@@ -313,3 +323,13 @@ def test__get_users_role__expected_role_returned(state, session, db_user_1, role
 
 def test__get_users_role__none_returned_if_no_role(state, session, db_user_1):
     assert UserStore().get_users_role(state, db_user_1) is None
+
+
+def test__edit_role__does_not_change_other_roles(state, session, role_1, role_2):
+    UserStore().create_role(state, 'role_a', role_1)
+    role_b = UserStore().create_role(state, 'role_b', role_2)
+    UserStore().edit_role(state, 'role_a', role_2)
+    with state.Session.begin() as session:
+        query = select(Role).where(Role.name == 'role_b')
+        db_role_b = session.execute(query).one()[0]
+        assert db_role_b.into_roles().as_dict() == role_b.into_roles().as_dict()

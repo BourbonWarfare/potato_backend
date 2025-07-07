@@ -1,8 +1,8 @@
-"""create initial tables
+"""initial
 
-Revision ID: e259b8c80c6f
+Revision ID: 2a15aa4a29fd
 Revises: 
-Create Date: 2025-06-23 20:52:40.325629
+Create Date: 2025-07-07 01:26:57.566847
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e259b8c80c6f'
+revision: str = '2a15aa4a29fd'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,62 +26,73 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=64), nullable=False),
     sa.Column('can_upload_mission', sa.Boolean(), nullable=False),
     sa.Column('can_test_mission', sa.Boolean(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('mission_iterations',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('min_player_count', sa.Integer(), nullable=False),
-    sa.Column('max_player_count', sa.Integer(), nullable=False),
-    sa.Column('desired_player_count', sa.Integer(), nullable=False),
-    sa.Column('upload_date', sa.DateTime(), server_default=sa.text('CURRENT_DATE'), nullable=False),
-    sa.Column('bwmf_version', sa.Integer(), nullable=False),
-    sa.Column('iteration', sa.Integer(), nullable=False),
-    sa.Column('changelog', sa.Text(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('mission_types',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=256), nullable=False),
     sa.Column('signoffs_required', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('numeric_tag', sa.Integer(), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name'),
+    sa.UniqueConstraint('numeric_tag')
     )
     op.create_table('user_roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=64), nullable=False),
     sa.Column('can_create_role', sa.Boolean(), nullable=False),
     sa.Column('can_create_group', sa.Boolean(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('groups',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('permissions', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=64), nullable=False),
     sa.ForeignKeyConstraint(['permissions'], ['group_permissions.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('role', sa.Integer(), nullable=False),
-    sa.Column('creation_date', sa.DateTime(), server_default=sa.text('CURRENT_DATE'), nullable=False),
+    sa.Column('uuid', sa.Uuid(), nullable=False),
+    sa.Column('role', sa.Integer(), nullable=True),
+    sa.Column('creation_date', sa.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['role'], ['user_roles.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('uuid')
+    )
+    op.create_table('bot_users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('bot_token', sa.String(length=32), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_table('discord_users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('discord_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('discord_id'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_table('missions',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('uuid', sa.Uuid(), nullable=False),
+    sa.Column('creation_date', sa.DateTime(), server_default=sa.text('CURRENT_DATE'), nullable=False),
     sa.Column('author', sa.Integer(), nullable=True),
     sa.Column('author_name', sa.String(length=256), nullable=False),
     sa.Column('title', sa.String(length=256), nullable=False),
     sa.Column('mission_type', sa.Integer(), nullable=False),
+    sa.Column('special_flags', sa.JSON(), nullable=False),
     sa.ForeignKeyConstraint(['author'], ['users.id'], ),
     sa.ForeignKeyConstraint(['mission_type'], ['mission_types.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('uuid')
     )
     op.create_table('reviews',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -94,10 +105,11 @@ def upgrade() -> None:
     op.create_table('sessions',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('token', sa.String(length=16), nullable=False),
-    sa.Column('expire_time', sa.TIMESTAMP(), server_default=sa.text("CURRENT_TIMESTAMP + '3600'"), nullable=False),
+    sa.Column('token', sa.String(length=32), nullable=False),
+    sa.Column('expire_time', sa.TIMESTAMP(), server_default=sa.text('LOCALTIMESTAMP + make_interval(secs=>3600.0)'), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_table('user_groups',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -105,7 +117,25 @@ def upgrade() -> None:
     sa.Column('group_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['group_id'], ['groups.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'group_id', name='can_be_added_to_group_once')
+    )
+    op.create_table('mission_iterations',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('file_name', sa.String(length=256), nullable=False),
+    sa.Column('mission_id', sa.Integer(), nullable=False),
+    sa.Column('min_player_count', sa.Integer(), nullable=False),
+    sa.Column('max_player_count', sa.Integer(), nullable=False),
+    sa.Column('desired_player_count', sa.Integer(), nullable=False),
+    sa.Column('safe_start_length', sa.Integer(), nullable=False),
+    sa.Column('mission_length', sa.Integer(), nullable=False),
+    sa.Column('upload_date', sa.DateTime(), server_default=sa.text('CURRENT_DATE'), nullable=False),
+    sa.Column('bwmf_version', sa.String(), nullable=False),
+    sa.Column('iteration', sa.Integer(), nullable=False),
+    sa.Column('changelog', sa.Text(), nullable=False),
+    sa.ForeignKeyConstraint(['mission_id'], ['missions.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('iteration', 'mission_id', name='mission_has_single_iteration')
     )
     op.create_table('passed_missions',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -114,7 +144,8 @@ def upgrade() -> None:
     sa.Column('date_passed', sa.DateTime(), server_default=sa.text('CURRENT_DATE'), nullable=False),
     sa.ForeignKeyConstraint(['iteration_id'], ['mission_iterations.id'], ),
     sa.ForeignKeyConstraint(['mission_id'], ['missions.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('iteration_id')
     )
     op.create_table('played_missions',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -133,7 +164,9 @@ def upgrade() -> None:
     sa.Column('date_tested', sa.DateTime(), server_default=sa.text('CURRENT_DATE'), nullable=False),
     sa.ForeignKeyConstraint(['iteration_id'], ['mission_iterations.id'], ),
     sa.ForeignKeyConstraint(['review_id'], ['reviews.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('review_id'),
+    sa.UniqueConstraint('review_id', 'iteration_id', name='review_maps_to_single_iteration')
     )
     op.create_table('test_cosigns',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -141,7 +174,8 @@ def upgrade() -> None:
     sa.Column('tester_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['test_result_id'], ['test_results.id'], ),
     sa.ForeignKeyConstraint(['tester_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('test_result_id', 'tester_id', name='can_only_cosign_once')
     )
     # ### end Alembic commands ###
 
@@ -153,15 +187,16 @@ def downgrade() -> None:
     op.drop_table('test_results')
     op.drop_table('played_missions')
     op.drop_table('passed_missions')
+    op.drop_table('mission_iterations')
     op.drop_table('user_groups')
     op.drop_table('sessions')
     op.drop_table('reviews')
     op.drop_table('missions')
     op.drop_table('discord_users')
+    op.drop_table('bot_users')
     op.drop_table('users')
     op.drop_table('groups')
     op.drop_table('user_roles')
     op.drop_table('mission_types')
-    op.drop_table('mission_iterations')
     op.drop_table('group_permissions')
     # ### end Alembic commands ###

@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import uuid
 
 from sqlalchemy import insert
 
@@ -16,10 +17,10 @@ def fake_mission():
         def __init__(self):
             self.custom_attributes = {
                 'potato_missiontesting_missionTestingInfo': {
-                    'potato_missiontesting_missionType': {'Value': {'data': {'value': 1}}},
+                    'potato_missiontesting_missionType': {'data': {'value': 1}},
                 },
                 'potato_missiontesting_metadata': {
-                    'potato_missionMaking_uuid': {'Value': {'data': {'value': 'b3d7e343-d244-45fd-a614-a40e3da5de90'}}},
+                    'potato_missionMaking_uuid': {'data': {'value': 'b3d7e343-d244-45fd-a614-a40e3da5de90'}},
                 },
             }
             self.author = 'author_name'
@@ -87,6 +88,7 @@ def db_mission_1(state, session, db_user_1, db_mission_type_1):
     with state.Session.begin() as session:
         mission = Mission(
             id=1,
+            uuid=uuid.UUID('b3d7e343-d244-45fd-a614-a40e3da5de90'),
             author=db_user_1.id,
             author_name='me',
             title='foobar',
@@ -104,6 +106,7 @@ def db_mission_1_1(state, session, db_user_1, db_mission_type_2):
     with state.Session.begin() as session:
         mission = Mission(
             id=2,
+            uuid=uuid.UUID('c3d7e343-d244-45fd-a614-a40e3da5de91'),
             author=db_user_1.id,
             author_name='me',
             title='foobar 2',
@@ -121,6 +124,7 @@ def db_mission_1_2(state, session, db_user_1, db_mission_type_1):
     with state.Session.begin() as session:
         mission = Mission(
             id=3,
+            uuid=uuid.UUID('d3d7e343-d244-45fd-a614-a40e3da5de92'),
             author=db_user_1.id,
             author_name='me',
             title='foobar',

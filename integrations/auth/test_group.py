@@ -5,7 +5,13 @@ import pytest
 from sqlalchemy import select
 
 from bw.auth.permissions import Permissions
-from bw.error import GroupPermissionCreationFailed, GroupCreationFailed, NoGroupPermissionWithCredentials, GroupAssignmentFailed
+from bw.error import (
+    GroupPermissionCreationFailed,
+    GroupCreationFailed,
+    NoGroupPermissionWithCredentials,
+    GroupAssignmentFailed,
+    NoGroupWithName,
+)
 from bw.models.auth import GroupPermission, Group, UserGroup
 from bw.auth.group import GroupStore
 from integrations.auth.fixtures import (
@@ -157,6 +163,14 @@ def test__remove_user_from_group__nothing_if_cant_remove_user(state, session, db
     GroupStore().remove_user_from_group(state, db_user_1, db_group_1)
 
 
+def test__remove_user_from_group__no_error_if_user_not_in_group(state, session, db_group_1, db_user_2):
+    GroupStore().remove_user_from_group(state, db_user_2, db_group_1)
+    with state.Session.begin() as session:
+        query = select(UserGroup).where(UserGroup.user_id == db_user_2.id).where(UserGroup.group_id == db_group_1.id)
+        row = session.execute(query).first()
+        assert row is None
+
+
 def test__delete_group__can_delete_empty(state, session, db_group_1):
     GroupStore().delete_group(state, db_group_1.name)
 
@@ -182,6 +196,10 @@ def test__delete_group__can_delete_with_user_only_one_group(state, session, db_g
         row = session.execute(query).first()
         assert row is not None
         assert len(row) == 1
+
+
+def test__delete_group__no_error_if_group_does_not_exist(state, session, group_name_1):
+    GroupStore().delete_group(state, group_name_1)
 
 
 def test__get_all_permissions_user_has__no_permissions_if_not_in_group(state, session, db_user_1):
@@ -235,3 +253,14 @@ def test__get_all_permissions_user_has__user_has_expected_permissions_from_many_
 
     combined = Permissions.from_many(db_permission_2.into_permissions(), db_permission_3.into_permissions())
     assert combined.as_dict() == permissions.as_dict()
+
+
+def test__get_group__can_get_existing_group(state, session, db_group_1):
+    group = GroupStore().get_group(state, db_group_1.name)
+    assert group.id == db_group_1.id
+    assert group.name == db_group_1.name
+
+
+def test__get_group__raises_on_nonexistent_group(state, session, group_name_1):
+    with pytest.raises(NoGroupWithName):
+        GroupStore().get_group(state, group_name_1)

@@ -27,7 +27,7 @@ class State:
 
         if 'db_name' in GLOBAL_CONFIGURATION:
             self.default_database = GLOBAL_CONFIGURATION['db_name']
-            self.register_database(self.default_database)
+            self.register_database(self.default_database, echo=False)
 
     def register_database(self, database_name: str, echo=False):
         self.engine_map[database_name] = DatabaseConnection(self._setup_engine(echo=echo, db_name=database_name))

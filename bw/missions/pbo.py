@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import json
 from pathlib import Path
+from typing import Any
 
 from bw.subprocess.hemtt import hemtt
 
@@ -41,6 +42,9 @@ class Attribute:
     name: str
     expression: str
     data: dict
+
+    def __getitem__(self, item: str) -> Any:
+        return self.data[item]
 
 
 class MissionFile:

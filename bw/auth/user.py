@@ -1,4 +1,5 @@
 import secrets
+from uuid import UUID
 
 from sqlalchemy import select, delete, insert, update
 from sqlalchemy.exc import NoResultFound, IntegrityError
@@ -6,7 +7,7 @@ from sqlalchemy.exc import NoResultFound, IntegrityError
 from bw.state import State
 from bw.auth.roles import Roles
 from bw.models.auth import User, DiscordUser, BotUser, TOKEN_LENGTH, Role
-from bw.error import AuthError, NoUserWithGivenCredentials, DbError, RoleCreationFailed, NoRoleWithName
+from bw.error import AuthError, NoUserWithGivenCredentials, DbError, RoleCreationFailed, NoRoleWithName, DiscordUserAlreadyExists
 
 
 class UserStore:
@@ -45,6 +46,31 @@ class UserStore:
         """
         with state.Session.begin() as session:
             query = select(User).where(User.id == user_id)
+            try:
+                user = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoUserWithGivenCredentials()
+            session.expunge(user)
+        return user
+
+    def user_from_uuid(self, state: State, uuid: UUID) -> User:
+        """
+        ### Retrieve a user by UUID
+
+        Retrieves a user from the database by their user UUID.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `uuid` (`UUID`): The UUIDID of the user to retrieve.
+
+        **Returns:**
+        - `User`: The user object with the given ID.
+
+        **Raises:**
+        - `NoUserWithGivenCredentials`: If no user with the given ID exists.
+        """
+        with state.Session.begin() as session:
+            query = select(User).where(User.uuid == uuid)
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
@@ -159,6 +185,10 @@ class UserStore:
 
         with state.Session.begin() as session:
             try:
+                query = select(DiscordUser).where(DiscordUser.discord_id == discord_id)
+                discord_user = session.execute(query).one_or_none()
+                if discord_user is not None:
+                    raise DiscordUserAlreadyExists(discord_id, discord_user[0].user_id)
                 query = insert(DiscordUser).values(user_id=user.id, discord_id=discord_id).returning(DiscordUser)
                 discord_user = session.execute(query).one()[0]
             except IntegrityError:

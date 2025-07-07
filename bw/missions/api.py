@@ -1,16 +1,142 @@
 import re
+import os
+import logging
+import csv
 from uuid import UUID
 from pathlib import Path
 
 from bw.state import State
-from bw.response import JsonResponse
-from bw.error import MissionDoesNotHaveMetadata, NoMissionTypeWithTag, SessionInvalid, CouldNotCreateIteration
+from bw.response import JsonResponse, WebResponse, Ok
+from bw.error import BwServerError, MissionDoesNotHaveMetadata, NoMissionTypeWithTag, SessionInvalid, CouldNotCreateIteration
 from bw.auth.session import SessionStore
 from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
+from bw.missions.metainfo import Metainfo
+from bw.settings import GLOBAL_CONFIGURATION
+
+
+logger = logging.getLogger('quart.app')
 
 
 class MissionsApi:
+    async def upload_mission_metadata(self, stored_pbo_path: str) -> WebResponse:
+        """
+        ### Logs a mission's metadata
+
+        Loads a mission from a PBO directory, validates required metadata, and logs metadata information.
+
+        **Args:**
+        - `stored_pbo_path` (`str`): The path to the stored PBO directory.
+
+        **Returns:**
+        - `WebResponse`: A status code of whether or not the operation was successful.
+
+        **Example:**
+        ```python
+        response = await MissionsApi().upload_mission_metadata("/missions/mission1.pbo")
+        # Success: WebResponse(status=200)
+        ```
+        """
+        logging.info(f'uploading mission metadata: {stored_pbo_path} to spreadsheet')
+        mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
+
+        csv_fields = [
+            'Mission Name',
+            'Has `missionTestingInfo`',
+            'Has `missionType`',
+            'uuid',
+            'tag',
+            'flag1',
+            'flag2',
+            'flag3',
+            'minPlayers',
+            'desiredPlayers',
+            'maxPlayers',
+            'safeStartTime',
+            'missionTime',
+        ]
+
+        data = Metainfo(csv_fields)
+        data.append(mission.source_name)
+        try:
+            if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
+                return MissionDoesNotHaveMetadata().as_response_code()
+            data.append(1)
+
+            info = mission.custom_attributes['potato_missiontesting_missionTestingInfo']
+            if 'potato_missiontesting_missionType' not in info:
+                return MissionDoesNotHaveMetadata().as_response_code()
+            data.append(1)
+
+            if 'potato_missionTesting_missionTestingInfo' in mission.custom_attributes:
+                uuid = (
+                    mission.custom_attributes
+                        ['potato_missionTesting_missionTestingInfo']
+                        ['potato_missionMaking_uuid']
+                        ['data']
+                        ['value']
+                )  # fmt: skip
+                data.append(uuid)
+            else:
+                uuid = None
+                data.append('')
+
+            tag = int(info['potato_missiontesting_missionType']['data']['value'])
+            data.append(tag)
+
+            if 'potato_missiontesting_missionTag1' in info:
+                data.append(int(info['potato_missiontesting_missionTag1']['data']['value']))
+            else:
+                data.append()
+            if 'potato_missiontesting_missionTag2' in info:
+                data.append(int(info['potato_missiontesting_missionTag2']['data']['value']))
+            else:
+                data.append()
+            if 'potato_missiontesting_missionTag3' in info:
+                data.append(int(info['potato_missiontesting_missionTag3']['data']['value']))
+            else:
+                data.append('')
+
+            if 'potato_missiontesting_playerCountMinimum' in info:
+                data.append(int(info['potato_missiontesting_playerCountMinimum']['data']['value']))
+            else:
+                data.append()
+            if 'potato_missiontesting_playerCountMaximum' in info:
+                data.append(int(info['potato_missiontesting_playerCountMaximum']['data']['value']))
+            else:
+                data.append()
+            if 'potato_missiontesting_playerCountRecommended' in info:
+                data.append(int(info['potato_missiontesting_playerCountRecommended']['data']['value']))
+            else:
+                data.append()
+            if 'potato_missiontesting_SSTimeGiven' in info:
+                data.append(int(info['potato_missiontesting_SSTimeGiven']['data']['value']))
+            else:
+                data.append()
+            if 'potato_missiontesting_missionTimeLength' in info:
+                data.append(int(info['potato_missiontesting_missionTimeLength']['data']['value']))
+            else:
+                data.append()
+        except BwServerError:
+            pass
+
+        new_file = not os.path.exists('metadata/log.csv')
+        if not os.path.exists('metadata'):
+            os.makedirs('metadata')
+            new_file = True
+        if os.path.exists('metadata/log.csv') and os.path.getsize('metadata/log.csv') > int(
+            GLOBAL_CONFIGURATION.get('mission_metadata_csv_size', 2 * 1024 * 1024 * 1024)
+        ):
+            os.remove('metadata/log.csv')
+            new_file = True
+        with open('metadata/log.csv', 'a', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_fields, restval='')
+            if new_file:
+                writer.writeheader()
+            writer.writerow(data.as_dict())
+
+        return Ok()
+
     async def upload_mission_to_main(
         self, state: State, user_session_token: str, stored_pbo_path: str, changelog: dict
     ) -> JsonResponse:
@@ -39,6 +165,8 @@ class MissionsApi:
         # Error: JsonResponse({'status': 403, 'reason': 'Session is not valid'})
         ```
         """
+        logging.info(f'uploading mission: {stored_pbo_path} to database')
+        logging.info(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
@@ -48,12 +176,11 @@ class MissionsApi:
         if 'potato_missiontesting_missionType' not in info:
             return MissionDoesNotHaveMetadata().as_json()
 
-        if 'potato_missionMaking_metadata' in mission.custom_attributes:
+        if 'potato_missionTesting_missionTestingInfo' in mission.custom_attributes:
             uuid = (
                 mission.custom_attributes
-                    ['potato_missionMaking_metadata']
+                    ['potato_missionTesting_missionTestingInfo']
                     ['potato_missionMaking_uuid']
-                    ['Value']
                     ['data']
                     ['value']
             )  # fmt: skip
@@ -67,7 +194,7 @@ class MissionsApi:
             existing_mission = None
 
         if existing_mission is None:
-            tag = int(info['potato_missiontesting_missionType']['Value']['data']['value'])
+            tag = int(info['potato_missiontesting_missionType']['data']['value'])
             try:
                 mission_type = MissionTypeStore().mission_type_from_tag(state, tag)
             except NoMissionTypeWithTag as e:
@@ -80,11 +207,11 @@ class MissionsApi:
 
             flags = {}
             if 'potato_missiontesting_missionTag1' in info:
-                flags['tag1'] = int(info['potato_missiontesting_missionTag1']['Value']['data']['value'])
+                flags['tag1'] = int(info['potato_missiontesting_missionTag1']['data']['value'])
             if 'potato_missiontesting_missionTag2' in info:
-                flags['tag2'] = int(info['potato_missiontesting_missionTag2']['Value']['data']['value'])
+                flags['tag2'] = int(info['potato_missiontesting_missionTag2']['data']['value'])
             if 'potato_missiontesting_missionTag3' in info:
-                flags['tag3'] = int(info['potato_missiontesting_missionTag3']['Value']['data']['value'])
+                flags['tag3'] = int(info['potato_missiontesting_missionTag3']['data']['value'])
 
             existing_mission = MissionStore().create_mission(
                 state,
@@ -102,15 +229,15 @@ class MissionsApi:
         safe_start_length = 0
         mission_length = 0
         if 'potato_missiontesting_playerCountMinimum' in info:
-            min_players = int(info['potato_missiontesting_playerCountMinimum']['Value']['data']['value'])
+            min_players = int(info['potato_missiontesting_playerCountMinimum']['data']['value'])
         if 'potato_missiontesting_playerCountMaximum' in info:
-            max_players = int(info['potato_missiontesting_playerCountMaximum']['Value']['data']['value'])
+            max_players = int(info['potato_missiontesting_playerCountMaximum']['data']['value'])
         if 'potato_missiontesting_playerCountRecommended' in info:
-            desired_players = int(info['potato_missiontesting_playerCountRecommended']['Value']['data']['value'])
-        if 'potato_missiontesting_safeStartLength' in info:
-            safe_start_length = int(info['potato_missiontesting_safeStartLength']['Value']['data']['value'])
-        if 'potato_missiontesting_missionLength' in info:
-            safe_start_length = int(info['potato_missiontesting_missionLength']['Value']['data']['value'])
+            desired_players = int(info['potato_missiontesting_playerCountRecommended']['data']['value'])
+        if 'potato_missiontesting_SSTimeGiven' in info:
+            safe_start_length = int(info['potato_missiontesting_SSTimeGiven']['data']['value'])
+        if 'potato_missiontesting_missionTimeLength' in info:
+            safe_start_length = int(info['potato_missiontesting_missionTimeLength']['data']['value'])
 
         try:
             iteration = MissionStore().add_iteration(

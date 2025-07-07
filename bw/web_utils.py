@@ -1,15 +1,21 @@
+import logging
 from quart import request
 
-from bw.error import ExpectedJson, JsonPayloadError, BwServerError
+from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError
+
+
+logger = logging.getLogger('quart.app')
 
 
 def url_api(func):
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            return await func(*args, **kwargs)
         except BwServerError as e:
+            logger.warning(f'Error in URL API: {e}')
             return e.as_response_code()
 
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -19,16 +25,20 @@ def json_api(func):
         if converted_json is not None:
             for key in converted_json.keys():
                 if key in kwargs:
+                    logger.warning(f'Duplicate key found while parsing arguments: {key}')
                     return JsonPayloadError().as_json()
 
             kwargs.update(converted_json)
             try:
                 return await func(*args, **kwargs)
-            except TypeError:
-                return JsonPayloadError().as_json()
+            except TypeError as e:
+                logger.warning(e)
+                return BadArguments().as_json()
             except BwServerError as e:
+                logger.warning(e)
                 return e.as_json()
         else:
             return ExpectedJson().as_json()
 
+    wrapper.__name__ = func.__name__
     return wrapper

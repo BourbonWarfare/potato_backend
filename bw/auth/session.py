@@ -69,7 +69,7 @@ class SessionStore:
         - `bool`: True if the session is active, False otherwise.
         """
         with state.Session.begin() as session:
-            query = select(Session.expire_time).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
+            query = select(Session.user_id).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
             row = session.execute(query).first()
             return row is not None
 

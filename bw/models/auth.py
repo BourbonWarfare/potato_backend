@@ -1,6 +1,7 @@
 import datetime
-
-from sqlalchemy import ForeignKey, String, func, TIMESTAMP, Boolean, UniqueConstraint
+import uuid
+from uuid import UUID
+from sqlalchemy import ForeignKey, String, func, TIMESTAMP, Boolean, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.models import Base
@@ -19,8 +20,9 @@ class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     role: Mapped[int | None] = mapped_column(ForeignKey('user_roles.id'))
-    creation_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
+    creation_date: Mapped[int] = mapped_column(TIMESTAMP(timezone=False), nullable=False, server_default=func.current_timestamp())
 
 
 class DiscordUser(Base):
@@ -49,7 +51,7 @@ class Role(Base):
     can_create_group: Mapped[bool]
 
     def into_roles(self) -> Roles:
-        return Roles(**{key: getattr(self, key) for key in Roles.__slots__})  # ty: ignore[missing-argument, unresolved-attribute]
+        return Roles.from_keys(**{key: getattr(self, key) for key in Roles.__slots__})  # ty: ignore[missing-argument, unresolved-attribute]
 
 
 class Session(Base):
@@ -61,20 +63,20 @@ class Session(Base):
     expire_time: Mapped[int] = mapped_column(
         TIMESTAMP(timezone=False),
         nullable=False,
-        server_default=func.current_timestamp() + GLOBAL_CONFIGURATION['default_session_length'],
+        server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
     )
 
     @staticmethod
     def now():
-        return func.current_timestamp()
+        return func.localtimestamp()
 
-    @staticmethod
-    def human_session_length():
-        return func.current_timestamp() + GLOBAL_CONFIGURATION['default_session_length']
+    @classmethod
+    def human_session_length(cls):
+        return cls.now() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length']))
 
-    @staticmethod
-    def api_session_length():
-        return func.current_timestamp() + GLOBAL_CONFIGURATION['api_session_length']
+    @classmethod
+    def api_session_length(cls):
+        return cls.now() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['api_session_length']))
 
 
 class GroupPermission(Base):
@@ -87,7 +89,7 @@ class GroupPermission(Base):
     can_test_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
 
     def into_permissions(self) -> Permissions:
-        return Permissions(**{key: getattr(self, key) for key in Permissions.__slots__})  # ty: ignore[missing-argument, unresolved-attribute]
+        return Permissions.from_keys(**{key: getattr(self, key) for key in Permissions.__slots__})  # ty: ignore[missing-argument, unresolved-attribute]
 
 
 class Group(Base):

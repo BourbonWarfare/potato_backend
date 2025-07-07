@@ -12,6 +12,31 @@ class BwServerError(Exception):
         return WebResponse(status=self.status())
 
 
+class BadArguments(BwServerError):
+    def status(self) -> int:
+        return 400
+
+    def __init__(self):
+        super().__init__('Arguments are invalid')
+
+
+class MismatchedArguments(BwServerError):
+    def status(self) -> int:
+        return 400
+
+    def __init__(self, expected_keys=[], extra_keys=[]):
+        if expected_keys == [] and extra_keys == []:
+            raise BadArguments()
+        elif expected_keys == [] and extra_keys != []:
+            super().__init__(f'Extra keys supplied: {"', '".join(extra_keys)}')
+        elif expected_keys != [] and extra_keys == []:
+            super().__init__(f'Keys expected but not supplied: {", ".join(expected_keys)}')
+        else:
+            super().__init__(
+                f'Keys expected but not supplied: {", ".join(expected_keys)}. Extra keys supplied: {", ".join(extra_keys)}'
+            )
+
+
 class ExpectedJson(BwServerError):
     def status(self) -> int:
         return 415
@@ -66,7 +91,15 @@ class AuthError(ClientError):
         return 401
 
     def __init__(self, reason: str):
-        super().__init__(f'[Auth] Error: {reason}')
+        super().__init__(f'Error with authorization: {reason}')
+
+
+class DiscordUserAlreadyExists(AuthError):
+    def status(self) -> int:
+        return 409
+
+    def __init__(self, discord_id: int, user_id: int):
+        super().__init__(f'Discord user with id {discord_id} already exists for user {user_id}')
 
 
 class NotEnoughPermissions(PermissionError):
@@ -98,6 +131,11 @@ class NonLocalIpAccessingLocalOnlyAddress(AuthError):
 class NoGroupPermissionWithCredentials(AuthError):
     def __init__(self, group_name: str):
         super().__init__(f'No group permission called "{group_name}" exists.')
+
+
+class NoGroupWithName(AuthError):
+    def __init__(self, group_name: str):
+        super().__init__(f'No group called "{group_name}" exists.')
 
 
 class GroupCreationFailed(AuthError):
