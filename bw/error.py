@@ -159,6 +159,9 @@ class RoleCreationFailed(AuthError):
 
 
 class NoRoleWithName(AuthError):
+    def status(self) -> int:
+        return 404
+
     def __init__(self, role_name: str):
         super().__init__(f'No role with name "{role_name}" exists.')
 

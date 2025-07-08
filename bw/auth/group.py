@@ -158,6 +158,9 @@ class GroupStore:
         - `state` (`State`): The application state containing the database connection.
         - `user` (`User`): The user to remove from the group.
         - `group` (`Group`): The group to remove the user from.
+
+        **Raises:**
+        - None
         """
         with state.Session.begin() as session:
             query = delete(UserGroup).where(UserGroup.user_id == user.id).where(UserGroup.group_id == group.id)
@@ -172,6 +175,9 @@ class GroupStore:
         **Args:**
         - `state` (`State`): The application state containing the database connection.
         - `group_name` (`str`): The name of the group to delete.
+
+        **Raises:**
+        - None
         """
         with state.Session.begin() as session:
             query = delete(UserGroup).where(Group.id == UserGroup.group_id).where(Group.name == group_name)
@@ -189,6 +195,12 @@ class GroupStore:
         **Args:**
         - `state` (`State`): The application state containing the database connection.
         - `group_name` (`str`): The name of the group to get.
+
+        **Returns:**
+        - `Group`: The group object.
+
+        **Raises:**
+        - `NoGroupWithName`: If no group with the given name exists.
         """
         with state.Session.begin() as session:
             query = select(Group).where(Group.name == group_name)

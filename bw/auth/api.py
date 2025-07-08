@@ -5,7 +5,17 @@ from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.permissions import Permissions
+from bw.models.auth import User
 from bw.error import NoUserWithGivenCredentials, DbError, SessionInvalid
+import uuid
+from bw.error import (
+    RoleCreationFailed,
+    GroupCreationFailed,
+    GroupPermissionCreationFailed,
+    NoGroupWithName,
+    GroupAssignmentFailed,
+    NoRoleWithName,
+)
 
 
 class AuthApi:
@@ -272,4 +282,175 @@ class AuthApi:
         except NoUserWithGivenCredentials as e:
             return e.as_response_code()
         SessionStore().expire_session_from_user(state, user)
+        return Ok()
+
+    def create_role(self, state: State, role_name: str, roles: Roles) -> JsonResponse:
+        """
+        ### Create a new role
+
+        Creates a new role with the specified name and role permissions.
+        Returns an error response if role creation fails.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `role_name` (`str`): The name of the role to create.
+        - `roles` (`Roles`): The role permissions to assign.
+
+        **Returns:**
+        - `JsonResponse`: A JSON response containing the role name or an error message.
+
+        **Example:**
+        ```python
+        response = AuthApi().create_role(state, 'admin', roles)
+        # Success: JsonResponse({'name': 'admin', 'status': 202})
+        # Error: JsonResponse({'status': 400, 'reason': 'Creation of role "admin" failed.'})
+        ```
+        """
+        try:
+            role = UserStore().create_role(state, role_name=role_name, roles=roles)
+        except RoleCreationFailed as e:
+            return e.as_json()
+        return JsonResponse({'name': role.name}, status=201)
+
+    def assign_role(self, state: State, role_name: str, user_uuid: uuid.UUID) -> WebResponse:
+        """
+        ### Assign a role to a user
+
+        Assigns the specified role to the user with the given UUID.
+        Returns an error response if the user does not exist or role assignment fails.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `role_name` (`str`): The name of the role to assign.
+        - `user_uuid` (`str`): The UUID of the user to assign the role to.
+
+        **Returns:**
+        - `Ok`: An OK response if successful, or an error response if failed.
+
+        **Example:**
+        ```python
+        response = AuthApi().assign_role(state, 'admin', 'uuid-string')
+        # Success: Ok() (status 200)
+        # Error: WebResponse(status=404)
+        ```
+        """
+        try:
+            user = UserStore().user_from_uuid(state, uuid=user_uuid)
+            UserStore().assign_user_role(state, user=user, role_name=role_name)
+        except (NoUserWithGivenCredentials, NoRoleWithName) as e:
+            return e.as_response_code()
+        return Ok()
+
+    def create_group_permission(self, state: State, permission_name: str, permissions: Permissions) -> JsonResponse:
+        """
+        ### Create a new group permission
+
+        Creates a new group permission with the specified name and permission settings.
+        Returns an error response if permission creation fails.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `permission_name` (`str`): The name of the permission to create.
+        - `permissions` (`Permissions`): The permission settings to assign.
+
+        **Returns:**
+        - `JsonResponse`: A JSON response containing the permission name or an error message.
+
+        **Example:**
+        ```python
+        response = AuthApi().create_group_permission(state, 'read_access', permissions)
+        # Success: JsonResponse({'name': 'read_access', 'status': 201})
+        # Error: JsonResponse({'status': 400, 'reason': 'Creation of permission "read_access" failed.'})
+        ```
+        """
+        try:
+            permission = GroupStore().create_permission(state, name=permission_name, permissions=permissions)
+        except GroupPermissionCreationFailed as e:
+            return e.as_json()
+        return JsonResponse({'name': permission.name}, status=201)
+
+    def create_group(self, state: State, group_name: str, permission_group: str) -> JsonResponse:
+        """
+        ### Create a new group
+
+        Creates a new group with the specified name and associated permissions.
+        Returns an error response if group creation fails.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `group_name` (`str`): The name of the group to create.
+        - `permission_group` (`str`): The name of the permission group to associate.
+
+        **Returns:**
+        - `JsonResponse`: A JSON response containing the group name or an error message.
+
+        **Example:**
+        ```python
+        response = AuthApi().create_group(state, 'editors', 'edit_permissions')
+        # Success: JsonResponse({'name': 'editors', 'status': 201})
+        # Error: JsonResponse({'status': 400, 'reason': 'Creation of group "editors" failed.'})
+        ```
+        """
+        try:
+            group = GroupStore().create_group(state=state, group_name=group_name, permission_group=permission_group)
+        except GroupCreationFailed as e:
+            return e.as_json()
+        return JsonResponse({'name': group.name}, status=201)
+
+    def join_group(self, state: State, user: User, group_name: str) -> WebResponse:
+        """
+        ### Join a group
+
+        Adds the specified user to the given group.
+        Returns an error response if the group does not exist or assignment fails.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `user` (`User`): The user object to add to the group.
+        - `group_name` (`str`): The name of the group to join.
+
+        **Returns:**
+        - `Ok`: An OK response if successful, or an error response if failed.
+
+        **Example:**
+        ```python
+        response = AuthApi().join_group(state, user, 'editors')
+        # Success: Ok() (status 200)
+        # Error: WebResponse(status=404) or WebResponse(status=400)
+        ```
+        """
+        try:
+            group = GroupStore().get_group(state=state, group_name=group_name)
+            GroupStore().assign_user_to_group(state=state, user=user, group=group)
+        except (NoGroupWithName, GroupAssignmentFailed) as e:
+            return e.as_response_code()
+        return Ok()
+
+    def leave_group(self, state: State, user: User, group_name: str) -> WebResponse:
+        """
+        ### Leave a group
+
+        Removes the specified user from the given group.
+        Returns an error response if the group does not exist or removal fails.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `user` (`User`): The user object to remove from the group.
+        - `group_name` (`str`): The name of the group to leave.
+
+        **Returns:**
+        - `Ok`: An OK response if successful, or an error response if failed.
+
+        **Example:**
+        ```python
+        response = AuthApi().leave_group(state, user, 'editors')
+        # Success: Ok() (status 200)
+        # Error: WebResponse(status=404)
+        ```
+        """
+        try:
+            group = GroupStore().get_group(state=state, group_name=group_name)
+            GroupStore().remove_user_from_group(state=state, user=user, group=group)
+        except NoGroupWithName as e:
+            return e.as_response_code()
         return Ok()

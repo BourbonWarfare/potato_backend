@@ -51,6 +51,16 @@ def permission_3() -> Permissions:
 
 
 @pytest.fixture(scope='session')
+def role_name_1() -> str:
+    return 'role 1'
+
+
+@pytest.fixture(scope='session')
+def role_name_2() -> str:
+    return 'role 2'
+
+
+@pytest.fixture(scope='session')
 def role_1() -> Roles:
     return Roles(can_create_group=False, can_create_role=True)
 
