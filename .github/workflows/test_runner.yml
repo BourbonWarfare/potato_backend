@@ -42,6 +42,7 @@ jobs:
         run: uv sync --locked --extra tests --dev
       - name: run tests
         run: |
+          mkdir bin
           touch bin/hemtt
           chmod +x bin/hemtt
           echo "${{ secrets.TEST_CONF }}" >> conf.txt
