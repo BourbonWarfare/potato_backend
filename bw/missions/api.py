@@ -13,12 +13,16 @@ from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
 from bw.missions.metainfo import Metainfo
 from bw.settings import GLOBAL_CONFIGURATION
+from bw.events import ServerEvent
 
 
-logger = logging.getLogger('quart.app')
+logger = logging.getLogger('bw.missions')
 
 
 class MissionsApi:
+    def __init__(self):
+        self.metadata_path = Path('metadata/log.csv')
+
     async def upload_mission_metadata(self, stored_pbo_path: str) -> WebResponse:
         """
         ### Logs a mission's metadata
@@ -37,7 +41,8 @@ class MissionsApi:
         # Success: WebResponse(status=200)
         ```
         """
-        logging.info(f'uploading mission metadata: {stored_pbo_path} to spreadsheet')
+        logger.info(f'uploading mission metadata: {stored_pbo_path} to spreadsheet')
+        State.cache.event(ServerEvent.MISSION_UPLOADED)
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         csv_fields = [
@@ -120,16 +125,16 @@ class MissionsApi:
         except BwServerError:
             pass
 
-        new_file = not os.path.exists('metadata/log.csv')
-        if not os.path.exists('metadata'):
-            os.makedirs('metadata')
+        new_file = not os.path.exists(self.metadata_path)
+        if not os.path.exists(self.metadata_path.parent):
+            os.makedirs(self.metadata_path.parent)
             new_file = True
-        if os.path.exists('metadata/log.csv') and os.path.getsize('metadata/log.csv') > int(
+        if os.path.exists(self.metadata_path) and os.path.getsize(self.metadata_path) > int(
             GLOBAL_CONFIGURATION.get('mission_metadata_csv_size', 2 * 1024 * 1024 * 1024)
         ):
-            os.remove('metadata/log.csv')
+            os.remove(self.metadata_path)
             new_file = True
-        with open('metadata/log.csv', 'a', newline='') as csvfile:
+        with open(self.metadata_path, 'a', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=csv_fields, restval='')
             if new_file:
                 writer.writeheader()
@@ -165,8 +170,9 @@ class MissionsApi:
         # Error: JsonResponse({'status': 403, 'reason': 'Session is not valid'})
         ```
         """
-        logging.info(f'uploading mission: {stored_pbo_path} to database')
-        logging.info(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
+        logger.info(f'uploading mission: {stored_pbo_path} to database')
+        logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
+        State.cache.event(ServerEvent.MISSION_UPLOADED)
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
@@ -256,3 +262,29 @@ class MissionsApi:
             return e.as_json()
 
         return JsonResponse({'iteration_number': iteration.iteration}, status=201)
+
+    async def get_stored_metadata(self) -> JsonResponse:
+        """
+        ### Get stored mission metadata
+
+        Reads the mission metadata from the CSV file and returns it as a JSON response.
+
+        **Returns:**
+        - `JsonResponse`: A JSON response containing the mission metadata.
+
+        **Example:**
+        ```python
+        response = await MissionsApi().get_stored_metadata()
+        # Success: JsonResponse({'fields': [], 'metadata': [...]})
+        ```
+        """
+        if not os.path.exists(self.metadata_path):
+            return JsonResponse({'fields': [], 'metadata': []})
+
+        fields = []
+        with open(self.metadata_path, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            fields = reader.fieldnames or []
+            metadata = [row for row in reader]
+
+        return JsonResponse({'fields': fields, 'metadata': metadata})

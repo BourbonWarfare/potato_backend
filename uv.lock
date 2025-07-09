@@ -279,6 +279,15 @@ wheels = [
 ]
 
 [[package]]
+name = "objsize"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/0c/4b759e274c2b11f1c44232d3bde33c5f8faf746226c7acd6b637c5b53d23/objsize-0.7.1.tar.gz", hash = "sha256:91e68d2a3031efb61b0e8cb7f995ddaeb65fe5ace9e737785e029f0932c2e619", size = 16428, upload-time = "2025-01-19T02:02:03.502Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/a7/55f8f3853a4a654d3a6fbf63e646e0b469b52c174703a10db70a1cb06c7e/objsize-0.7.1-py3-none-any.whl", hash = "sha256:634a0c134c4b1ff2c340fe29caf58bc0a16cb2ff7c556df609d04f026fdf4eca", size = 11351, upload-time = "2025-01-19T02:02:01.543Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -324,6 +333,7 @@ version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "objsize" },
     { name = "pg8000" },
     { name = "quart" },
     { name = "sqlalchemy" },
@@ -346,6 +356,7 @@ tests = [
 [package.metadata]
 requires-dist = [
     { name = "alembic" },
+    { name = "objsize" },
     { name = "pg8000" },
     { name = "pre-commit", marker = "extra == 'development'" },
     { name = "pytest", marker = "extra == 'tests'" },

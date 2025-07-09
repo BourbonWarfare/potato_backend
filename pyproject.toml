@@ -9,6 +9,7 @@ dependencies = [
     "quart",
     "werkzeug",
     "alembic",
+    "objsize"
 ]
 authors = [
     {name="Bailey Danyluk"}

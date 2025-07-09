@@ -12,7 +12,7 @@ from bw.auth.api import AuthApi
 from bw.state import State
 
 
-logger = logging.getLogger('quart.app')
+logger = logging.getLogger('bw.auth')
 
 
 @app.post('/api/v1/users/login/bot')

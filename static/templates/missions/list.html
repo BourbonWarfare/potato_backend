@@ -1,0 +1,20 @@
+<h2>Metadata for stored missions</h2>
+<div>
+    {% for item in missions %}
+        <h3>{{ item['Mission Name'] }}</h3>
+        <ul>
+            <li>Has "missionTestingInfo": [{{ 'x' if item['Has `missionTestingInfo`'] else ' '}}]</li>
+            <li>Has "missionType": [{{ 'x' if item['Has `missionType`'] else ' '}}]</li>
+            <li>uuid: {{ item.uuid if item.uuid != '' else 'NONE' }}</li>
+            <li>tag: {{ item.tag }}</li>
+            <li>Flag 1: {{ item.flag1 }}</li>
+            <li>Flag 2: {{ item.flag2 }}</li>
+            <li>Flag 3: {{ item.flag3 }}</li>
+            <li>Minimum Playercount: {{ item.minPlayers }}</li>
+            <li>Maximum Playercount: {{ item.maxPlayers }}</li>
+            <li>Optimal Playercount: {{ item.desiredPlayers }}</li>
+            <li>Safe-Start Time (Minutes): {{ item.safeStartTime }}</li>
+            <li>Mission Runtime (Minutes): {{ item.missionTime }}</li>
+        </ul>
+    {% endfor %}
+</div>

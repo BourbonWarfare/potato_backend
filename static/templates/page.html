@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ title }}</title>
+
+        <link rel="stylesheet" href="static/css/style.css">
+        <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
+        <script>
+            const html_map = new Map();
+            let element_id = 0;
+
+            function preload(element) {
+                // If the HTML is already cached, use it
+                if (html_map.has(element.href)) {
+                    return;
+                }
+
+                // Otherwise, fetch the HTML and cache it
+                const parser = new DOMParser();
+                console.log('Preloading:', element.href);
+                fetch(element.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        const htmlDoc = parser.parseFromString(html, 'text/html');
+                        return htmlDoc.querySelector('#view').innerHTML;
+                    })
+                    .then(html => {
+                        html_map.set(element.href, html);
+                    })
+                    .catch(error => console.error('Error fetching HTML:', error));
+            }
+
+            function setViewToCachedHTML(element) {
+                // If the HTML is cached, set the view to it
+                if (html_map.has(element.href)) {
+                    document.getElementById("view").innerHTML = html_map.get(element.href);
+                } else {
+                    console.error('No cached HTML found for:', element.href);
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <!-- The top bar for the website -->
+        <header>
+            <nav>
+                <ul>
+                    <li><a href="/missions" hx-on:mouseover="preload(this)" hx-on:click="setViewToCachedHTML(this)">Home</a></li>
+                    <li><a href="/missions/list" hx-on:mouseover="preload(this)" hx-on:click="setViewToCachedHTML(this)">Uploaded Missions</a></li>
+                </ul>
+            </nav>
+        </header>
+        <!-- The body of page the website. This gets filled out server-side -->
+        <div id="view">
+            {{ inner_html|safe }}
+        </div>
+    </body>
+</html>

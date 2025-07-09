@@ -8,7 +8,7 @@ from bw.auth.group import GroupStore
 from bw.auth.user import UserStore
 from quart import request
 
-logger = logging.getLogger('quart.app')
+logger = logging.getLogger('bw.auth')
 
 
 def require_local(func):

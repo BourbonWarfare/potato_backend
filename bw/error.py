@@ -265,3 +265,13 @@ class UploadError(ClientError):
 class MissionDoesNotHaveMetadata(UploadError):
     def __init__(self):
         super().__init__('mission does not have attached mission testing attributes')
+
+
+class CacheMiss(BwServerError):
+    def status(self) -> int:
+        return 404
+
+
+class L1CacheMiss(CacheMiss):
+    def __init__(self, key: str):
+        super().__init__(f'L1 Cache miss for key: {key}')

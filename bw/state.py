@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from bw.environment import ENVIRONMENT
 from bw.settings import GLOBAL_CONFIGURATION
+from bw.cache import Cache
 
 
 class DatabaseConnection:
@@ -14,6 +15,7 @@ class DatabaseConnection:
 
 class State:
     state: Self = None  # ty: ignore[invalid-assignment]
+    cache: Cache
 
     def _connection(self) -> str:
         return ENVIRONMENT.db_connection()
@@ -22,6 +24,8 @@ class State:
         return create_engine(f'{self._connection()}/{db_name}', echo=echo)
 
     def __init__(self):
+        State.cache = Cache()
+
         self.engine_map = {}
         State.state = self
 
