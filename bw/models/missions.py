@@ -57,6 +57,7 @@ class Iteration(Base):
     __tablename__ = 'mission_iterations'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     file_name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
     min_player_count: Mapped[int] = mapped_column(nullable=False)
@@ -76,6 +77,7 @@ class TestResult(Base):
     __tablename__ = 'test_results'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'), nullable=False, unique=True)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_date())
