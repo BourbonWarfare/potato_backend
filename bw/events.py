@@ -19,12 +19,12 @@ class Broker:
         self.global_subscribers.append(callback)
 
     def subscribe(self, event: ServerEvent, callback: Callable[[ServerEvent, Any], None]):
-        if event not in self._subscribers:
+        if event not in self.subscribers:
             self.subscribers[event] = []
         self.subscribers[event].append(callback)
 
     def publish(self, event: ServerEvent, data=None):
-        if event in self._subscribers:
+        if event in self.subscribers:
             for callback in self.subscribers[event]:
                 callback(event, data)
 
