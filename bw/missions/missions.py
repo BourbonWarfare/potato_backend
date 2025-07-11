@@ -11,6 +11,7 @@ from bw.error import (
     CouldNotCreateIteration,
     MissionDoesNotExist,
     NoMissionTypeWithTag,
+    IterationDoesNotExist,
 )
 
 
@@ -23,7 +24,7 @@ class MissionTypeStore:
         - `state` (`State`): The application state containing the database connection.
         - `name` (`str`): The name of the mission type.
         - `signoff_requirement` (`int`): The number of signoffs required for the mission type.
-        - `tag` (`str`): The tag for the mission type.
+        - `tag` (`int`): The tag for the mission type.
 
         **Returns:**
         - `MissionType`: The created mission type object.
@@ -51,7 +52,7 @@ class MissionTypeStore:
         - `state` (`State`): The application state containing the database connection.
         - `name` (`str`): The name of the mission type to update.
         - `new_signoff_requirement` (`int | None`): The new signoff requirement, if updating.
-        - `new_tag` (`str | None`): The new tag, if updating.
+        - `new_tag` (`int | None`): The new tag, if updating.
 
         **Returns:**
         - `MissionType`: The updated mission type object.
@@ -116,7 +117,7 @@ class MissionTypeStore:
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.
-        - `tag` (`intn`): The tag of the mission.
+        - `tag` (`int`): The tag of the mission.
 
         **Returns:**
         - `MissionType`: The mission type object with the given tag.
@@ -148,6 +149,7 @@ class MissionStore:
         - `title` (`str`): The title of the mission.
         - `type` (`MissionType`): The mission type.
         - `flags` (`dict`): Special flags for the mission.
+        - `uuid` (`UUID | None`): The UUID of the mission, if it has one.
 
         **Returns:**
         - `Mission`: The created mission object.
@@ -203,7 +205,7 @@ class MissionStore:
                 session.expunge(mission[0])
         return [mission[0] for mission in missions]
 
-    def mission_with_uuid(self, state: State, uuid: UUID) -> Mission | None:
+    def mission_with_uuid(self, state: State, uuid: UUID) -> Mission:
         """
         ### Retrieve existing mission via it's UUID
 
@@ -212,16 +214,39 @@ class MissionStore:
         - `uuid` (`UUID`): The UUID a mission may have.
 
         **Returns:**
-        - `Mission | None`: The mission, if the UUID is in the database; otherwise `None`.
+        - `Mission`: The mission, if the UUID is in the database.
         """
         with state.Session.begin() as session:
             query = select(Mission).where(Mission.uuid == uuid)
             try:
                 mission = session.execute(query).one()[0]
             except NoResultFound:
-                return None
+                raise MissionDoesNotExist()
             session.expunge(mission)
         return mission
+
+    def iteration_with_uuid(self, state: State, uuid: UUID) -> Iteration:
+        """
+        ### Retrieve existing iteration via it's UUID
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `uuid` (`UUID`): The UUID an iteration may have.
+
+        **Returns:**
+        - `Iteration`: The iteration, if the UUID is in the database.
+
+        **Raises:**
+        - `IterationDoesNotExist`: If no iteration with the given UUID exists.
+        """
+        with state.Session.begin() as session:
+            query = select(Iteration).where(Iteration.uuid == uuid)
+            try:
+                iteration = session.execute(query).one()[0]
+            except NoResultFound:
+                raise IterationDoesNotExist()
+            session.expunge(iteration)
+        return iteration
 
     def add_iteration(
         self,
@@ -240,7 +265,6 @@ class MissionStore:
         ### Add a new iteration to a mission
 
         Adds a new iteration, incrementing the iteration number.
-        Raises `CouldNotCreateIteration` if a constraint is violated or the mission does not exist.
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.

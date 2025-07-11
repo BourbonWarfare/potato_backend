@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import datetime
 from enum import StrEnum
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ class TestStatus(StrEnum):
 
 @dataclass(kw_only=True)
 class Review:
+    uuid: UUID
     date_tested: datetime
     status: TestStatus
     notes: dict

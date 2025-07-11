@@ -7,11 +7,24 @@ from pathlib import Path
 
 from bw.state import State
 from bw.response import JsonResponse, WebResponse, Created
-from bw.error import BwServerError, MissionDoesNotHaveMetadata, NoMissionTypeWithTag, SessionInvalid, CouldNotCreateIteration
+from bw.error import (
+    BwServerError,
+    MissionDoesNotHaveMetadata,
+    NoMissionTypeWithTag,
+    SessionInvalid,
+    CouldNotCreateIteration,
+    CouldNotReviewMission,
+    IterationDoesNotExist,
+    CouldNotCreateTestResult,
+    MissionDoesNotExist,
+)
 from bw.auth.session import SessionStore
 from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
+from bw.missions.tests import TestStore
 from bw.missions.metainfo import Metainfo
+from bw.missions.test_status import TestStatus
+from bw.models.auth import User
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.events import ServerEvent
 
@@ -42,7 +55,7 @@ class MissionsApi:
         ```
         """
         logger.info(f'uploading mission metadata: {stored_pbo_path} to spreadsheet')
-        State.cache.event(ServerEvent.MISSION_UPLOADED)
+        State.broker.publish(ServerEvent.MISSION_UPLOADED)
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         csv_fields = [
@@ -172,7 +185,7 @@ class MissionsApi:
         """
         logger.info(f'uploading mission: {stored_pbo_path} to database')
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
-        State.cache.event(ServerEvent.MISSION_UPLOADED)
+        State.broker.publish(ServerEvent.MISSION_UPLOADED)
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
@@ -288,3 +301,138 @@ class MissionsApi:
             metadata = [row for row in reader]
 
         return JsonResponse({'fields': fields, 'metadata': metadata})
+
+
+class TestApi:
+    async def review_mission(
+        self, state: State, tester: User, iteration_uuid: UUID, status: str, notes: dict[str, str]
+    ) -> JsonResponse:
+        """
+        ### Review a mission iteration
+
+        Allows a user to submit a review for a mission iteration.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tester` (`User`): The user reviewing the mission.
+        - `iteration_uuid` (`UUID`): The UUID of the mission iteration to review.
+        - `status` (`str`): The status of the review.
+        - `notes` (`dict[str, str]`): Notes for the review.
+
+        **Returns:**
+        - `JsonResponse`: A JSON response containing the new result's UUID, or an error message.
+
+        **Example:**
+        ```python
+        response = await TestApi().review_mission(state, tester, UUID('...'), 'passed', {'note': 'good mission'})
+        # Success: JsonResponse({'result_uuid': '...'})
+        ```
+        """
+        try:
+            test_status = TestStatus(status)
+        except ValueError:
+            return CouldNotReviewMission().as_json()
+
+        try:
+            iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
+        except IterationDoesNotExist as e:
+            return e.as_json()
+
+        with state.Session.begin() as session:
+            review = TestStore().create_review(state, tester, test_status, notes)
+            try:
+                result = TestStore().create_result(state, iteration, review)
+            except CouldNotCreateTestResult:
+                session.rollback()
+                return CouldNotReviewMission().as_json()
+
+        State.broker.publish(ServerEvent.REVIEW_CREATED, result.uuid)
+        return JsonResponse({'result_uuid': str(result.uuid)})
+
+    async def cosign_result(self, state: State, tester: User, result_uuid: UUID) -> WebResponse:
+        """
+        ### Cosign a test result
+
+        Allows a user to cosign a test result, indicating agreement with the review.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tester` (`User`): The user cosigning the test result.
+        - `result_uuid` (`UUID`): The UUID of the test result to cosign.
+
+        **Returns:**
+        - `WebResponse`: A `Created` response on success, or an error response.
+
+        **Example:**
+        ```python
+        response = await TestApi().cosign_result(state, tester, UUID('...'))
+        # Success: Created()
+        ```
+        """
+        try:
+            test_result = TestStore().result_by_uuid(state, result_uuid)
+            TestStore().cosign_result(state, tester, test_result)
+        except BwServerError as e:
+            return e.as_response_code()
+
+        State.broker.publish(ServerEvent.REVIEW_COSIGNED, result_uuid)
+        return Created()
+
+    async def reviews(self, state: State, iteration_uuid: UUID, viewer: User | None) -> JsonResponse:
+        """
+        ### Get reviews for a mission iteration
+
+        Retrieves all reviews for a specific mission iteration. The `viewer` parameter
+        is used to determine if the viewing user is the reviewer or a cosigner on any
+        of the reviews.
+
+        **Args:**
+        - `state` (`State`): The application state.
+        - `iteration_uuid` (`UUID`): The UUID of the mission iteration.
+        - `viewer` (`User | None`): The user viewing the reviews. Can be `None` for an
+          unauthenticated user.
+
+        **Returns:**
+        - `JsonResponse`: A JSON response containing a list of reviews. Each review includes
+          the review's UUID, test date, status, notes, and flags indicating if the viewer
+          is the reviewer or a cosigner.
+
+        **Example:**
+        ```python
+        response = await TestApi().reviews(state, UUID('...'), viewer)
+        # Success: JsonResponse({
+        #     'reviews': [
+        #         {
+        #             'uuid': '...',
+        #             'date_tested': '...',
+        #             'status': 'passed',
+        #             'notes': {'note': '...'},
+        #             'is_viewer_reviewer': False,
+        #             'is_viewer_cosigner': False,
+        #         },
+        #         ...
+        #     ]
+        # })
+        # Error: JsonResponse({'status': 404, 'reason': 'iteration does not exist'})
+        ```
+        """
+        try:
+            iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
+            reviews = TestStore().iteration_reviews(state, iteration)
+            return JsonResponse(
+                {
+                    'reviews': [
+                        {
+                            'uuid': str(review.uuid),
+                            'date_tested': review.date_tested.isoformat(),
+                            'status': str(review.status),
+                            'notes': review.notes,
+                            'is_viewer_reviewer': viewer is not None and viewer.id == review.original_tester_id,
+                            'is_viewer_cosigner': viewer is not None and viewer.id in review.cosign_ids,
+                        }
+                        for review in reviews
+                    ]
+                }
+            )
+        except (MissionDoesNotExist, IterationDoesNotExist) as e:
+            return e.as_json()

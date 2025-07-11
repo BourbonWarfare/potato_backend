@@ -1,10 +1,11 @@
+from uuid import UUID
 from sqlalchemy import delete, select
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from bw.state import State
 from bw.models.auth import User
 from bw.models.missions import Review, Iteration, TestResult, TestCosign
-from bw.error import CouldNotCreateTestResult, CouldNotCosignResult, NoReviewFound
+from bw.error import CouldNotCreateTestResult, CouldNotCosignResult, NoReviewFound, NoResultFound as NoTestResultFound
 from bw.missions.test_status import TestStatus, Review as IterationReview
 
 
@@ -86,6 +87,26 @@ class TestStore:
             session.expunge(result)
         return result
 
+    def result_by_uuid(self, state: State, uuid: UUID) -> TestResult:
+        """
+        ### Retrieve existing test result via it's UUID
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `uuid` (`UUID`): The UUID a review may have.
+
+        **Returns:**
+        - `TestResult | None`: The test result, if the UUID is in the database; otherwise `None`.
+        """
+        with state.Session.begin() as session:
+            query = select(TestResult).where(TestResult.uuid == uuid)
+            try:
+                review = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoTestResultFound()
+            session.expunge(review)
+        return review
+
     def cosign_result(self, state: State, tester: User, test_result: TestResult) -> TestCosign:
         """
         ### Add a cosign to a test result
@@ -141,13 +162,14 @@ class TestStore:
         - `iteration` (`Iteration`): The mission iteration for which to retrieve reviews.
 
         **Returns:**
-        - `list[test_status.Review]`: A list of `test_status.Review` objects containing review and cosign information.
+        - `list[IterationReview]`: A list of `IterationReview` objects containing review and cosign information.
         """
         with state.Session.begin() as session:
             query = (
-                select(TestResult.id, TestResult.date_tested, Review.status, Review.notes, Review.tester_id)
+                select(TestResult.id, TestResult.uuid, TestResult.date_tested, Review.status, Review.notes, Review.tester_id)
                 .join(Review, TestResult.review_id == Review.id)
                 .where(TestResult.iteration_id == iteration.id)
+                .order_by(TestResult.date_tested.desc())
             )
             try:
                 reviews = session.execute(query).all()
@@ -155,7 +177,7 @@ class TestStore:
                 return []
 
             iteration_reviews = []
-            for result_id, date_tested, status, notes, tester in reviews:
+            for result_id, result_uuid, date_tested, status, notes, tester in reviews:
                 query = select(TestCosign.tester_id).where(TestCosign.test_result_id == result_id)
                 try:
                     cosigns = [row[0] for row in session.execute(query).all()]
@@ -163,7 +185,12 @@ class TestStore:
                     cosigns = []
                 iteration_reviews.append(
                     IterationReview(
-                        date_tested=date_tested, status=status, notes=notes, original_tester_id=tester, cosign_ids=cosigns
+                        uuid=result_uuid,
+                        date_tested=date_tested,
+                        status=status,
+                        notes=notes,
+                        original_tester_id=tester,
+                        cosign_ids=cosigns,
                     )
                 )
         return iteration_reviews
