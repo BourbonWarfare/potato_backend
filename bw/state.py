@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from bw.environment import ENVIRONMENT
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.cache import Cache
+from bw.events import Broker
 
 
 class DatabaseConnection:
@@ -15,7 +16,8 @@ class DatabaseConnection:
 
 class State:
     state: Self = None  # ty: ignore[invalid-assignment]
-    cache: Cache
+    cache: Cache = None  # ty: ignore[invalid-assignment]
+    broker: Broker = None  # ty: ignore[invalid-assignment]
 
     def _connection(self) -> str:
         return ENVIRONMENT.db_connection()
@@ -24,6 +26,7 @@ class State:
         return create_engine(f'{self._connection()}/{db_name}', echo=echo)
 
     def __init__(self):
+        State.broker = Broker()
         State.cache = Cache()
 
         self.engine_map = {}
@@ -32,6 +35,8 @@ class State:
         if 'db_name' in GLOBAL_CONFIGURATION:
             self.default_database = GLOBAL_CONFIGURATION['db_name']
             self.register_database(self.default_database, echo=False)
+
+        State.broker.subscribe_all(self.cache.event)
 
     def register_database(self, database_name: str, echo=False):
         self.engine_map[database_name] = DatabaseConnection(self._setup_engine(echo=echo, db_name=database_name))

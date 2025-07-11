@@ -19,7 +19,7 @@ class Cache:
         self.l1_cache = L1Cache()
         self.l2_cache = None
 
-    def event(self, event: ServerEvent):
+    def event(self, event: ServerEvent, data: Any = None):
         self.l1_cache.event(event)
 
     def insert(self, key: str, value: Any, expire_event: ServerEvent | None = None):

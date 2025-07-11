@@ -24,16 +24,16 @@ async def upload(location: str, session_user: User, pbo_path: str, changelog: di
     return JsonResponse({})
 
 
-@app.get('/missions')
-@html_api(template_path='missions/home.html', title='BW Mission Database', expire_event=ServerEvent.MISSION_UPLOADED)
-async def html_missions(html: str) -> str:
+@app.get('/')
+@html_api(template_path='home.html', title='Bourbon Warfare')
+async def html_home(html: str) -> str:
     return await render_template_string(
         html,
     )
 
 
 @app.get('/missions/list')
-@html_api(template_path='missions/list.html', title='BW Mission List', expire_event=ServerEvent.MISSION_UPLOADED)
+@html_api(template_path='missions/home.html', title='BW Mission List', expire_event=ServerEvent.MISSION_UPLOADED)
 async def html_missions_list(html: str) -> str:
     metadata = await MissionsApi().get_stored_metadata()
     return await render_template_string(

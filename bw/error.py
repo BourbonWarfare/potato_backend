@@ -210,6 +210,14 @@ class NoReviewFound(MissionError):
         super().__init__('couldnt find review')
 
 
+class NoResultFound(MissionError):
+    def status(self) -> int:
+        return 404
+
+    def __init__(self):
+        super().__init__('couldnt find test result')
+
+
 class CouldNotCreateIteration(MissionError):
     def __init__(self):
         super().__init__('could not create mission iteration')
@@ -221,6 +229,19 @@ class MissionDoesNotExist(MissionError):
 
     def __init__(self):
         super().__init__('mission does not exist')
+
+
+class IterationDoesNotExist(MissionError):
+    def status(self) -> int:
+        return 404
+
+    def __init__(self):
+        super().__init__('iteration does not exist')
+
+
+class CouldNotReviewMission(MissionError):
+    def __init__(self):
+        super().__init__('could not review mission')
 
 
 class SubprocessError(BwServerError):
