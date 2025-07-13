@@ -36,10 +36,11 @@ class JsonResponse(WebResponse):
         return 'text/json'
 
     def __init__(self, json_payload: dict, headers: dict = {}, status=200):
-        if 'status' not in json_payload:
-            json_payload['status'] = status
+        contained_status = json_payload.pop('status', None)
+        if contained_status is None:
+            contained_status = status
         self.contained_json = json_payload
-        super().__init__(status=200, headers=headers, response=json.dumps(json_payload))
+        super().__init__(status=contained_status, headers=headers, response=json.dumps(json_payload))
 
 
 class HtmlResponse(WebResponse):

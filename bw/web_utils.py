@@ -31,19 +31,19 @@ def json_api(func):
             for key in converted_json.keys():
                 if key in kwargs:
                     logger.warning(f'Duplicate key found while parsing arguments: {key}')
-                    return JsonPayloadError().as_json()
+                    return JsonPayloadError().as_response_code()
 
             kwargs.update(converted_json)
             try:
                 return await func(*args, **kwargs)
             except TypeError as e:
                 logger.warning(e)
-                return BadArguments().as_json()
+                return BadArguments().as_response_code()
             except BwServerError as e:
                 logger.warning(e)
-                return e.as_json()
+                return e.as_response_code()
         else:
-            return ExpectedJson().as_json()
+            return ExpectedJson().as_response_code()
 
     wrapper.__name__ = func.__name__
     return wrapper
