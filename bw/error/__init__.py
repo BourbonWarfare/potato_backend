@@ -1,5 +1,10 @@
 # ruff: noqa: F403
-from bw.error.base import BwServerError as BwServerError, ClientError as ClientError
+from bw.error.base import (
+    BwServerError as BwServerError,
+    ClientError as ClientError,
+    ConflictError as ConflictError,
+    NotFoundError as NotFoundError,
+)
 from bw.error.auth import *
 from bw.error.cache import *
 from bw.error.common import *

@@ -41,7 +41,7 @@ from integrations.auth.fixtures import (
 )
 from bw.error import (
     DbError,
-    SessionInvalid,
+    SessionExpired,
     NoUserWithGivenCredentials,
     RoleCreationFailed,
     GroupPermissionCreationFailed,
@@ -57,7 +57,7 @@ def test__create_new_user_bot__can_create_and_get_token(mocker, state, session, 
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
 
     response = AuthApi().create_new_user_bot(state)
-    assert response.contained_json['status'] == 201
+    assert response.status_code == 201
     assert response.contained_json['bot_token'] == token_1
 
 
@@ -73,7 +73,7 @@ def test__login_with_discord__can_login_when_user_exists(
     mocker.patch('bw.models.auth.Session.api_session_length', return_value=expire_valid)
 
     response = AuthApi().login_with_discord(state, discord_id_1)
-    assert response.contained_json['status'] == 200
+    assert response.status_code == 200
     assert response.contained_json['session_token'] == token_1
     assert datetime.fromisoformat(response.contained_json['expire_time']) == datetime.fromisoformat(expire_valid)
 
@@ -82,7 +82,7 @@ def test__login_with_discord__invalid_id(mocker, state, session, token_1, discor
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
 
     response = AuthApi().login_with_discord(state, discord_id_1)
-    assert response.contained_json['status'] == 404
+    assert response.status_code == 404
 
 
 def test__login_with_discord__can_login_when_generic_expire(
@@ -91,7 +91,7 @@ def test__login_with_discord__can_login_when_generic_expire(
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
 
     response = AuthApi().login_with_discord(state, discord_id_1)
-    assert response.contained_json['status'] == 200
+    assert response.status_code == 200
     assert response.contained_json['session_token'] == token_1
 
 
@@ -101,7 +101,7 @@ def test__login_with_bot__can_login_when_user_exists(mocker, state, session, tok
 
     AuthApi().create_new_user_bot(state)
     response = AuthApi().login_with_bot(state, token_1)
-    assert response.contained_json['status'] == 200
+    assert response.status_code == 200
     assert response.contained_json['session_token'] == token_1
     assert datetime.fromisoformat(response.contained_json['expire_time']) == datetime.fromisoformat(expire_valid)
 
@@ -111,7 +111,7 @@ def test__login_with_bot__can_login_when_generic_expire(mocker, state, session, 
 
     AuthApi().create_new_user_bot(state)
     response = AuthApi().login_with_bot(state, token_1)
-    assert response.contained_json['status'] == 200
+    assert response.status_code == 200
     assert response.contained_json['session_token'] == token_1
 
 
@@ -119,7 +119,7 @@ def test__login_with_bot__invalid_id(mocker, state, session, token_1):
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
 
     response = AuthApi().login_with_bot(state, token_1)
-    assert response.contained_json['status'] == 404
+    assert response.status_code == 404
 
 
 def test__is_session_active__no_session(state, session):
@@ -137,11 +137,11 @@ def test__is_session_active__with_expired_session(state, session, db_expired_ses
 def test__create_new_user_bot__rolls_back_on_error(mocker, state, session):
     mocker.patch('bw.auth.user.UserStore.link_bot_user', side_effect=DbError)
     response = AuthApi().create_new_user_bot(state)
-    assert response.contained_json['status'] == 400
+    assert response.status_code == 400
 
     mocker.patch('bw.auth.user.UserStore.link_bot_user', side_effect=NoUserWithGivenCredentials)
     response = AuthApi().create_new_user_bot(state)
-    assert response.contained_json['status'] == 404
+    assert response.status_code == 404
 
 
 def test__create_new_user_from_discord__rolls_back_on_error(mocker, state, session, discord_id_1):
@@ -159,7 +159,7 @@ def test__does_user_have_roles__no_session(state, session, role_1):
 
 
 def test__does_user_have_roles__invalid_session(mocker, state, session, role_1):
-    mocker.patch('bw.auth.session.SessionStore.get_user_from_session_token', side_effect=SessionInvalid)
+    mocker.patch('bw.auth.session.SessionStore.get_user_from_session_token', side_effect=SessionExpired)
     assert not AuthApi().does_user_have_roles(state, 'some-token', role_1)
 
 
@@ -184,7 +184,7 @@ def test__does_user_have_permissions__no_session(state, session, permission_1):
 
 
 def test__does_user_have_permissions__invalid_session(mocker, state, session, permission_1):
-    mocker.patch('bw.auth.session.SessionStore.get_user_from_session_token', side_effect=SessionInvalid)
+    mocker.patch('bw.auth.session.SessionStore.get_user_from_session_token', side_effect=SessionExpired)
     assert not AuthApi().does_user_have_permissions(state, 'some-token', permission_1)
 
 
@@ -237,14 +237,14 @@ def test__revoke_bot_user_session__user_exists(state, session, db_bot_user_1, db
 
 def test__create_role__success(state, session, role_1, role_name_1):
     response = AuthApi().create_role(state, role_name_1, role_1)
-    assert response.contained_json['status'] == 201
+    assert response.status_code == 201
     assert response.contained_json['name'] == role_name_1
 
 
 def test__create_role__failure(mocker, state, session, role_1, role_name_1):
     mocker.patch('bw.auth.user.UserStore.create_role', side_effect=RoleCreationFailed(role_name_1))
     response = AuthApi().create_role(state, role_name_1, role_1)
-    assert response.contained_json['status'] == 401
+    assert response.status_code == 409
 
 
 def test__assign_role__success(state, session, db_user_1, role_1, role_name_1):
@@ -267,26 +267,26 @@ def test__assign_role__no_role(state, session, db_user_1):
 
 def test__create_group_permission__success(state, session, permission_1, permission_name_1):
     response = AuthApi().create_group_permission(state, permission_name_1, permission_1)
-    assert response.contained_json['status'] == 201
+    assert response.status_code == 201
     assert response.contained_json['name'] == permission_name_1
 
 
 def test__create_group_permission__failure(mocker, state, session, permission_1, permission_name_1):
     mocker.patch('bw.auth.group.GroupStore.create_permission', side_effect=GroupPermissionCreationFailed(permission_name_1))
     response = AuthApi().create_group_permission(state, permission_name_1, permission_1)
-    assert response.contained_json['status'] == 401
+    assert response.status_code == 409
 
 
 def test__create_group__success(state, session, db_permission_1, group_name_1):
     response = AuthApi().create_group(state, group_name_1, db_permission_1.name)
-    assert response.contained_json['status'] == 201
+    assert response.status_code == 201
     assert response.contained_json['name'] == group_name_1
 
 
 def test__create_group__failure(mocker, state, session, db_permission_1, group_name_1):
     mocker.patch('bw.auth.group.GroupStore.create_group', side_effect=GroupCreationFailed(group_name_1))
     response = AuthApi().create_group(state, group_name_1, db_permission_1.name)
-    assert response.contained_json['status'] == 401
+    assert response.status_code == 409
 
 
 def test__join_group__success(state, session, db_user_1, db_group_1):
@@ -296,23 +296,21 @@ def test__join_group__success(state, session, db_user_1, db_group_1):
 
 def test__join_group__no_group(state, session, db_user_1):
     response = AuthApi().join_group(state, db_user_1, 'nonexistent_group')
-    assert response.status_code == 401
+    assert response.status_code == 404
 
 
 def test__join_group__assignment_failed(mocker, state, session, db_user_1, db_group_1):
     mocker.patch('bw.auth.group.GroupStore.assign_user_to_group', side_effect=GroupAssignmentFailed())
     response = AuthApi().join_group(state, db_user_1, db_group_1.name)
-    assert response.status_code == 401
+    assert response.status_code == 409
 
 
 def test__leave_group__success(state, session, db_user_1, db_group_1):
-    # First join the group
     GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
-    # Then leave it
     response = AuthApi().leave_group(state, db_user_1, db_group_1.name)
     assert response.status_code == 200
 
 
 def test__leave_group__no_group(state, session, db_user_1):
     response = AuthApi().leave_group(state, db_user_1, 'nonexistent_group')
-    assert response.status_code == 401
+    assert response.status_code == 404

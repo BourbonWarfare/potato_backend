@@ -5,7 +5,7 @@ from datetime import datetime
 
 from bw.auth.session import SessionStore
 from bw.models.auth import Session
-from bw.error import SessionInvalid
+from bw.error import SessionExpired
 from integrations.auth.fixtures import (
     state,
     session,
@@ -92,7 +92,7 @@ def test__session_store__correct_user_returned_from_token(state, session, db_ses
 
 
 def test__session_store__raises_on_invalid_token(state, session):
-    with pytest.raises(SessionInvalid):
+    with pytest.raises(SessionExpired):
         assert SessionStore().get_user_from_session_token(state, 'invalid token') is None
 
 
@@ -142,5 +142,5 @@ def test__session_store__get_user_from_expired_token_raises(mocker, token_1, exp
     mocker.patch('bw.models.auth.Session.api_session_length', return_value=expire_invalid)
     session_data = SessionStore().start_api_session(state, db_user_1)
     assert not SessionStore().is_session_active(state, session_data['session_token'])
-    with pytest.raises(SessionInvalid):
+    with pytest.raises(SessionExpired):
         SessionStore().get_user_from_session_token(state, session_data['session_token'])

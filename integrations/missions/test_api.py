@@ -28,7 +28,7 @@ async def test__missions_api__upload_mission_to_main__success_with_new_upload(
 
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
     assert resp.contained_json['iteration_number'] == 1
-    assert resp.contained_json['status'] == 201
+    assert resp.status_code == 201
 
 
 @pytest.mark.asyncio
@@ -36,7 +36,7 @@ async def test__missions_api__upload_mission_to_main__missing_metadata(mocker, s
     fake_mission.custom_attributes = {}
     mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
-    assert resp.contained_json['status'] == 422
+    assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -44,7 +44,7 @@ async def test__missions_api__upload_mission_to_main__missing_mission_type(mocke
     fake_mission.custom_attributes = {'potato_missiontesting_missionTestingInfo': {}}
     mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
-    assert resp.contained_json['status'] == 422
+    assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -53,7 +53,7 @@ async def test__missions_api__upload_mission_to_main__no_mission_type_with_tag(
 ):
     mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
-    assert resp.contained_json['status'] == 404
+    assert resp.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -62,7 +62,7 @@ async def test__missions_api__upload_mission_to_main__invalid_session(
 ):
     mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
-    assert resp.contained_json['status'] == 403
+    assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
@@ -73,7 +73,7 @@ async def test__missions_api__upload_mission_to_main__could_not_create_iteration
     mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
     mocker.patch.object(MissionStore, 'add_iteration', side_effect=CouldNotCreateIteration())
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
-    assert resp.contained_json['status'] == 400
+    assert resp.status_code == 400
 
 
 @pytest.mark.asyncio
@@ -85,7 +85,7 @@ async def test__missions_api__upload_mission_to_main__creates_new_mission(
     mocker.patch.object(MissionStore, 'add_iteration', return_value=fake_iteration_1)
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
     assert resp.contained_json['iteration_number'] == 1
-    assert resp.contained_json['status'] == 201
+    assert resp.status_code == 201
 
 
 @pytest.mark.asyncio
@@ -100,7 +100,7 @@ async def test__missions_api__upload_mission_to_main__updates_existing_mission(
     mocker.patch.object(MissionStore, 'mission_with_uuid', return_value=db_mission_1)
     mocker.patch.object(MissionStore, 'add_iteration', return_value=fake_iteration_2)
     resp = await MissionsApi().upload_mission_to_main(state, 'token', 'fake_path', fake_changelog)
-    assert resp.contained_json['status'] == 201
+    assert resp.status_code == 201
     assert resp.contained_json['iteration_number'] == 2
 
 

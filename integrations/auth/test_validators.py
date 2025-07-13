@@ -28,7 +28,7 @@ from integrations.auth.fixtures import (
     group_name_1,
     group_name_2,
 )
-from bw.error import SessionInvalid, NotEnoughPermissions
+from bw.error import SessionExpired, NotEnoughPermissions
 
 
 def test__validate_session__active_session_passes(state, session, db_session_1):
@@ -36,7 +36,7 @@ def test__validate_session__active_session_passes(state, session, db_session_1):
 
 
 def test__validate_session__inactive_session_passes(state, session, db_expired_session_1):
-    with pytest.raises(SessionInvalid):
+    with pytest.raises(SessionExpired):
         validate_session(state, db_expired_session_1.token)
 
 
