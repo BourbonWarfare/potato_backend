@@ -1,18 +1,46 @@
 import logging
 import os
 import time
+from collections.abc import Callable, Awaitable
 from pathlib import Path
 from quart import request, render_template_string
 
 from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError, CacheMiss
 from bw.state import State
 from bw.events import ServerEvent
+from bw.response import JsonResponse, WebResponse
 
 
 logger = logging.getLogger('bw')
 
 
-def url_api(func):
+def define_async_api(func: Callable[..., Awaitable[WebResponse]]):
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except BwServerError as e:
+            logger.warning(f'API error: {e}')
+            return e.as_response_code()
+
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
+def define_api(func: Callable[..., WebResponse]):
+    def wrapper(*args, **kwargs):
+        try:
+            print('trying')
+            return func(*args, **kwargs)
+        except BwServerError as e:
+            print('excepting')
+            logger.warning(f'API error: {e}')
+            return e.as_response_code()
+
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
+def url_endpoint(func: Callable[..., Awaitable[WebResponse]]):
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
@@ -24,7 +52,7 @@ def url_api(func):
     return wrapper
 
 
-def json_api(func):
+def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
     async def wrapper(*args, **kwargs):
         converted_json = await request.get_json()
         if converted_json is not None:
@@ -49,7 +77,7 @@ def json_api(func):
     return wrapper
 
 
-def html_api(*, template_path: Path | str, title: str | None = None, expire_event: ServerEvent | None = None):
+def html_endpoint(*, template_path: Path | str, title: str | None = None, expire_event: ServerEvent | None = None):
     if isinstance(template_path, str):
         template_path = Path(template_path)
 
@@ -60,7 +88,7 @@ def html_api(*, template_path: Path | str, title: str | None = None, expire_even
     page_path = templates_path / 'page.html'
     template_path = templates_path / template_path
 
-    def decorator(func):
+    def decorator(func: Callable[..., Awaitable[str]]):
         async def wrapper(*args, **kwargs):
             # We aggressivley cache the page and template to avoid unnecessary disk reads.
             # If the page or template has changed, we will re-read them and re-render the page.

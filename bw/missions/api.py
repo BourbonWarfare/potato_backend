@@ -10,13 +10,7 @@ from bw.response import JsonResponse, WebResponse, Created
 from bw.error import (
     BwServerError,
     MissionDoesNotHaveMetadata,
-    NoMissionTypeWithTag,
-    SessionInvalid,
-    CouldNotCreateIteration,
     CouldNotReviewMission,
-    IterationDoesNotExist,
-    CouldNotCreateTestResult,
-    MissionDoesNotExist,
 )
 from bw.auth.session import SessionStore
 from bw.missions.pbo import MissionLoader
@@ -27,6 +21,7 @@ from bw.missions.test_status import TestStatus
 from bw.models.auth import User
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.events import ServerEvent
+from bw.web_utils import define_async_api
 
 
 logger = logging.getLogger('bw.missions')
@@ -36,6 +31,7 @@ class MissionsApi:
     def __init__(self):
         self.metadata_path = Path('metadata/log.csv')
 
+    @define_async_api
     async def upload_mission_metadata(self, stored_pbo_path: str) -> WebResponse:
         """
         ### Logs a mission's metadata
@@ -155,6 +151,7 @@ class MissionsApi:
 
         return Created()
 
+    @define_async_api
     async def upload_mission_to_main(
         self, state: State, user_session_token: str, stored_pbo_path: str, changelog: dict
     ) -> JsonResponse:
@@ -189,11 +186,11 @@ class MissionsApi:
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
-            return MissionDoesNotHaveMetadata().as_json()
+            return MissionDoesNotHaveMetadata().as_response_code()
 
         info = mission.custom_attributes['potato_missiontesting_missionTestingInfo']
         if 'potato_missiontesting_missionType' not in info:
-            return MissionDoesNotHaveMetadata().as_json()
+            return MissionDoesNotHaveMetadata().as_response_code()
 
         if 'potato_missionTesting_missionTestingInfo' in mission.custom_attributes:
             uuid = (
@@ -214,15 +211,9 @@ class MissionsApi:
 
         if existing_mission is None:
             tag = int(info['potato_missiontesting_missionType']['data']['value'])
-            try:
-                mission_type = MissionTypeStore().mission_type_from_tag(state, tag)
-            except NoMissionTypeWithTag as e:
-                return e.as_json()
+            mission_type = MissionTypeStore().mission_type_from_tag(state, tag)
 
-            try:
-                creator = SessionStore().get_user_from_session_token(state, session_token=user_session_token)
-            except SessionInvalid as e:
-                return e.as_json()
+            creator = SessionStore().get_user_from_session_token(state, session_token=user_session_token)
 
             flags = {}
             if 'potato_missiontesting_missionTag1' in info:
@@ -258,24 +249,22 @@ class MissionsApi:
         if 'potato_missiontesting_missionTimeLength' in info:
             safe_start_length = int(info['potato_missiontesting_missionTimeLength']['data']['value'])
 
-        try:
-            iteration = MissionStore().add_iteration(
-                state,
-                existing_mission,
-                str(Path(stored_pbo_path).name),
-                min_players=min_players,
-                desired_players=desired_players,
-                max_players=max_players,
-                safe_start_length=safe_start_length,
-                mission_length=mission_length,
-                bwmf_version=mission.bwmf,
-                changelog=changelog,
-            )
-        except CouldNotCreateIteration as e:
-            return e.as_json()
+        iteration = MissionStore().add_iteration(
+            state,
+            existing_mission,
+            str(Path(stored_pbo_path).name),
+            min_players=min_players,
+            desired_players=desired_players,
+            max_players=max_players,
+            safe_start_length=safe_start_length,
+            mission_length=mission_length,
+            bwmf_version=mission.bwmf,
+            changelog=changelog,
+        )
 
         return JsonResponse({'iteration_number': iteration.iteration}, status=201)
 
+    @define_async_api
     async def get_stored_metadata(self) -> JsonResponse:
         """
         ### Get stored mission metadata
@@ -304,6 +293,7 @@ class MissionsApi:
 
 
 class TestApi:
+    @define_async_api
     async def review_mission(
         self, state: State, tester: User, iteration_uuid: UUID, status: str, notes: dict[str, str]
     ) -> JsonResponse:
@@ -331,24 +321,22 @@ class TestApi:
         try:
             test_status = TestStatus(status)
         except ValueError:
-            return CouldNotReviewMission().as_json()
+            raise CouldNotReviewMission()
 
-        try:
-            iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
-        except IterationDoesNotExist as e:
-            return e.as_json()
+        iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
 
         with state.Session.begin() as session:
             review = TestStore().create_review(state, tester, test_status, notes)
             try:
                 result = TestStore().create_result(state, iteration, review)
-            except CouldNotCreateTestResult:
+            except BwServerError as e:
                 session.rollback()
-                return CouldNotReviewMission().as_json()
+                raise e
 
         State.broker.publish(ServerEvent.REVIEW_CREATED, result.uuid)
         return JsonResponse({'result_uuid': str(result.uuid)})
 
+    @define_async_api
     async def cosign_result(self, state: State, tester: User, result_uuid: UUID) -> WebResponse:
         """
         ### Cosign a test result
@@ -369,15 +357,13 @@ class TestApi:
         # Success: Created()
         ```
         """
-        try:
-            test_result = TestStore().result_by_uuid(state, result_uuid)
-            TestStore().cosign_result(state, tester, test_result)
-        except BwServerError as e:
-            return e.as_response_code()
+        test_result = TestStore().result_by_uuid(state, result_uuid)
+        TestStore().cosign_result(state, tester, test_result)
 
         State.broker.publish(ServerEvent.REVIEW_COSIGNED, result_uuid)
         return Created()
 
+    @define_async_api
     async def reviews(self, state: State, iteration_uuid: UUID, viewer: User | None) -> JsonResponse:
         """
         ### Get reviews for a mission iteration
@@ -416,23 +402,20 @@ class TestApi:
         # Error: JsonResponse({'status': 404, 'reason': 'iteration does not exist'})
         ```
         """
-        try:
-            iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
-            reviews = TestStore().iteration_reviews(state, iteration)
-            return JsonResponse(
-                {
-                    'reviews': [
-                        {
-                            'uuid': str(review.uuid),
-                            'date_tested': review.date_tested.isoformat(),
-                            'status': str(review.status),
-                            'notes': review.notes,
-                            'is_viewer_reviewer': viewer is not None and viewer.id == review.original_tester_id,
-                            'is_viewer_cosigner': viewer is not None and viewer.id in review.cosign_ids,
-                        }
-                        for review in reviews
-                    ]
-                }
-            )
-        except (MissionDoesNotExist, IterationDoesNotExist) as e:
-            return e.as_json()
+        iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
+        reviews = TestStore().iteration_reviews(state, iteration)
+        return JsonResponse(
+            {
+                'reviews': [
+                    {
+                        'uuid': str(review.uuid),
+                        'date_tested': review.date_tested.isoformat(),
+                        'status': str(review.status),
+                        'notes': review.notes,
+                        'is_viewer_reviewer': viewer is not None and viewer.id == review.original_tester_id,
+                        'is_viewer_cosigner': viewer is not None and viewer.id in review.cosign_ids,
+                    }
+                    for review in reviews
+                ]
+            }
+        )

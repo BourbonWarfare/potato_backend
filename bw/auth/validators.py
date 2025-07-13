@@ -1,4 +1,4 @@
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionInvalid, NotEnoughPermissions
+from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionExpired, NotEnoughPermissions
 from bw.state import State
 from bw.auth import api
 from bw.auth.roles import Roles
@@ -58,7 +58,7 @@ def validate_session(state: State, session_token: str):
     - `SessionInvalid`: If the session is not valid.
     """
     if not api.AuthApi().is_session_active(state, session_token):
-        raise SessionInvalid()
+        raise SessionExpired()
 
 
 def validate_local(ip: str | None):

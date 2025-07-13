@@ -4,7 +4,7 @@ from sqlalchemy import insert, delete, select
 
 from bw.state import State
 from bw.models.auth import Session, User, TOKEN_LENGTH
-from bw.error import SessionInvalid
+from bw.error import SessionExpired
 
 
 class SessionStore:
@@ -37,7 +37,7 @@ class SessionStore:
         - `dict`: A dictionary containing session-specific information.
 
         **Raises:**
-        - `SessionInvalid`: If the session could not be created.
+        - `SessionExpired`: If the session could not be created.
         """
         self.expire_session_from_user(state, user)
 
@@ -51,7 +51,7 @@ class SessionStore:
             expire_time = session.scalar(query)
 
         if expire_time is None:
-            raise SessionInvalid()
+            raise SessionExpired()
 
         return {'session_token': token, 'expire_time': str(expire_time)}
 
@@ -87,13 +87,13 @@ class SessionStore:
         - `User`: The user associated with the session token.
 
         **Raises:**
-        - `SessionInvalid`: If the session token is not found or is expired.
+        - `SessionExpired`: If the session token is not found or is expired.
         """
         with state.Session.begin() as session:
             query = select(Session.user_id).where(Session.token == session_token).where(Session.now() <= Session.expire_time)
             user_id = session.execute(query).first()
             if user_id is None:
-                raise SessionInvalid()
+                raise SessionExpired()
             query = select(User).where(User.id == user_id[0])
             user = session.execute(query).one()[0]
             session.expunge(user)

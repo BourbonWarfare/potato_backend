@@ -1,5 +1,5 @@
 import logging
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionInvalid
+from bw.error import NonLocalIpAccessingLocalOnlyAddress, CannotDetermineSession, NotEnoughPermissions
 from bw.state import State
 from bw.models.auth import User
 from bw.auth.validators import validate_local, validate_session
@@ -47,25 +47,30 @@ def require_session(func):
     Ensures the decorated function is called with a valid session token.
 
     **Raises:**
-    - `SessionInvalid`: If the session token is missing or invalid.
+    - `CannotDetermineSession`: If the request is malformed such that we can't determine session.
+    - `SessionKnownButInvalid`: If the session is not valid for some reason.
 
     **Example:**
     ```python
     @require_session
-    def my_view(session_token, ...):
+    def my_view(session_user, ...):
         ...
     ```
     """
 
     async def wrapper(*args, **kwargs):
-        if 'session_token' not in kwargs:
-            logger.warning("'Session Token' not present in payload")
-            raise SessionInvalid()
+        auth = request.headers.get('Authorization')
+        if auth is None:
+            logger.warning("'Session Token' not present in header")
+            raise CannotDetermineSession()
 
-        session_token = kwargs.pop('session_token')
-        if not isinstance(session_token, str):
-            logger.warning("'session_token' is not a string")
-            raise SessionInvalid()
+        bearer_header = 'Bearer '
+        if not auth.startswith(bearer_header):
+            logger.warning("'Session Token' does not start with 'Bearer '")
+            raise CannotDetermineSession()
+
+        session_token = auth[len(bearer_header) :]  # Remove 'Bearer ' prefix
+
         validate_session(State.state, session_token)
         session_user = SessionStore().get_user_from_session_token(State.state, session_token=session_token)
         return await func(session_user=session_user, *args, **kwargs)
@@ -81,7 +86,7 @@ def require_group_permission(*required_permissions: bool):
     Decorator factory that enforces group-based permissions for the decorated function.
 
     **Raises:**
-    - `SessionInvalid`: If any required permission is missing from the user's group permissions.
+    - `NotEnoughPermissions`: If any required permission is missing from the user's group permissions.
 
     **Example:**
     ```python
@@ -97,7 +102,7 @@ def require_group_permission(*required_permissions: bool):
             for permission in required_permissions:
                 if not permission.__get__(permissions):  # ty: ignore[unresolved-attribute]
                     logger.warning(f'User {session_user.id} does not have required permission: {permission.__name__}')  # ty: ignore[unresolved-attribute]
-                    raise SessionInvalid()
+                    raise NotEnoughPermissions()
             return await func(session_user=session_user, *args, **kwargs)
 
         wrapper.__name__ = func.__name__
@@ -113,7 +118,7 @@ def require_user_role(*required_roles: bool):
     Decorator factory that enforces group-based permissions for the decorated function.
 
     **Raises:**
-    - `SessionInvalid`: If any required permission is missing from the user's group permissions.
+    - `NotEnoughPermissions`: If any required permission is missing from the user's group permissions.
 
     **Example:**
     ```python
@@ -128,12 +133,12 @@ def require_user_role(*required_roles: bool):
             user_role = UserStore().get_users_role(State.state, session_user)
             if user_role is None:
                 logger.warning(f'User {session_user.id} does not have a role assigned')
-                raise SessionInvalid()
+                raise NotEnoughPermissions()
             roles = user_role.into_roles()
             for role in required_roles:
                 if not role.__get__(roles):  # ty: ignore[unresolved-attribute]
                     logger.warning(f'User {session_user.id} does not have required role: {role.__name__}')  # ty: ignore[unresolved-attribute]
-                    raise SessionInvalid()
+                    raise NotEnoughPermissions()
             return await func(session_user=session_user, *args, **kwargs)
 
         wrapper.__name__ = func.__name__

@@ -6,19 +6,13 @@ from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.permissions import Permissions
 from bw.models.auth import User
-from bw.error import NoUserWithGivenCredentials, DbError, SessionInvalid
+from bw.error import BwServerError, SessionExpired
+from bw.web_utils import define_api
 import uuid
-from bw.error import (
-    RoleCreationFailed,
-    GroupCreationFailed,
-    GroupPermissionCreationFailed,
-    NoGroupWithName,
-    GroupAssignmentFailed,
-    NoRoleWithName,
-)
 
 
 class AuthApi:
+    @define_api
     def create_new_user_bot(self, state: State) -> JsonResponse:
         """
         ### Create a new user and link a bot user
@@ -44,11 +38,12 @@ class AuthApi:
                 user = UserStore().create_user(state)
                 try:
                     bot = UserStore().link_bot_user(state, user)
-                except (NoUserWithGivenCredentials, DbError) as e:
+                except BwServerError as e:
                     savepoint.rollback()
-                    return e.as_json()
+                    raise e
         return JsonResponse({'bot_token': bot.bot_token}, status=201)
 
+    @define_api
     def create_new_user_from_discord(self, state: State, discord_id: int) -> WebResponse:
         """
         ### Create a new user and link a Discord user
@@ -75,11 +70,12 @@ class AuthApi:
                 user = UserStore().create_user(state)
                 try:
                     UserStore().link_discord_user(state, discord_id, user)
-                except (NoUserWithGivenCredentials, DbError) as e:
+                except BwServerError as e:
                     savepoint.rollback()
-                    return e.as_response_code()
+                    raise e
         return Created()
 
+    @define_api
     def login_with_discord(self, state: State, discord_id: int) -> JsonResponse:
         """
         ### Log in with Discord ID
@@ -101,12 +97,10 @@ class AuthApi:
         # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
         ```
         """
-        try:
-            user = UserStore().user_from_discord_id(state, discord_id)
-        except NoUserWithGivenCredentials as e:
-            return e.as_json()
+        user = UserStore().user_from_discord_id(state, discord_id)
         return JsonResponse(SessionStore().start_api_session(state, user))
 
+    @define_api
     def login_with_bot(self, state: State, bot_token: str) -> JsonResponse:
         """
         ### Log in with bot token
@@ -128,12 +122,10 @@ class AuthApi:
         # Error: JsonResponse({'status': 404, 'reason': 'User does not exist'})
         ```
         """
-        try:
-            user = UserStore().user_from_bot_token(state, bot_token)
-        except NoUserWithGivenCredentials as e:
-            return e.as_json()
+        user = UserStore().user_from_bot_token(state, bot_token)
         return JsonResponse(SessionStore().start_api_session(state, user))
 
+    @define_api
     def is_session_active(self, state: State, session_token: str) -> bool:
         """
         ### Check if a session is active
@@ -156,6 +148,7 @@ class AuthApi:
         """
         return SessionStore().is_session_active(state, session_token)
 
+    @define_api
     def does_user_have_roles(self, state: State, session_token: str, wanted_roles: Roles) -> bool:
         """
         ### Check if user has all specified roles
@@ -180,7 +173,7 @@ class AuthApi:
         """
         try:
             user = SessionStore().get_user_from_session_token(state, session_token)
-        except SessionInvalid:
+        except SessionExpired:
             return False
 
         user_roles = UserStore().get_users_role(state, user)
@@ -193,6 +186,7 @@ class AuthApi:
                 return False
         return True
 
+    @define_api
     def does_user_have_permissions(self, state: State, session_token: str, wanted_perms: Permissions) -> bool:
         """
         ### Check if user has all specified permissions
@@ -217,7 +211,7 @@ class AuthApi:
         """
         try:
             user = SessionStore().get_user_from_session_token(state, session_token)
-        except SessionInvalid:
+        except SessionExpired:
             return False
 
         user_perms = GroupStore().get_all_permissions_user_has(state, user)
@@ -230,6 +224,7 @@ class AuthApi:
                 return False
         return True
 
+    @define_api
     def revoke_discord_user_session(self, state: State, discord_id: int) -> WebResponse:
         """
         ### Revoke all sessions for a Discord user
@@ -250,13 +245,11 @@ class AuthApi:
         # Error: WebResponse(status=404)
         ```
         """
-        try:
-            user = UserStore().user_from_discord_id(state, discord_id)
-        except NoUserWithGivenCredentials as e:
-            return e.as_response_code()
+        user = UserStore().user_from_discord_id(state, discord_id)
         SessionStore().expire_session_from_user(state, user)
         return Ok()
 
+    @define_api
     def revoke_bot_user_session(self, state: State, bot_token: str) -> WebResponse:
         """
         ### Revoke all sessions for a bot user
@@ -277,13 +270,11 @@ class AuthApi:
         # Error: WebResponse(status=404)
         ```
         """
-        try:
-            user = UserStore().user_from_bot_token(state, bot_token)
-        except NoUserWithGivenCredentials as e:
-            return e.as_response_code()
+        user = UserStore().user_from_bot_token(state, bot_token)
         SessionStore().expire_session_from_user(state, user)
         return Ok()
 
+    @define_api
     def create_role(self, state: State, role_name: str, roles: Roles) -> JsonResponse:
         """
         ### Create a new role
@@ -306,12 +297,10 @@ class AuthApi:
         # Error: JsonResponse({'status': 400, 'reason': 'Creation of role "admin" failed.'})
         ```
         """
-        try:
-            role = UserStore().create_role(state, role_name=role_name, roles=roles)
-        except RoleCreationFailed as e:
-            return e.as_json()
+        role = UserStore().create_role(state, role_name=role_name, roles=roles)
         return JsonResponse({'name': role.name}, status=201)
 
+    @define_api
     def assign_role(self, state: State, role_name: str, user_uuid: uuid.UUID) -> WebResponse:
         """
         ### Assign a role to a user
@@ -334,13 +323,11 @@ class AuthApi:
         # Error: WebResponse(status=404)
         ```
         """
-        try:
-            user = UserStore().user_from_uuid(state, uuid=user_uuid)
-            UserStore().assign_user_role(state, user=user, role_name=role_name)
-        except (NoUserWithGivenCredentials, NoRoleWithName) as e:
-            return e.as_response_code()
+        user = UserStore().user_from_uuid(state, uuid=user_uuid)
+        UserStore().assign_user_role(state, user=user, role_name=role_name)
         return Ok()
 
+    @define_api
     def create_group_permission(self, state: State, permission_name: str, permissions: Permissions) -> JsonResponse:
         """
         ### Create a new group permission
@@ -363,12 +350,10 @@ class AuthApi:
         # Error: JsonResponse({'status': 400, 'reason': 'Creation of permission "read_access" failed.'})
         ```
         """
-        try:
-            permission = GroupStore().create_permission(state, name=permission_name, permissions=permissions)
-        except GroupPermissionCreationFailed as e:
-            return e.as_json()
+        permission = GroupStore().create_permission(state, name=permission_name, permissions=permissions)
         return JsonResponse({'name': permission.name}, status=201)
 
+    @define_api
     def create_group(self, state: State, group_name: str, permission_group: str) -> JsonResponse:
         """
         ### Create a new group
@@ -391,12 +376,10 @@ class AuthApi:
         # Error: JsonResponse({'status': 400, 'reason': 'Creation of group "editors" failed.'})
         ```
         """
-        try:
-            group = GroupStore().create_group(state=state, group_name=group_name, permission_group=permission_group)
-        except GroupCreationFailed as e:
-            return e.as_json()
+        group = GroupStore().create_group(state=state, group_name=group_name, permission_group=permission_group)
         return JsonResponse({'name': group.name}, status=201)
 
+    @define_api
     def join_group(self, state: State, user: User, group_name: str) -> WebResponse:
         """
         ### Join a group
@@ -419,13 +402,11 @@ class AuthApi:
         # Error: WebResponse(status=404) or WebResponse(status=400)
         ```
         """
-        try:
-            group = GroupStore().get_group(state=state, group_name=group_name)
-            GroupStore().assign_user_to_group(state=state, user=user, group=group)
-        except (NoGroupWithName, GroupAssignmentFailed) as e:
-            return e.as_response_code()
+        group = GroupStore().get_group(state=state, group_name=group_name)
+        GroupStore().assign_user_to_group(state=state, user=user, group=group)
         return Ok()
 
+    @define_api
     def leave_group(self, state: State, user: User, group_name: str) -> WebResponse:
         """
         ### Leave a group
@@ -448,9 +429,6 @@ class AuthApi:
         # Error: WebResponse(status=404)
         ```
         """
-        try:
-            group = GroupStore().get_group(state=state, group_name=group_name)
-            GroupStore().remove_user_from_group(state=state, user=user, group=group)
-        except NoGroupWithName as e:
-            return e.as_response_code()
+        group = GroupStore().get_group(state=state, group_name=group_name)
+        GroupStore().remove_user_from_group(state=state, user=user, group=group)
         return Ok()

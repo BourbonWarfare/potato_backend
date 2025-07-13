@@ -1,4 +1,4 @@
-from bw.response import WebResponse, JsonResponse
+from bw.response import WebResponse
 
 
 class BwServerError(Exception):
@@ -7,9 +7,6 @@ class BwServerError(Exception):
 
     def headers(self) -> dict[str, str]:
         return {}
-
-    def as_json(self) -> JsonResponse:
-        return JsonResponse({'status': self.status(), 'reason': str(self)})
 
     def as_response_code(self) -> WebResponse:
         return WebResponse(status=self.status())
