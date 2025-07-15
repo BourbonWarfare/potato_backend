@@ -130,7 +130,7 @@ async def test__missions_api__upload_mission_metadata__missing_metadata(mocker, 
     mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
     api = MissionsApi()
     resp = await api.upload_mission_metadata('fake_path')
-    assert resp.status == '422 UNPROCESSABLE ENTITY'
+    assert resp.status == '201 CREATED'
 
 
 @pytest.mark.asyncio
@@ -139,4 +139,4 @@ async def test__missions_api__upload_mission_metadata__missing_mission_type(mock
     mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
     api = MissionsApi()
     resp = await api.upload_mission_metadata('fake_path')
-    assert resp.status == '422 UNPROCESSABLE ENTITY'
+    assert resp.status == '201 CREATED'

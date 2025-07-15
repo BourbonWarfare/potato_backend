@@ -1,5 +1,5 @@
 from bw.state import State
-from bw.response import JsonResponse, Ok, Created, WebResponse
+from bw.response import JsonResponse, Ok, Created, WebResponse, Exists, DoesNotExist
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
@@ -126,7 +126,7 @@ class AuthApi:
         return JsonResponse(SessionStore().start_api_session(state, user))
 
     @define_api
-    def is_session_active(self, state: State, session_token: str) -> bool:
+    def is_session_active(self, state: State, session_token: str) -> Exists:
         """
         ### Check if a session is active
 
@@ -146,10 +146,10 @@ class AuthApi:
         # is_active = False (if session is expired, revoked, or invalid)
         ```
         """
-        return SessionStore().is_session_active(state, session_token)
+        return Exists(SessionStore().is_session_active(state, session_token))
 
     @define_api
-    def does_user_have_roles(self, state: State, session_token: str, wanted_roles: Roles) -> bool:
+    def does_user_have_roles(self, state: State, session_token: str, wanted_roles: Roles) -> Exists:
         """
         ### Check if user has all specified roles
 
@@ -174,20 +174,20 @@ class AuthApi:
         try:
             user = SessionStore().get_user_from_session_token(state, session_token)
         except SessionExpired:
-            return False
+            return DoesNotExist()
 
         user_roles = UserStore().get_users_role(state, user)
         if user_roles is None:
-            return False
+            return DoesNotExist()
 
         test_roles = user_roles.into_roles().as_dict()
         for role, expecting_role in wanted_roles.as_dict().items():
             if expecting_role and not test_roles[role]:
-                return False
-        return True
+                return DoesNotExist()
+        return Exists()
 
     @define_api
-    def does_user_have_permissions(self, state: State, session_token: str, wanted_perms: Permissions) -> bool:
+    def does_user_have_permissions(self, state: State, session_token: str, wanted_perms: Permissions) -> Exists:
         """
         ### Check if user has all specified permissions
 
@@ -212,17 +212,17 @@ class AuthApi:
         try:
             user = SessionStore().get_user_from_session_token(state, session_token)
         except SessionExpired:
-            return False
+            return DoesNotExist()
 
         user_perms = GroupStore().get_all_permissions_user_has(state, user)
         if user_perms is None:
-            return False
+            return DoesNotExist()
 
         test_perms = user_perms.as_dict()
         for perms, expecting_perms in wanted_perms.as_dict().items():
             if expecting_perms and not test_perms[perms]:
-                return False
-        return True
+                return DoesNotExist()
+        return Exists()
 
     @define_api
     def revoke_discord_user_session(self, state: State, discord_id: int) -> WebResponse:

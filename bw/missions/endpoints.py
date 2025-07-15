@@ -2,7 +2,7 @@ import logging
 from quart import render_template_string
 
 from bw.server import app
-from bw.web_utils import json_endpoint, html_api
+from bw.web_utils import json_endpoint, html_endpoint
 from bw.response import JsonResponse
 from bw.models.auth import User
 from bw.auth.decorators import require_session, require_group_permission
@@ -57,7 +57,7 @@ async def upload(location: str, session_user: User, pbo_path: str, changelog: di
 
 
 @app.get('/')
-@html_api(template_path='home.html', title='Bourbon Warfare')
+@html_endpoint(template_path='home.html', title='Bourbon Warfare')
 async def html_home(html: str) -> str:
     """
     ### Home page
@@ -79,7 +79,7 @@ async def html_home(html: str) -> str:
 
 
 @app.get('/missions/list')
-@html_api(template_path='missions/home.html', title='BW Mission List', expire_event=ServerEvent.MISSION_UPLOADED)
+@html_endpoint(template_path='missions/home.html', title='BW Mission List', expire_event=ServerEvent.MISSION_UPLOADED)
 async def html_missions_list(html: str) -> str:
     """
     ### Mission list page
@@ -88,7 +88,7 @@ async def html_missions_list(html: str) -> str:
     This page is automatically refreshed when new missions are uploaded (expire_event).
 
     **Args:**
-    - `html` (`str`): The HTML template content (automatically injected by `@html_api`).
+    - `html` (`str`): The HTML template content (automatically injected by `@html_endpoint`).
 
     **Returns:**
     - `str`: HTML content of the mission list page with mission data.

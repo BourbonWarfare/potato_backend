@@ -31,6 +31,20 @@ class Created(WebResponse):
         super().__init__(201, response=data)
 
 
+class Exists(WebResponse):
+    def __bool__(self):
+        return self.exists
+
+    def __init__(self, exists: bool = True):
+        super().__init__(status=200 if exists else 409, response='Exists' if exists else 'Does not exist')
+        self.exists = exists
+
+
+class DoesNotExist(Exists):
+    def __init__(self):
+        super().__init__(False)
+
+
 class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'text/json'

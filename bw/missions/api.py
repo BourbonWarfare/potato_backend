@@ -51,7 +51,6 @@ class MissionsApi:
         ```
         """
         logger.info(f'uploading mission metadata: {stored_pbo_path} to spreadsheet')
-        State.broker.publish(ServerEvent.MISSION_UPLOADED)
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         csv_fields = [
@@ -74,12 +73,12 @@ class MissionsApi:
         data.append(mission.source_name)
         try:
             if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
-                return MissionDoesNotHaveMetadata().as_response_code()
+                raise MissionDoesNotHaveMetadata()
             data.append(1)
 
             info = mission.custom_attributes['potato_missiontesting_missionTestingInfo']
             if 'potato_missiontesting_missionType' not in info:
-                return MissionDoesNotHaveMetadata().as_response_code()
+                raise MissionDoesNotHaveMetadata()
             data.append(1)
 
             if 'potato_missionTesting_missionTestingInfo' in mission.custom_attributes:
@@ -149,6 +148,7 @@ class MissionsApi:
                 writer.writeheader()
             writer.writerow(data.as_dict())
 
+        State.broker.publish(ServerEvent.MISSION_UPLOADED)
         return Created()
 
     @define_async_api
@@ -186,11 +186,11 @@ class MissionsApi:
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
-            return MissionDoesNotHaveMetadata().as_response_code()
+            raise MissionDoesNotHaveMetadata()
 
         info = mission.custom_attributes['potato_missiontesting_missionTestingInfo']
         if 'potato_missiontesting_missionType' not in info:
-            return MissionDoesNotHaveMetadata().as_response_code()
+            raise MissionDoesNotHaveMetadata()
 
         if 'potato_missionTesting_missionTestingInfo' in mission.custom_attributes:
             uuid = (

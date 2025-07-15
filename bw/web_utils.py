@@ -22,7 +22,7 @@ def define_async_api(func: Callable[..., Awaitable[WebResponse]]):
             logger.warning(f'API error: {e}')
             return e.as_response_code()
 
-    wrapper.__name__ = func.__name__
+    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -36,7 +36,7 @@ def define_api(func: Callable[..., WebResponse]):
             logger.warning(f'API error: {e}')
             return e.as_response_code()
 
-    wrapper.__name__ = func.__name__
+    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -48,7 +48,7 @@ def url_endpoint(func: Callable[..., Awaitable[WebResponse]]):
             logger.warning(f'Error in URL API: {e}')
             return e.as_response_code()
 
-    wrapper.__name__ = func.__name__
+    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -73,7 +73,7 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
         else:
             return ExpectedJson().as_response_code()
 
-    wrapper.__name__ = func.__name__
+    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -133,7 +133,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, expire
                 State.cache.insert(page_hash, (full_page, time.time()), expire_event=expire_event)
             return full_page
 
-        wrapper.__name__ = func.__name__
+        wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
         return wrapper
 
     return decorator
