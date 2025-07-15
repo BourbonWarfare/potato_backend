@@ -11,6 +11,9 @@ class Environment:
     def db_connection(self) -> str:
         raise NotImplementedError()
 
+    def deploy_asgi(self) -> bool:
+        raise NotImplementedError()
+
 
 class Local(Environment):
     def port(self) -> int:
@@ -22,6 +25,9 @@ class Local(Environment):
     def db_connection(self) -> str:
         GC.require('db_driver', 'db_username', 'db_password', 'db_address', 'db_name')
         return f'{GC["db_driver"]}://{GC["db_username"]}:{GC["db_password"]}@{GC["db_address"]}'
+
+    def deploy_asgi(self) -> bool:
+        return False
 
 
 class Test(Environment):
@@ -35,6 +41,9 @@ class Test(Environment):
         GC.require('db_driver', 'db_username', 'db_password', 'db_address', 'db_name')
         return f'{GC["db_driver"]}://{GC["db_username"]}:{GC["db_password"]}@{GC["db_address"]}'
 
+    def deploy_asgi(self) -> bool:
+        return False
+
 
 class Production(Environment):
     def port(self) -> int:
@@ -46,6 +55,9 @@ class Production(Environment):
     def db_connection(self) -> str:
         GC.require('db_driver', 'db_username', 'db_password', 'db_address', 'db_name')
         return f'{GC["db_driver"]}://{GC["db_username"]}:{GC["db_password"]}@{GC["db_address"]}'
+
+    def deploy_asgi(self) -> bool:
+        return True
 
 
 if GC.get('environment', 'local') == 'prod':

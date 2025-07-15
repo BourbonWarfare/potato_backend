@@ -1,45 +1,13 @@
-import os
 from quart import Quart
 from logging.config import dictConfig
 
+from bw.log import config as log_config
 from bw.settings import GLOBAL_CONFIGURATION
-from bw.environment import ENVIRONMENT, Local
+from bw.environment import ENVIRONMENT
 from bw.state import State
 import bw.response  # noqa: F401
 
-if not os.path.exists('./logs'):
-    os.makedirs('./logs')
-
-dictConfig(
-    {
-        'version': 1,
-        'formatters': {
-            'default': {'format': '[%(asctime)s] [%(module)s] %(levelname)s: %(message)s', 'datefmt': '%Y-%m-%d %H:%M:%S'}
-        },
-        'handlers': {
-            'wsgi': {
-                'class': 'logging.StreamHandler',
-                'stream': 'ext://flask.logging.wsgi_errors_stream',
-                'formatter': 'default',
-            },
-            'file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'default',
-                'filename': 'logs/server.log',
-                'backupCount': int(GLOBAL_CONFIGURATION.get('log_backup_count', 3)),
-                'maxBytes': int(GLOBAL_CONFIGURATION.get('single_log_size', 1 * 1024 * 1024)),
-            },
-        },
-        'root': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
-        'loggers': {
-            'quart.app': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
-            'bw': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
-            'bw.cache': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
-            'bw.auth': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
-            'bw.missions': {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else 'INFO', 'handlers': ['wsgi', 'file']},
-        },
-    }
-)
+dictConfig(log_config())
 
 app = Quart(__name__)
 app.config.update(TESTING=False, PROPAGATE_EXCEPTIONS=False)

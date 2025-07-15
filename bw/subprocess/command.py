@@ -9,13 +9,15 @@ from bw.error import SubprocessNotFound, SubprocessFailed
 
 
 class Command:
+    RUNNER: str = ''
     COMMAND: str = ''
+    GUARANTEE_CAN_RUN: bool = False
     POSITIONAL_ARGUMENTS: tuple[type, ...] = ()
     KEYWORD_ARGUMENTS: dict[str, type] = {}
 
     @classmethod
     def locate(cls) -> str:
-        if can_call_as_command(cls.COMMAND):
+        if cls.GUARANTEE_CAN_RUN or can_call_as_command(cls.COMMAND):
             return cls.COMMAND
         if can_call_as_command(f'./bin/{cls.COMMAND}'):
             return f'./bin/{cls.COMMAND}'
@@ -30,7 +32,11 @@ class Command:
         raise NotImplementedError()
 
     @classmethod
-    def _validate_arguments(cls, *args, **kwargs):
+    def _python_keyword_arguments(cls) -> dict[str, type]:
+        return {k.replace('-', '_'): v for k, v in cls.KEYWORD_ARGUMENTS.items()}
+
+    @classmethod
+    def _validate_arguments(cls, *args, **kwargs) -> list[str]:
         full_command = f'"{" ".join(cls._COMMAND)}"'
         required_arguments = len([t for t in cls.POSITIONAL_ARGUMENTS if not isinstance(None, t)])
         if len(args) < required_arguments:
@@ -47,17 +53,25 @@ class Command:
             if not isinstance(arg, expected_type):
                 raise TypeError(f"{full_command} argument {idx} must be '{expected_type.__name__}', not '{gotten_type.__name__}'")
 
-        if len(kwargs) > len(cls.KEYWORD_ARGUMENTS):
-            raise TypeError(f'{full_command} takes at most {len(cls.KEYWORD_ARGUMENTS)} keyword arguments ({len(kwargs)} given)')
+        modified_kwargs = cls._python_keyword_arguments()
+        if len(kwargs) > len(modified_kwargs):
+            raise TypeError(f'{full_command} takes at most {len(modified_kwargs)} keyword arguments ({len(kwargs)} given)')
 
+        kwargs_to_adjust = []
         for option, arg in kwargs.items():
-            if option not in cls.KEYWORD_ARGUMENTS:
+            if option not in modified_kwargs:
                 raise TypeError(f"{full_command} does not have an argument of name '{option}'")
 
-            expected_type = cls.KEYWORD_ARGUMENTS[option]
+            if option in modified_kwargs and option not in cls.KEYWORD_ARGUMENTS:
+                # replace abc_def => abc-def
+                kwargs_to_adjust.append(option)
+
+            expected_type = modified_kwargs[option]
             given_type = type(arg)
             if not isinstance(arg, expected_type):
                 raise TypeError(f"{full_command} Expected '{arg}={expected_type.__name__}, {arg}={given_type.__name__} given'")
+
+        return kwargs_to_adjust
 
     @classmethod
     def _interpret_results(cls, stdout: str, stderr: str) -> Any:
@@ -85,10 +99,16 @@ class Command:
 
     @classmethod
     def _get_command(cls, *args, **kwargs) -> list[str]:
-        cls._validate_arguments(*args, **kwargs)
+        kwargs_to_adjust = cls._validate_arguments(*args, **kwargs)
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
+        string_options = {k.replace('_', '-'): v for k, v in string_options.items() if k in kwargs_to_adjust}
 
-        return cls._COMMAND + [f'--{k}={v}' if len(k) > 1 else f'-{k} {v}' for k, v in string_options.items()] + list(args)
+        return (
+            cls.RUNNER.split()
+            + cls._COMMAND
+            + [f'--{k}={v}' if len(k) > 2 else f'-{k} {v}' for k, v in string_options.items()]
+            + list(args)
+        )
 
     @classmethod
     def call(cls, *args, **kwargs) -> Any:
@@ -96,7 +116,14 @@ class Command:
         try:
             result.check_returncode()
         except subprocess.CalledProcessError as e:
-            raise SubprocessFailed(cls.COMMAND, e.output.decode())
+            raise SubprocessFailed(
+                cls.COMMAND,
+                f'\
+{e.output.decode().strip().replace("\n", " ").replace("\r", "")}:\
+\n\tstdout={e.stdout.decode().strip().replace("\n", " ").replace("\r", "")}\
+\n\tstderr={e.stderr.decode().strip().replace("\n", " ").replace("\r", "")}\
+',
+            )
         return cls._interpret_results(result.stdout.decode(), result.stderr.decode())
 
     @classmethod

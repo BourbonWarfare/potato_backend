@@ -30,6 +30,9 @@ tests = [
     "pytest-cov",
     "pytest-asyncio"
 ]
+prod = [
+    "uvicorn"
+]
 
 [tool.setuptools.packages.find]
 include = ["bw*"]

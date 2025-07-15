@@ -78,7 +78,7 @@ async def html_home(html: str) -> str:
     )
 
 
-@app.get('/missions/list')
+@app.get('/missions')
 @html_endpoint(template_path='missions/home.html', title='BW Mission List', expire_event=ServerEvent.MISSION_UPLOADED)
 async def html_missions_list(html: str) -> str:
     """
@@ -95,7 +95,7 @@ async def html_missions_list(html: str) -> str:
 
     **Example:**
     ```
-    GET /missions/list
+    GET /missions
     ```
     Returns the rendered HTML mission list page with all mission metadata.
     """
