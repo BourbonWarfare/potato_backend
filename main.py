@@ -26,8 +26,6 @@ def production():
 
 
 def main():
-    production()
-    return
     if ENVIRONMENT.deploy_asgi():
         production()
     else:
