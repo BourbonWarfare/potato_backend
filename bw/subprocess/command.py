@@ -109,17 +109,16 @@ class Command:
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
         string_options = {k.replace('_', '-') if k in kwargs_to_adjust else k: v for k, v in string_options.items()}
 
-        return (
-            cls.RUNNER.split()
-            + cls._COMMAND
-            + [f'--{k}={v}' if len(k) > 2 else f'-{k} {v}' for k, v in string_options.items()]
-            + list(args)
-        )
+        commands = []
+        for k, v in string_options.items():
+            commands.extend([f'--{k}' if len(k) > 1 else f'-{k}', v])
+
+        return cls.RUNNER.split() + cls._COMMAND + commands + list(args)
 
     @classmethod
     def call(cls, *args, **kwargs) -> Any:
         command = cls._get_command(*args, **kwargs)
-        logger.info(f'Calling `{command}` (synchronous) with args={args}, kwargs={kwargs}')
+        logger.info(f'Calling `{" ".join(command)}` (synchronous) with args={args}, kwargs={kwargs}')
         result = subprocess.run(args=command, capture_output=True)
         try:
             result.check_returncode()
@@ -137,7 +136,7 @@ class Command:
     @classmethod
     async def acall(cls, *args, **kwargs) -> Any:
         command = cls._get_command(*args, **kwargs)
-        logger.info(f'Calling `{command}` (asynchronous) with args={args}, kwargs={kwargs}')
+        logger.info(f'Calling `{" ".join(command)}` (asynchronous) with args={args}, kwargs={kwargs}')
         process = await asyncio.create_subprocess_exec(
             *command,
             stdout=asyncio.subprocess.PIPE,
