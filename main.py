@@ -13,6 +13,7 @@ def production():
     ssl_certfile_path = GLOBAL_CONFIGURATION['ssl_certfile_path']
     ssl_keyfile_path = GLOBAL_CONFIGURATION['ssl_keyfile_path']
 
+    print('Starting production server with SSL')
     uvicorn.run(
         'bw.server:app',
         host='0.0.0.0',
@@ -23,6 +24,7 @@ def production():
         log_config=log_config(),
         log_level='info',
     )
+    print('thats all, folks')
 
 
 def main():

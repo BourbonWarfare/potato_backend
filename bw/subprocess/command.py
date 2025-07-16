@@ -1,3 +1,4 @@
+import logging
 import copy
 import subprocess
 import asyncio
@@ -6,6 +7,9 @@ from typing import Any
 
 from bw.subprocess.helpers import can_call_as_command
 from bw.error import SubprocessNotFound, SubprocessFailed
+
+
+logger = logging.getLogger('bw.subprocess')
 
 
 class Command:
@@ -17,10 +21,12 @@ class Command:
 
     @classmethod
     def locate(cls) -> str:
-        if cls.GUARANTEE_CAN_RUN or can_call_as_command(cls.COMMAND):
+        if cls.GUARANTEE_CAN_RUN:
             return cls.COMMAND
         if can_call_as_command(f'./bin/{cls.COMMAND}'):
             return f'./bin/{cls.COMMAND}'
+        if can_call_as_command(cls.COMMAND):
+            return cls.COMMAND
         raise SubprocessNotFound(cls.COMMAND)
 
     @staticmethod
@@ -112,7 +118,9 @@ class Command:
 
     @classmethod
     def call(cls, *args, **kwargs) -> Any:
-        result = subprocess.run(args=cls._get_command(*args, **kwargs), capture_output=True)
+        command = cls._get_command(*args, **kwargs)
+        logger.info(f'Calling `{command}` (synchronous) with args={args}, kwargs={kwargs}')
+        result = subprocess.run(args=command, capture_output=True)
         try:
             result.check_returncode()
         except subprocess.CalledProcessError as e:
@@ -129,6 +137,7 @@ class Command:
     @classmethod
     async def acall(cls, *args, **kwargs) -> Any:
         command = cls._get_command(*args, **kwargs)
+        logger.info(f'Calling `{command}` (asynchronous) with args={args}, kwargs={kwargs}')
         process = await asyncio.create_subprocess_exec(
             *command,
             stdout=asyncio.subprocess.PIPE,
@@ -137,7 +146,13 @@ class Command:
 
         stdout, stderr = await process.communicate()
         if process.returncode != 0:
-            raise SubprocessFailed(cls.COMMAND, stderr.decode())
+            raise SubprocessFailed(
+                cls.COMMAND,
+                f'\
+\n\tstdout={stdout.decode().strip().replace("\n", " ").replace("\r", "")}\
+\n\tstderr={stderr.decode().strip().replace("\n", " ").replace("\r", "")}\
+',
+            )
         return cls._interpret_results(stdout.decode(), stderr.decode())
 
     def __call__(self, *args, **kwargs) -> Any:
