@@ -21,5 +21,6 @@ def run(folder: Path):
             if len(tasks) >= 10:
                 await asyncio.gather(*tasks)
                 tasks.clear()
+        await asyncio.gather(*tasks)
 
     asyncio.run(process_folder(folder))
