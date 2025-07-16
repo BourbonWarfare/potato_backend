@@ -7,7 +7,7 @@ from bw.missions.api import MissionsApi
 
 def run(folder: Path):
     async def process_folder(folder: Path):
-        dirpath, _, files = os.walk(folder)
+        dirpath, _, files = [x for x in os.walk(folder)][0]
         async with asyncio.TaskGroup() as tg:
             for file in files:
                 if not file.endswith('.pbo'):
