@@ -3,9 +3,12 @@ import asyncio
 
 from pathlib import Path
 from bw.missions.api import MissionsApi
+from bw.state import State
 
 
 def run(folder: Path):
+    state = State()  # noqa: F841
+
     async def process_folder(folder: Path):
         api = MissionsApi()
         tasks = set()
@@ -19,8 +22,8 @@ def run(folder: Path):
             tasks.add(asyncio.create_task(api.upload_mission_metadata(path)))
 
             if len(tasks) >= 10:
-                await asyncio.gather(*tasks)
+                await asyncio.gather(*tasks, return_exceptions=True)
                 tasks.clear()
-        await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     asyncio.run(process_folder(folder))
