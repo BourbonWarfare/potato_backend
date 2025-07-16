@@ -107,7 +107,7 @@ class Command:
     def _get_command(cls, *args, **kwargs) -> list[str]:
         kwargs_to_adjust = cls._validate_arguments(*args, **kwargs)
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
-        string_options = {k.replace('_', '-'): v for k, v in string_options.items() if k in kwargs_to_adjust}
+        string_options = {k.replace('_', '-') if k in kwargs_to_adjust else k: v for k, v in string_options.items()}
 
         return (
             cls.RUNNER.split()
