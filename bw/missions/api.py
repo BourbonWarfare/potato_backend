@@ -81,10 +81,10 @@ class MissionsApi:
                 raise MissionDoesNotHaveMetadata()
             data.append(1)
 
-            if 'potato_missionTesting_missionTestingInfo' in mission.custom_attributes:
+            if 'potato_missiontesting_missionTestingInfo' in mission.custom_attributes:
                 uuid = (
                     mission.custom_attributes
-                        ['potato_missionTesting_missionTestingInfo']
+                        ['potato_missiontesting_missionTestingInfo']
                         ['potato_missionMaking_uuid']
                         ['data']
                         ['value']
@@ -192,10 +192,10 @@ class MissionsApi:
         if 'potato_missiontesting_missionType' not in info:
             raise MissionDoesNotHaveMetadata()
 
-        if 'potato_missionTesting_missionTestingInfo' in mission.custom_attributes:
+        if 'potato_missiontesting_missionTestingInfo' in mission.custom_attributes:
             uuid = (
                 mission.custom_attributes
-                    ['potato_missionTesting_missionTestingInfo']
+                    ['potato_missiontesting_missionTestingInfo']
                     ['potato_missionMaking_uuid']
                     ['data']
                     ['value']
