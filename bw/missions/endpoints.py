@@ -1,5 +1,6 @@
 import logging
 from quart import render_template_string
+from pathlib import Path
 
 from bw.server import app
 from bw.web_utils import json_endpoint, html_endpoint
@@ -52,7 +53,7 @@ async def upload(location: str, session_user: User, pbo_path: str, changelog: di
     ```
     """
     logger.info(f'User {session_user.id} is uploading mission from {pbo_path} to {location} with changelog: {changelog}')
-    await MissionsApi().upload_mission_metadata(stored_pbo_path=pbo_path)
+    await MissionsApi().upload_mission_metadata(stored_pbo_path=Path(pbo_path))
     return JsonResponse({})
 
 

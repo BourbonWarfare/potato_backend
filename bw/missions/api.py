@@ -12,7 +12,6 @@ from bw.error import (
     MissionDoesNotHaveMetadata,
     CouldNotReviewMission,
 )
-from bw.auth.session import SessionStore
 from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
 from bw.missions.tests import TestStore
@@ -32,7 +31,7 @@ class MissionsApi:
         self.metadata_path = Path('metadata/log.csv')
 
     @define_async_api
-    async def upload_mission_metadata(self, stored_pbo_path: str) -> WebResponse:
+    async def upload_mission_metadata(self, stored_pbo_path: Path) -> WebResponse:
         """
         ### Logs a mission's metadata
 
@@ -83,8 +82,14 @@ class MissionsApi:
 
             if 'potato_missionMaking_uuid' in info:
                 uuid = info['potato_missionMaking_uuid']['data']['value']
+                logger.info(f'uuid found for {mission.source_name}')
+                logger.info(f'posterity: [{uuid}]')
+                logger.debug(f'info dict: {info["potato_missionMaking_uuid"]}')
                 data.append(uuid)
             else:
+                logger.info(f'no uuid found in mission metadata for {mission.source_name}')
+                logger.info(f'posterity: {"potato_missionMaking_uuid" in info}')
+                logger.debug(f'info dict: {info}')
                 data.append('')
 
             tag = int(info['potato_missiontesting_missionType']['data']['value'])
@@ -145,9 +150,7 @@ class MissionsApi:
         return Created()
 
     @define_async_api
-    async def upload_mission_to_main(
-        self, state: State, user_session_token: str, stored_pbo_path: str, changelog: dict
-    ) -> JsonResponse:
+    async def upload_mission_to_main(self, state: State, user: User, stored_pbo_path: Path, changelog: dict) -> JsonResponse:
         """
         ### Upload a mission to the main database
 
@@ -156,7 +159,7 @@ class MissionsApi:
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.
-        - `user_session_token` (`str`): The session token of the user uploading the mission.
+        - `user` (`User`): The user uploading the mission.
         - `stored_pbo_path` (`str`): The path to the stored PBO directory.
         - `changelog` (`dict`): The changelog for this mission iteration.
 
@@ -200,8 +203,6 @@ class MissionsApi:
             tag = int(info['potato_missiontesting_missionType']['data']['value'])
             mission_type = MissionTypeStore().mission_type_from_tag(state, tag)
 
-            creator = SessionStore().get_user_from_session_token(state, session_token=user_session_token)
-
             flags = {}
             if 'potato_missiontesting_missionTag1' in info:
                 flags['tag1'] = int(info['potato_missiontesting_missionTag1']['data']['value'])
@@ -212,7 +213,7 @@ class MissionsApi:
 
             existing_mission = MissionStore().create_mission(
                 state,
-                creator,
+                user,
                 author=mission.author,
                 title=re.sub('_[vV][0-9]*', '', mission.source_name),
                 type=mission_type,
