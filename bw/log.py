@@ -11,6 +11,7 @@ PRODUCTION_LOG_CONFIG = {
     'bw.cache': 'INFO',
     'bw.auth': 'INFO',
     'bw.missions': 'DEBUG',
+    'bw.psm': 'DEBUG',
 }
 
 
@@ -59,6 +60,10 @@ def config() -> dict[str, Any]:
             },
             'bw.missions': {
                 'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.missions'],
+                'handlers': ['wsgi', 'file'],
+            },
+            'bw.psm': {
+                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.psm'],
                 'handlers': ['wsgi', 'file'],
             },
         },

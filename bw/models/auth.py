@@ -87,6 +87,7 @@ class GroupPermission(Base):
 
     can_upload_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
     can_test_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
+    can_manage_server: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
 
     def into_permissions(self) -> Permissions:
         return Permissions.from_keys(**{key: getattr(self, key) for key in Permissions.__slots__})  # ty: ignore[missing-argument, unresolved-attribute]

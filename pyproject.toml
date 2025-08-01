@@ -6,6 +6,7 @@ requires-python = "==3.12.*"
 dependencies = [
     "SQLAlchemy",
     "pg8000",
+    "python-socketio[asyncio_client]",
     "quart",
     "werkzeug",
     "alembic",
