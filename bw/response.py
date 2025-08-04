@@ -1,5 +1,6 @@
 from quart import Response
 from werkzeug.datastructures.headers import Headers
+from dataclasses import dataclass
 import json
 
 
@@ -63,3 +64,35 @@ class HtmlResponse(WebResponse):
 
     def __init__(self, html: str, headers: dict = {}):
         super().__init__(status=200, headers=headers, response=html)
+
+
+@dataclass
+class WebEvent:
+    event: str
+    data: str | dict
+    id: str | None = None
+    retry: int | None = None
+
+    def encode(self) -> bytes:
+        data = f'event: {self.event}\ndata: {json.dumps(self.data)}\n'
+        if self.id is not None:
+            data += f'id: {self.id}\n'
+        if self.retry is not None:
+            data += f'retry: {self.retry}\n'
+        data += '\n'
+        return data.encode('utf-8')
+
+
+class ServerSentEventResponse(WebResponse):
+    def content_type(self) -> str:
+        return 'text/event-stream'
+
+    def __init__(self, data: WebEvent, headers: dict = {}):
+        headers.update(
+            {
+                'Cache-Control': 'no-cache',
+                'Transfer-Encoding': 'chunked',
+            }
+        )
+
+        super().__init__(status=200, headers=headers, response=data.encode())
