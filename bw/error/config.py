@@ -19,3 +19,23 @@ class ConfigurationKeyNotPresent(ConfigError):
 class NoConfigLoaded(ConfigError):
     def __init__(self):
         super().__init__('Config not loaded')
+
+
+class WrongConfigType(ConfigError):
+    def __init__(self, expected_type: str, actual_type: str):
+        super().__init__(f'Expected config type {expected_type}, but got {actual_type}')
+
+
+class ConfigIsNotEnv(WrongConfigType):
+    def __init__(self, actual: str):
+        super().__init__('.env', actual)
+
+
+class ConfigIsNotKeyValue(WrongConfigType):
+    def __init__(self, actual: str):
+        super().__init__('.txt', actual)
+
+
+class UnknownConfigFileType(WrongConfigType):
+    def __init__(self, actual: str, *expected: str):
+        ConfigError.__init__(self, f'Unknown config file type: {actual}. Expected one of: {", ".join(expected)}')

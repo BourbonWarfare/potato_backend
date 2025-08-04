@@ -19,9 +19,11 @@ class Command:
     POSITIONAL_ARGUMENTS: tuple[type, ...] = ()
     KEYWORD_ARGUMENTS: dict[str, type] = {}
 
+    KEYWORD_PREFIX = '--'
+
     @classmethod
     def locate(cls) -> str:
-        if cls.GUARANTEE_CAN_RUN:
+        if cls.GUARANTEE_CAN_RUN or cls.RUNNER != '':
             return cls.COMMAND
         if can_call_as_command(f'./bin/{cls.COMMAND}'):
             return f'./bin/{cls.COMMAND}'
@@ -74,7 +76,9 @@ class Command:
 
             expected_type = modified_kwargs[option]
             given_type = type(arg)
-            if not isinstance(arg, expected_type):
+            if expected_type is None or expected_type == Any:
+                pass
+            elif not isinstance(arg, expected_type):
                 raise TypeError(f"{full_command} Expected '{arg}={expected_type.__name__}, {arg}={given_type.__name__} given'")
 
         return kwargs_to_adjust
@@ -111,9 +115,12 @@ class Command:
 
         commands = []
         for k, v in string_options.items():
-            commands.extend([f'--{k}' if len(k) > 1 else f'-{k}', v])
+            commands.append(f'{cls.KEYWORD_PREFIX}{k}' if len(k) > 1 else f'-{k}')
+            if cls.KEYWORD_ARGUMENTS.get(k, None) is not None:
+                commands.append(v)
 
-        return cls.RUNNER.split() + cls._COMMAND + commands + list(args)
+        final_command = cls.RUNNER.split() + cls._COMMAND + commands + list(args)
+        return [c if isinstance(c, str) else str(c) for c in final_command]
 
     @classmethod
     def call(cls, *args, **kwargs) -> Any:
@@ -130,7 +137,7 @@ class Command:
 \n\tstdout={e.stdout.decode().strip().replace("\n", " ").replace("\r", "")}\
 \n\tstderr={e.stderr.decode().strip().replace("\n", " ").replace("\r", "")}\
 ',
-            )
+            ) from e
         return cls._interpret_results(result.stdout.decode(), result.stderr.decode())
 
     @classmethod
@@ -166,6 +173,9 @@ def define_process(process, *, command: list | None = None, return_instance: boo
     process._COMMAND = copy.deepcopy(command)
 
     for subprocess in process.__subclasses__():  # noqa: F402
+        subprocess.POSITIONAL_ARGUMENTS = process.POSITIONAL_ARGUMENTS + subprocess.POSITIONAL_ARGUMENTS
+        subprocess.KEYWORD_ARGUMENTS.update(process.KEYWORD_ARGUMENTS)
+
         if subprocess.COMMAND.startswith('-'):
             stripped = subprocess.COMMAND.strip('-')
             setattr(process, f'option_{stripped}', subprocess())
