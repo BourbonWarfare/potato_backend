@@ -1,6 +1,8 @@
 from quart import Response
 from werkzeug.datastructures.headers import Headers
 from dataclasses import dataclass
+from typing import Self
+from collections.abc import AsyncGenerator
 import json
 
 
@@ -8,7 +10,11 @@ class WebResponse(Response):
     def content_type(self) -> str:
         return 'text/plain'
 
+    def headers(self) -> dict[str, str]:
+        return {}
+
     def __init__(self, status: int, headers: dict = {}, response='', **kwargs):
+        headers.update(self.headers())
         lower_headers = {key.lower(): value for key, value in headers.items()}
         if 'content-type' not in lower_headers:
             lower_headers['content-type'] = self.content_type()
@@ -87,12 +93,18 @@ class ServerSentEventResponse(WebResponse):
     def content_type(self) -> str:
         return 'text/event-stream'
 
-    def __init__(self, data: WebEvent, headers: dict = {}):
-        headers.update(
-            {
-                'Cache-Control': 'no-cache',
-                'Transfer-Encoding': 'chunked',
-            }
-        )
+    def headers(self) -> dict[str, str]:
+        return {
+            'Cache-Control': 'no-cache',
+            'Transfer-Encoding': 'chunked',
+        }
 
-        super().__init__(status=200, headers=headers, response=data.encode())
+    @classmethod
+    async def from_async_generator(cls, async_generator: AsyncGenerator[WebEvent]) -> AsyncGenerator[Self]:
+        async def async_generator_wrapper() -> AsyncGenerator[bytes]:
+            async for event in async_generator:
+                yield event.encode()
+
+        response = cls(status=200, response=async_generator_wrapper())
+        response.timeout = None  # Disable timeout for SSE
+        return response

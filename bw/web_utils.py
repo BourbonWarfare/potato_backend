@@ -2,13 +2,14 @@ import logging
 import os
 import time
 from collections.abc import Callable, Awaitable
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from quart import request, render_template_string
 
 from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError, CacheMiss
 from bw.state import State
 from bw.events import ServerEvent
-from bw.response import JsonResponse, WebResponse, ServerSentEventResponse, WebEvent
+from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse
 
 
 logger = logging.getLogger('bw')
@@ -139,10 +140,9 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, expire
     return decorator
 
 
-def sse_endpoint(func: Callable[..., Awaitable[WebEvent]]):
+def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent]]):
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
-        event = await func(*args, **kwargs)
-        return ServerSentEventResponse(data=event)
+        return ServerSentEventResponse.from_async_generator(func(*args, **kwargs))
 
     wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
