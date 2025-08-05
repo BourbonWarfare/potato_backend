@@ -1,16 +1,17 @@
 import os
+import tomllib
 
 from enum import StrEnum
 from pathlib import Path
 from typing import Self, Any
-from collections.abc import Sequence
-from collections.abc import Callable
+from collections.abc import Sequence, Callable
 
 from bw.error import (
     DuplicateConfigKey,
     ConfigurationKeyNotPresent,
     ConfigIsNotEnv,
     ConfigIsNotKeyValue,
+    ConfigIsNotToml,
     UnknownConfigFileType,
 )
 from dotenv import dotenv_values
@@ -37,6 +38,7 @@ def enforce_lowercase_keys(func: Callable[..., 'Configuration']):
 class ConfigType(StrEnum):
     ENV = '.env'
     KEY_VALUE = '.kv'
+    TOML = '.toml'
 
     @classmethod
     def list(cls) -> list[str]:
@@ -69,8 +71,21 @@ class Configuration(dict):
                 raise ConfigurationKeyNotPresent(key=key)
         return ConfigContext(self, keys)
 
-    @enforce_lowercase_keys
     @classmethod
+    @enforce_lowercase_keys
+    def load_toml(cls, configuration_file: Path) -> Self:
+        if 'toml' not in configuration_file.suffixes:
+            raise ConfigIsNotToml(actual='.'.join(configuration_file.suffixes))
+
+        with open(configuration_file, 'rb') as file:
+            config = cls(tomllib.load(file))
+
+        config.file = configuration_file
+        config.file_type = ConfigType.TOML
+        return config
+
+    @classmethod
+    @enforce_lowercase_keys
     def load_env(cls, configuration_file: Path) -> Self:
         if 'env' not in configuration_file.suffixes:
             raise ConfigIsNotEnv(actual='.'.join(configuration_file.suffixes))
@@ -85,8 +100,8 @@ class Configuration(dict):
         config.file_type = ConfigType.ENV
         return config
 
-    @enforce_lowercase_keys
     @classmethod
+    @enforce_lowercase_keys
     def load_kv(cls, configuration_file: Path) -> Self:
         if configuration_file.suffix != '.kv':
             raise ConfigIsNotKeyValue(actual=configuration_file.suffix)
@@ -122,5 +137,7 @@ class Configuration(dict):
             return Configuration.load_env(configuration_file)
         elif configuration_file.suffix == '.kv':
             return Configuration.load_kv(configuration_file)
+        elif configuration_file.suffix == '.toml':
+            return Configuration.load_toml(configuration_file)
         else:
             raise UnknownConfigFileType(configuration_file.suffix, *ConfigType.list())

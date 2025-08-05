@@ -1,4 +1,7 @@
 # server-only conf
+*.kv
+*.env
+*.toml
 conf.txt*
 auth.txt*
 server.log*

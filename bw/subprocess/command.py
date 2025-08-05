@@ -4,6 +4,8 @@ import subprocess
 import asyncio
 import asyncio.subprocess
 from typing import Any
+from collections.abc import Iterable
+from pathlib import Path
 
 from bw.subprocess.helpers import can_call_as_command
 from bw.error import SubprocessNotFound, SubprocessFailed
@@ -14,17 +16,24 @@ logger = logging.getLogger('bw.subprocess')
 
 class Command:
     RUNNER: str = ''
+    COMMAND_PATHS: list[Path] = []
     COMMAND: str = ''
     GUARANTEE_CAN_RUN: bool = False
     POSITIONAL_ARGUMENTS: tuple[type, ...] = ()
     KEYWORD_ARGUMENTS: dict[str, type] = {}
 
-    KEYWORD_PREFIX = '--'
+    COMMAND_PREFIX: str = ''
+    KEYWORD_PREFIX: str = '--'
+    KEYWORD_PREFIXES: dict[str, str] = {}
+    POSITIONAL_ARGUMENTS_FIRST: bool = False
 
     @classmethod
     def locate(cls) -> str:
         if cls.GUARANTEE_CAN_RUN or cls.RUNNER != '':
             return cls.COMMAND
+        for path in cls.COMMAND_PATHS:
+            if can_call_as_command(str(path / cls.COMMAND)):
+                return str(path / cls.COMMAND)
         if can_call_as_command(f'./bin/{cls.COMMAND}'):
             return f'./bin/{cls.COMMAND}'
         if can_call_as_command(cls.COMMAND):
@@ -108,44 +117,102 @@ class Command:
         return stderr_result
 
     @classmethod
-    def _get_command(cls, *args, **kwargs) -> list[str]:
+    def _get_command(cls, *args, entire_chain: bool = True, **kwargs) -> list[str]:
         kwargs_to_adjust = cls._validate_arguments(*args, **kwargs)
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
         string_options = {k.replace('_', '-') if k in kwargs_to_adjust else k: v for k, v in string_options.items()}
 
         commands = []
         for k, v in string_options.items():
-            commands.append(f'{cls.KEYWORD_PREFIX}{k}' if len(k) > 1 else f'-{k}')
-            if cls.KEYWORD_ARGUMENTS.get(k, None) is not None:
-                commands.append(v)
+            if k in cls.KEYWORD_PREFIXES:
+                commands.append(f'{cls.KEYWORD_PREFIXES[k]}{k}')
+            else:
+                commands.append(f'{cls.KEYWORD_PREFIX}{k}' if len(k) > 1 else f'-{k}')
+                if cls.KEYWORD_ARGUMENTS.get(k, None) is not None:
+                    commands.append(v)
 
-        final_command = cls.RUNNER.split() + cls._COMMAND + commands + list(args)
+        command_prefix = [cls.COMMAND_PREFIX + cls.COMMAND]
+        if entire_chain:
+            command_prefix = cls.RUNNER.split() + cls._COMMAND
+
+        if cls.POSITIONAL_ARGUMENTS_FIRST:
+            final_command = command_prefix + list(args) + commands
+        else:
+            final_command = command_prefix + commands + list(args)
         return [c if isinstance(c, str) else str(c) for c in final_command]
 
     @classmethod
-    def call(cls, *args, **kwargs) -> Any:
+    def dryrun(cls, *args, **kwargs) -> str:
         command = cls._get_command(*args, **kwargs)
-        logger.info(f'Calling `{" ".join(command)}` (synchronous) with args={args}, kwargs={kwargs}')
-        result = subprocess.run(args=command, capture_output=True)
+        logger.info(f'Dry-running `{" ".join(command)}` with args={args}, kwargs={kwargs}')
+        return ' '.join(command)
+
+    @classmethod
+    def call(cls, *args, **kwargs) -> Any:
+        runner = Runner(cls._get_command(*args, **kwargs))
+        logger.info(f'Calling `{" ".join(runner.command)}` (synchronous) with args={args}, kwargs={kwargs}')
+        stdout, stderr = runner.call(*args, **kwargs)
+        return cls._interpret_results(stdout, stderr)
+
+    @classmethod
+    async def acall(cls, *args, **kwargs) -> Any:
+        runner = Runner(cls._get_command(*args, **kwargs))
+        logger.info(f'Calling `{" ".join(runner.command)}` (asynchronous) with args={args}, kwargs={kwargs}')
+        stdout, stderr = await runner.acall(*args, **kwargs)
+        return cls._interpret_results(stdout, stderr)
+
+    def __call__(self, *args, **kwargs) -> Any:
+        return self.call(*args, **kwargs)
+
+
+class DryCommand(Command):
+    @classmethod
+    def call(cls, *args, **kwargs) -> str:
+        return cls._get_command(*args, **kwargs, entire_chain=False)
+
+    @classmethod
+    async def acall(cls, *args, **kwargs) -> Any:
+        return cls._get_command(*args, **kwargs, entire_chain=False)
+
+    @classmethod
+    def start(cls, *args, **kwargs) -> str:
+        return cls._get_command(*args, **kwargs, entire_chain=True)
+
+
+class Runner:
+    _command: list[str]
+
+    def __init__(self, command: Iterable[str]):
+        self._command = list(command)
+
+    @property
+    def command(self) -> list[str]:
+        return self._command
+
+    def dryrun(self) -> str:
+        logger.info(f'Dry-running `{" ".join(self.command)}`')
+        return ' '.join(self.command)
+
+    def call(self) -> Any:
+        logger.info(f'Calling `{" ".join(self.command)}` (synchronous)')
+        result = subprocess.run(args=self.command, capture_output=True)
         try:
             result.check_returncode()
         except subprocess.CalledProcessError as e:
             raise SubprocessFailed(
-                cls.COMMAND,
+                ' '.join(self.command),
                 f'\
 {e.output.decode().strip().replace("\n", " ").replace("\r", "")}:\
 \n\tstdout={e.stdout.decode().strip().replace("\n", " ").replace("\r", "")}\
 \n\tstderr={e.stderr.decode().strip().replace("\n", " ").replace("\r", "")}\
 ',
             ) from e
-        return cls._interpret_results(result.stdout.decode(), result.stderr.decode())
+        return result.stdout.decode(), result.stderr.decode()
 
-    @classmethod
-    async def acall(cls, *args, **kwargs) -> Any:
-        command = cls._get_command(*args, **kwargs)
-        logger.info(f'Calling `{" ".join(command)}` (asynchronous) with args={args}, kwargs={kwargs}')
+    async def acall(self) -> Any:
+        logger.info(f'Calling `{" ".join(self.command)}` (asynchronous)')
         process = await asyncio.create_subprocess_exec(
-            *command,
+            *self.command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )  # ty: ignore[missing-argument]
@@ -153,23 +220,28 @@ class Command:
         stdout, stderr = await process.communicate()
         if process.returncode != 0:
             raise SubprocessFailed(
-                cls.COMMAND,
+                ' '.join(self.command),
                 f'\
 \n\tstdout={stdout.decode().strip().replace("\n", " ").replace("\r", "")}\
 \n\tstderr={stderr.decode().strip().replace("\n", " ").replace("\r", "")}\
 ',
             )
-        return cls._interpret_results(stdout.decode(), stderr.decode())
+        return stdout.decode(), stderr.decode()
 
-    def __call__(self, *args, **kwargs) -> Any:
-        return self.call(*args, **kwargs)
+
+class Chain:
+    def __new__(cls, *commands: str) -> Runner:
+        command = []
+        for sub_command in commands:
+            command.extend(sub_command)
+        return Runner(command)
 
 
 def define_process(process, *, command: list | None = None, return_instance: bool = True):
     if command is None:
         command = [process.locate()]
     else:
-        command = command + [process.COMMAND]
+        command = command + [process.COMMAND_PREFIX + process.COMMAND]
     process._COMMAND = copy.deepcopy(command)
 
     for subprocess in process.__subclasses__():  # noqa: F402
