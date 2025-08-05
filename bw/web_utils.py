@@ -142,7 +142,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, expire
 
 def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent]]):
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
-        return ServerSentEventResponse.from_async_generator(func(*args, **kwargs))
+        return await ServerSentEventResponse.from_async_generator(func(*args, **kwargs))
 
     wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
