@@ -10,6 +10,7 @@ from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError
 from bw.state import State
 from bw.events import ServerEvent
 from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse
+from bw.web_event import BaseEvent
 
 
 logger = logging.getLogger('bw')
@@ -140,9 +141,19 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, expire
     return decorator
 
 
-def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent]]):
+def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent | BaseEvent]]):
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
-        return await ServerSentEventResponse.from_async_generator(func(*args, **kwargs))
+        generator = func(*args, **kwargs)
+
+        if isinstance(generator, AsyncGenerator[BaseEvent]):
+
+            async def wrapped_generator() -> AsyncGenerator[WebEvent]:
+                async for event in func(*args, **kwargs):
+                    yield event.as_web_event()
+
+            generator = wrapped_generator()
+
+        return await ServerSentEventResponse.from_async_generator(generator)
 
     wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
