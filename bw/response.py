@@ -72,10 +72,10 @@ class HtmlResponse(WebResponse):
         super().__init__(status=200, headers=headers, response=html)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class WebEvent:
     event: str
-    data: str | dict
+    data: str | dict = ''
     id: str | None = None
     retry: int | None = None
 
