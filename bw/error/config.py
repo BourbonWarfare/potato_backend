@@ -36,6 +36,11 @@ class ConfigIsNotKeyValue(WrongConfigType):
         super().__init__('.txt', actual)
 
 
+class ConfigIsNotToml(WrongConfigType):
+    def __init__(self, actual: str):
+        super().__init__('.toml', actual)
+
+
 class UnknownConfigFileType(WrongConfigType):
     def __init__(self, actual: str, *expected: str):
         ConfigError.__init__(self, f'Unknown config file type: {actual}. Expected one of: {", ".join(expected)}')

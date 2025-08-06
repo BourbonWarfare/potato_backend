@@ -37,8 +37,8 @@ class MissionTypeStore:
             try:
                 session.add(mission_type)
                 session.flush()
-            except IntegrityError:
-                raise CouldNotCreateMissionType()
+            except IntegrityError as e:
+                raise CouldNotCreateMissionType() from e
             session.expunge(mission_type)
         return mission_type
 
@@ -64,8 +64,8 @@ class MissionTypeStore:
             query = select(MissionType).where(MissionType.name == name)
             try:
                 mission_type = session.execute(query).one()[0]
-            except NoResultFound:
-                raise NoMissionTypeWithName(name)
+            except NoResultFound as e:
+                raise NoMissionTypeWithName(name) from e
 
             if new_signoff_requirement is not None:
                 mission_type.signoffs_required = new_signoff_requirement
@@ -106,8 +106,8 @@ class MissionTypeStore:
             query = select(MissionType).where(MissionType.name == name)
             try:
                 mission_type = session.execute(query).one()[0]
-            except NoResultFound:
-                raise NoMissionTypeWithName(name)
+            except NoResultFound as e:
+                raise NoMissionTypeWithName(name) from e
             session.expunge(mission_type)
         return mission_type
 
@@ -129,8 +129,8 @@ class MissionTypeStore:
             query = select(MissionType).where(MissionType.numeric_tag == tag)
             try:
                 mission_type = session.execute(query).one()[0]
-            except NoResultFound:
-                raise NoMissionTypeWithTag(tag)
+            except NoResultFound as e:
+                raise NoMissionTypeWithTag(tag) from e
             session.expunge(mission_type)
         return mission_type
 
@@ -220,8 +220,8 @@ class MissionStore:
             query = select(Mission).where(Mission.uuid == uuid)
             try:
                 mission = session.execute(query).one()[0]
-            except NoResultFound:
-                raise MissionDoesNotExist()
+            except NoResultFound as e:
+                raise MissionDoesNotExist() from e
             session.expunge(mission)
         return mission
 
@@ -243,8 +243,8 @@ class MissionStore:
             query = select(Iteration).where(Iteration.uuid == uuid)
             try:
                 iteration = session.execute(query).one()[0]
-            except NoResultFound:
-                raise IterationDoesNotExist()
+            except NoResultFound as e:
+                raise IterationDoesNotExist() from e
             session.expunge(iteration)
         return iteration
 
@@ -289,8 +289,8 @@ class MissionStore:
             query = select(Mission).where(Mission.id == mission.id)
             try:
                 session.execute(query).one()
-            except NoResultFound:
-                raise MissionDoesNotExist()
+            except NoResultFound as e:
+                raise MissionDoesNotExist() from e
             query = select(Iteration.iteration).where(Iteration.mission_id == mission.id).order_by(Iteration.iteration)
             try:
                 previous_iteration = session.scalars(query).one()
@@ -312,8 +312,8 @@ class MissionStore:
             try:
                 session.add(iteration)
                 session.flush()
-            except IntegrityError:
-                raise CouldNotCreateIteration()
+            except IntegrityError as e:
+                raise CouldNotCreateIteration() from e
             session.expunge(iteration)
         return iteration
 
