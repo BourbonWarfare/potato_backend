@@ -10,7 +10,9 @@ dependencies = [
     "werkzeug",
     "alembic",
     "objsize",
-    "python-dotenv"
+    "python-dotenv",
+    "aiohttp",
+    "aiodns"
 ]
 authors = [
     {name="Bailey Danyluk"}

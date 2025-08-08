@@ -14,3 +14,4 @@ from bw.error.mission import *
 from bw.error.subprocess import *
 from bw.error.arma_server import *
 from bw.error.server_manage import *
+from bw.error.arma_mod import *

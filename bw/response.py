@@ -3,17 +3,28 @@ from werkzeug.datastructures.headers import Headers
 from dataclasses import dataclass
 from typing import Self
 from collections.abc import AsyncGenerator
+from bw.error import BwServerError
 import json
 
 
 class WebResponse(Response):
+    from_exception: BwServerError | None
+
     def content_type(self) -> str:
         return 'text/plain'
 
     def headers(self) -> dict[str, str]:
         return {}
 
-    def __init__(self, status: int, headers: dict = {}, response='', **kwargs):
+    def raise_if_unsuccessful(self):
+        if self.status_code >= 300:
+            if self.exception is not None:
+                raise self.exception
+            else:
+                raise BwServerError(status=self.status_code, message='An error occurred for unknown reasons.')
+
+    def __init__(self, status: int, headers: dict = {}, response='', from_exception: BwServerError | None = None, **kwargs):
+        self.exception = from_exception
         headers.update(self.headers())
         lower_headers = {key.lower(): value for key, value in headers.items()}
         if 'content-type' not in lower_headers:
