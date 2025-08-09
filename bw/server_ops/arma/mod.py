@@ -18,8 +18,13 @@ from bw.error.arma_mod import (
 
 logger = logging.getLogger('bw.server_ops.arma')
 
-MODS = {}
-MODLISTS = {}
+# A mapping of all mods by their name.
+# An entry is created when a mod is loaded from a mod definition file
+MODS: dict[str, 'Mod'] = {}
+
+# A mapping of all modlists by their name.
+# An entry is created when a modlist is initialised
+MODLISTS: dict[str, 'Modlist'] = {}
 
 
 async def fetch_mod_names_from_workshop(mods: dict[str, 'Mod']):
