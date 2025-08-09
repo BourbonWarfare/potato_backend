@@ -412,4 +412,4 @@ class ArmaApi:
         (self.deploy_keys(server_name)).raise_if_unsuccessful()
         (await self.start_server(server_name)).raise_if_unsuccessful()
 
-        return self.server_pid_status(server_name)
+        return await self.server_pid_status(server_name)
