@@ -29,9 +29,8 @@ Every non-private internal function MUST include a docstring with the following 
 - This is mandatory for all endpoint docstrings
 
 ### 4. Async/Sync Section 
-- Use `**Async:**` or `**Sync:**` as the section header
-- Use `**Async:**` for async functions and `**Sync:**` for sync functions
-- Indicate whether the function is asynchronous or synchronous
+- Use `**Async:**` the section header as well as body
+- Format: `**Async:** Yes` or `**Async:** No` for ALL functions
 
 ### 5. Args Section
 - Use `**Args:**` as the section header
