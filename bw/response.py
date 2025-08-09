@@ -8,7 +8,7 @@ import json
 
 
 class WebResponse(Response):
-    from_exception: BwServerError | None
+    from_exception: BwServerError | None  # ty: ignore[invalid-type-form]
 
     def content_type(self) -> str:
         return 'text/plain'
@@ -17,13 +17,13 @@ class WebResponse(Response):
         return {}
 
     def raise_if_unsuccessful(self):
-        if self.status_code >= 300:
+        if self.status_code >= 400:
             if self.exception is not None:
                 raise self.exception
             else:
                 raise BwServerError(status=self.status_code, message='An error occurred for unknown reasons.')
 
-    def __init__(self, status: int, headers: dict = {}, response='', from_exception: BwServerError | None = None, **kwargs):
+    def __init__(self, status: int, headers: dict = {}, response='', from_exception: BwServerError | None = None, **kwargs):  # ty: ignore[invalid-type-form]
         self.exception = from_exception
         headers.update(self.headers())
         lower_headers = {key.lower(): value for key, value in headers.items()}

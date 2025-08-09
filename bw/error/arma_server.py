@@ -1,4 +1,4 @@
-from bw.error import BwServerError
+from bw.error import BwServerError, NotFoundError
 
 
 class ArmaServerError(BwServerError):
@@ -11,11 +11,11 @@ class ArmaServerUnresponsive(ArmaServerError):
         super().__init__('The Arma server is unresponsive.')
 
 
-class ModlistNotFound(ArmaServerError):
+class ModlistNotFound(NotFoundError):
     def __init__(self, modlist_name: str):
         super().__init__(f'Modlist "{modlist_name}" not found in the server configuration.')
 
 
-class ServerConfigNotFound(ArmaServerError):
+class ServerConfigNotFound(NotFoundError):
     def __init__(self, server_name: str):
         super().__init__(f'Server "{server_name}" not found in the configuration.')

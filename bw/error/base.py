@@ -2,6 +2,8 @@ from bw.response import WebResponse
 
 
 class BwServerError(Exception):
+    _status: int
+
     def status(self) -> int:
         return self._status
 

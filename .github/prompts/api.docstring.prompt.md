@@ -43,21 +43,21 @@ Every API function MUST include a docstring with the following sections in this 
 - Mention different return scenarios if applicable
 - Include status codes for web responses when relevant
 
-### 6. Raises Section (when applicable)
-- Use `**Raises:**` as the section header
-- Format: `- \`ExceptionType\`: When this exception is raised.`
-- Only include if the function explicitly raises exceptions
-- Document ALL possible exceptions the function can raise
-- Be specific about when each exception occurs
-
-### 7. Example Section
+### 6. Example Section
 - Use `**Example:**` as the section header
 - Include a realistic code example in a Python code block
 - Show both success and error cases when relevant
 - Use comments to explain expected output
 - Make examples executable and realistic
+- Any exceptions raised should be shown as returning an appropiate error response
+- If the response is JSON, put each field on a new line
 
 ## Formatting Rules
+
+### Line length
+- Keep lines under 130 characters
+- All lines above 130 characters should be wrapped to the next line
+- If a line is above 130 characters, it will have to be manually wrapped to the next line
 
 ### Parameter Documentation Format
 ```
@@ -142,14 +142,11 @@ async def method_name(self, state: State, param1: str, param2: int) -> JsonRespo
     **Returns:**
     - `JsonResponse`: A JSON response containing the result data or an error message.
 
-    **Raises:**
-    - `ExceptionType`: When this specific condition occurs.
-
     **Example:**
     ```python
     response = await ApiClass().method_name(state, 'value', 123)
     # Success: JsonResponse({'result': 'data', 'status': 201})
-    # Error: JsonResponse({'status': 400, 'reason': 'Invalid input'})
+    # Error: WebResponse(status=400, reason='Invalid input')
     ```
     """
 ```
@@ -190,6 +187,7 @@ Before submitting docstrings, verify:
 - [ ] Language is consistent with existing codebase
 - [ ] No spelling or grammar errors
 - [ ] Follows exact structure order
+- [ ] All lines are below 130 characters
 
 ## Notes
 - Use triple quotes (`"""`) for all docstrings

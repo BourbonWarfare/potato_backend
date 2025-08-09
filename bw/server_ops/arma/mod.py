@@ -1,0 +1,251 @@
+import logging
+from pathlib import Path
+from enum import StrEnum
+from dataclasses import dataclass
+from typing import Any
+import asyncio
+import aiohttp
+import tomllib
+from bw.error.arma_mod import (
+    ModNotDefined,
+    ModAlreadyDefined,
+    ModMissingField,
+    ModInvalidKind,
+    ModFieldInvalid,
+    DuplicateModWorkshopID,
+    DuplicateModPath,
+)
+
+logger = logging.getLogger('bw.server_ops.arma')
+
+MODS = {}
+MODLISTS = {}
+
+
+async def fetch_mod_names_from_workshop(mods: dict[str, 'Mod']):
+    mod_workshop_ids = {mod.workshop_id: mod.name for mod in mods.values()}
+
+    request_url = 'http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
+    params: dict[str, Any] = {
+        'itemcount': len(mods),
+        **{f'publishedfileids[{idx}]': mod.workshop_id for idx, mod in enumerate(mods.values())},
+    }
+
+    # Get mods name form Steam Workshop
+    url = request_url
+    logger.info('Fetching mod names from Steam Workshop')
+    logger.debug(f'Using URL: {url}')
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, params=params, data=params) as response:
+            if response.status != 200:
+                logger.error(f'Failed to fetch mod names ({response.status} {response.reason})')
+                return
+            if response.content_type != 'application/json':
+                logger.error(f'Unexpected content type trying to fetch mod names: {response.content_type}')
+                return
+
+            json = await response.json()
+            for file in json['response']['publishedfiledetails']:
+                workshop_id = file.get('publishedfileid', -1)
+                if 'result' not in file or file['result'] != 1:
+                    error_reason = file.get('reason', 'unknown')
+                    logger.warning(
+                        f'Failed to fetch details for "{mod_workshop_ids[workshop_id]}" ({workshop_id}): {error_reason}'
+                    )
+                    continue
+                workshop_id = str(file['publishedfileid'])
+                if workshop_id not in mod_workshop_ids:
+                    logger.warning(f'Workshop ID {workshop_id} not found in loaded mods')
+                    continue
+                mod_name = mod_workshop_ids[workshop_id]
+                logger.debug(f'Setting name for mod {mod_name} to {file.get("title", "!!unknown!!")}')
+                mods[mod_name].name = file.get('title', mods[mod_name].name)
+
+
+def load_mods(mods_file: Path):
+    """Load mods from a TOML configuration file.
+
+    Args:
+        mods_file: Path to the TOML file containing mod definitions
+
+    Example TOML file:
+    ```
+        [defaults]
+        mod_directory = "/path/to/mods"
+        server_mod_directory = "/path/to/server/mods"
+
+        [mod]
+        [mod.ace]
+        filename = "ace"
+        workshop_id = 463939057
+        kind = "mod"
+
+        [mod.acre2]
+        filename = "acre2"
+        workshop_id = 751965892
+        manual_install = true
+
+        [mod.cba_a3]
+        filename = "cba_a3"
+        workshop_id = 450814997
+        kind = "server_mod"
+        server_mod_directory = "/custom/server/path"
+
+        [mod.custom_mod]
+        filename = "custom_mod"
+        workshop_id = 123456789
+        mod_directory = "/custom/mod/path"
+    ```
+    """
+    mods_added: dict[str, Mod] = {}
+    mod_workshop_ids = {mod.workshop_id: mod.name for mod in MODS.values()}
+    mod_filenames = {mod.filename: mod.name for mod in MODS.values()}
+
+    with open(mods_file, 'rb') as f:
+        config = tomllib.load(f)
+
+    if 'defaults' not in config:
+        raise ModMissingField('global', 'defaults')
+    if not isinstance(config['defaults'], dict):
+        raise ModFieldInvalid('global', 'defaults', 'must be a dictionary')
+    if 'mod' not in config:
+        raise ModMissingField('global', 'mod')
+    if not isinstance(config['mod'], dict):
+        raise ModFieldInvalid('global', 'mod', 'must be a dictionary')
+
+    defaults = config['defaults']
+    if 'mod_directory' not in defaults:
+        raise ModMissingField('defaults', 'mod_directory')
+    if not isinstance(defaults['mod_directory'], str):
+        raise ModFieldInvalid('defaults', 'mod_directory', 'must be a string')
+    if 'server_mod_directory' not in defaults:
+        raise ModMissingField('defaults', 'server_mod_directory')
+    if not isinstance(defaults['server_mod_directory'], str):
+        raise ModFieldInvalid('defaults', 'server_mod_directory', 'must be a string')
+
+    mod_list: dict[str, Any] = config['mod']
+
+    for mod_name, mod_data in mod_list.items():
+        # Check if mod already exists
+        mod_name = mod_name.replace('-', ' ').strip()
+        if mod_name in MODS:
+            raise ModAlreadyDefined(mod_name)
+
+        # Check required fields
+        if 'filename' not in mod_data:
+            raise ModMissingField(mod_name, 'filename')
+        if not isinstance(mod_data['filename'], str):
+            raise ModFieldInvalid(mod_name, 'filename', 'must be a string')
+
+        if 'workshop_id' not in mod_data:
+            raise ModMissingField(mod_name, 'workshop_id')
+        if not isinstance(mod_data['workshop_id'], int):
+            raise ModFieldInvalid(mod_name, 'workshop_id', 'must be an integer')
+
+        workshop_id_str = str(mod_data['workshop_id'])
+        if workshop_id_str in mod_workshop_ids:
+            raise DuplicateModWorkshopID(mod_data['workshop_id'], mod_name, mod_workshop_ids[workshop_id_str])
+        mod_workshop_ids[workshop_id_str] = mod_name
+
+        filename = mod_data['filename']
+        if filename in mod_filenames:
+            raise DuplicateModPath(mod_name, mod_filenames[filename], filename)
+        mod_filenames[filename] = mod_name
+
+        if 'manual_install' in mod_data and not isinstance(mod_data['manual_install'], bool):
+            raise ModFieldInvalid(mod_name, 'manual_install', 'must be a boolean')
+        if 'kind' in mod_data and not isinstance(mod_data['kind'], str):
+            raise ModFieldInvalid(mod_name, 'kind', 'must be a string')
+
+        # Validate kind if present
+        kind_str = mod_data.get('kind', Kind.MOD)
+        try:
+            kind = Kind(kind_str)
+        except ValueError as e:
+            raise ModInvalidKind(mod_name, kind_str, list(Kind)) from e
+
+        if kind == Kind.SERVER_MOD:
+            directory = Path(defaults['server_mod_directory'])
+            if 'server_mod_directory' in mod_data:
+                if not isinstance(mod_data['server_mod_directory'], str):
+                    raise ModFieldInvalid(mod_name, 'server_mod_directory', 'must be a string')
+                directory = Path(mod_data['server_mod_directory'])
+        else:
+            directory = Path(defaults['mod_directory'])
+            if 'mod_directory' in mod_data:
+                if not isinstance(mod_data['mod_directory'], str):
+                    raise ModFieldInvalid(mod_name, 'mod_directory', 'must be a string')
+                directory = Path(mod_data['mod_directory'])
+
+        mod = Mod(
+            filename=mod_data['filename'],
+            workshop_id=str(mod_data['workshop_id']),
+            kind=kind,
+            directory=directory,
+            manual_install=mod_data.get('manual_install', False),
+            name=mod_name,
+        )
+        MODS[mod_name] = mod
+        mods_added[mod_name] = mod
+
+    asyncio.run(fetch_mod_names_from_workshop(mods_added))
+
+
+class Kind(StrEnum):
+    MOD = 'mod'
+    SERVER_MOD = 'server_mod'
+
+
+@dataclass
+class Mod:
+    directory: Path = Path('')
+    name: str = ''
+    filename: str = ''
+    workshop_id: str | None = None
+    manual_install: bool = False
+    kind: Kind = Kind.MOD
+
+    def as_launch_parameter(self) -> str:
+        return f'@{self.filename}'
+
+    def path(self) -> Path:
+        return self.directory / self.as_launch_parameter()
+
+    def as_html(self) -> str:
+        with open(Path('static/templates/arma/mod.html')) as f:
+            return f.read().format(
+                mod_name=self.name,
+                workshop_id=self.workshop_id,
+            )
+
+
+class Modlist:
+    _name: str
+    _mods: list[Mod]
+
+    def __init__(self, name: str, file: Path):
+        self._name = name
+        self._mods = []
+        with open(file) as f:
+            for mod in f:
+                mod = mod.strip()
+                if mod not in MODS:
+                    raise ModNotDefined(mod)
+                self._mods.append(MODS[mod])
+
+        MODLISTS[self._name] = self
+
+    @property
+    def mods(self) -> list[Mod]:
+        return self._mods
+
+    def as_html(self, preset_name: str | None = None) -> str:
+        with open(Path('static/templates/arma/style.css')) as f:
+            style = f.read()
+        mod_html = ''.join(mod.as_html() for mod in self._mods)
+        with open(Path('static/templates/arma/modlist.html')) as f:
+            return f.read().format(
+                style=style,
+                modlist_name=self._name if preset_name is None else preset_name,
+                html_mods=mod_html,
+            )

@@ -31,7 +31,7 @@ class StartupStatus(StrEnum):
     FAILED = 'Failed'
 
 
-@dataclass
+@dataclass(slots=True)
 class ServerResult:
     message: str
     server_status: ServerStatus = ServerStatus.UNKNOWN

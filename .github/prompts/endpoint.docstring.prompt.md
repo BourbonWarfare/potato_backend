@@ -55,8 +55,14 @@ Every endpoint function MUST include a docstring with the following sections in 
 - Show realistic parameter values
 - Use proper JSON formatting for request bodies
 - Include brief description of expected response when helpful
+- If the response is JSON, put each field on a new line
 
 ## Formatting Rules
+
+### Line length
+- Keep lines under 130 characters
+- All lines above 130 characters should be wrapped to the next line
+- If a line is above 130 characters, it will have to be manually wrapped to the next line
 
 ### Parameter Documentation Format
 ```
@@ -234,6 +240,7 @@ Before submitting endpoint docstrings, verify:
 - [ ] Error responses are comprehensive and accurate
 - [ ] Local-only endpoints are clearly marked
 - [ ] Permission/role requirements are documented
+- [ ] All lines are below 130 characters
 
 ## Notes
 - Use triple quotes (`"""`) for all docstrings

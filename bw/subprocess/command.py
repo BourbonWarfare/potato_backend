@@ -229,12 +229,12 @@ class Runner:
         return stdout.decode(), stderr.decode()
 
 
-class Chain:
-    def __new__(cls, *commands: str) -> Runner:
+class Chain(Runner):
+    def __init__(self, *commands: str):
         command = []
         for sub_command in commands:
             command.extend(sub_command)
-        return Runner(command)
+        super().__init__(command)
 
 
 def define_process(process, *, command: list | None = None, return_instance: bool = True):
