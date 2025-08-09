@@ -52,7 +52,7 @@ async def fetch_mod_names_from_workshop(mods: dict[str, 'Mod']):
     # None
     ```
     """
-    mod_workshop_ids = {mod.workshop_id: mod.name for mod in mods.values()}
+    mod_workshop_ids = {mod.workshop_id: mod.name for mod in mods.values() if not mod.manual_install}
 
     request_url = 'http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
     params: dict[str, Any] = {
