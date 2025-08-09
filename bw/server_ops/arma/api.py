@@ -346,13 +346,13 @@ class ArmaApi:
         if not os.path.exists(key_path):
             os.makedirs(key_path)
 
-        key_paths = []
+        keys = []
         for mod in server.modlist().mods:
             path = mod.path()
             for key_file in path.rglob('*.bikey'):
-                key_paths.append(key_file)
+                keys.append(key_file)
 
-        for key in key_paths:
+        for key in keys:
             destination = key_path / key.name
             try:
                 shutil.copy(key, destination)
