@@ -17,8 +17,7 @@ class Environment:
         raise NotImplementedError()
 
     def steam_cmd_path(self) -> Path:
-        GC.require('steam_cmd_path')
-        return Path(GC['steam_cmd_path'])
+        return Path(GC.require('steam_cmd_path').get())
 
 
 class Local(Environment):
