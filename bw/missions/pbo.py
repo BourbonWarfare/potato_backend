@@ -105,7 +105,7 @@ class MissionLoader:
         mission_name = pbo_name.split('.')[0]
         mission_path = temp_path / mission_name
         await hemtt.utils.pbo.unpack.acall(str(temp_path / pbo_name), str(mission_path))
-        derap_task = asyncio.create_task(hemtt.utils.config.derapify.acall(str(mission_path / 'mission.sqm'), format='json'))
+        await asyncio.create_task(hemtt.utils.config.derapify.acall(str(mission_path / 'mission.sqm'), format='json'))
 
         bwmf_version = '2016/01/19'
         with open(mission_path / 'description.ext') as file:
@@ -114,5 +114,4 @@ class MissionLoader:
                     bwmf_version = line.split('=')[1]
                     break
 
-        await derap_task
         return MissionFile(json.load(open(mission_path / 'mission.json')), bwmf_version=bwmf_version)

@@ -305,3 +305,6 @@ class Modlist:
                 modlist_name=self._name if preset_name is None else preset_name,
                 html_mods=mod_html,
             )
+
+    def has_mods_from(self, other: 'Modlist') -> bool:
+        return any(mod in self._mods for mod in other.mods)

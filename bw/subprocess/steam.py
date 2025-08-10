@@ -22,9 +22,20 @@ class ForceInstallDirectory(Steam):
 
 class AppUpdate(Steam):
     COMMAND = 'app_update'
-    POSITIONAL_ARGUMENTS = (str,)
+    POSITIONAL_ARGUMENTS = (int,)
     KEYWORD_ARGUMENTS = {
         'beta': str,
+        'validate': None,
+    }
+    KEYWORD_PREFIXES = {
+        'validate': '',
+    }
+
+
+class WorkshopDownloadItem(Steam):
+    COMMAND = 'workshop_download_item'
+    POSITIONAL_ARGUMENTS = (int, int)
+    KEYWORD_ARGUMENTS = {
         'validate': None,
     }
     KEYWORD_PREFIXES = {
