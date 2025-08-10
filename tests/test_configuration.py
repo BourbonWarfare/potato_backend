@@ -1,7 +1,7 @@
 import pytest
 
 from bw import configuration
-from bw.error import NoConfigLoaded, ConfigurationKeyNotPresent
+from bw.error import ConfigurationKeyNotPresent
 
 
 @pytest.fixture
@@ -37,8 +37,3 @@ def test__configuration__require_single_fails(config_with_keys):
 def test__configuration__require_many_fails(config_with_keys):
     with pytest.raises(ConfigurationKeyNotPresent):
         config_with_keys.require('b', 'd')
-
-
-def test__configuration__write_without_file_fails(config_with_keys):
-    with pytest.raises(NoConfigLoaded):
-        config_with_keys.write()

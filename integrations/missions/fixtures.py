@@ -18,8 +18,6 @@ def fake_mission():
             self.custom_attributes = {
                 'potato_missiontesting_missionTestingInfo': {
                     'potato_missiontesting_missionType': {'data': {'value': 1}},
-                },
-                'potato_missiontesting_metadata': {
                     'potato_missionMaking_uuid': {'data': {'value': 'b3d7e343-d244-45fd-a614-a40e3da5de90'}},
                 },
             }

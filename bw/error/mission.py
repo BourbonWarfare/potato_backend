@@ -1,4 +1,5 @@
 from bw.error.base import ClientError
+from typing import Any
 
 
 class MissionError(ClientError):
@@ -62,8 +63,12 @@ class MissionDoesNotExist(MissionError):
     def status(self) -> int:
         return 404
 
-    def __init__(self):
-        super().__init__('mission does not exist')
+    def __init__(self, identifier: Any = None):
+        identifier = str(identifier) if identifier is not None else ''
+        if identifier == '':
+            super().__init__('mission does not exist')
+        else:
+            super().__init__(f'mission "{identifier}" does not exist')
 
 
 class IterationDoesNotExist(MissionError):

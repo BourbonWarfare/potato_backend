@@ -1,4 +1,3 @@
-# filepath: c:\Dev\potato_db\bw\error\server_manage.py
 from bw.error.base import BwServerError
 
 

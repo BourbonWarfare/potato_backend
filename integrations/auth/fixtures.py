@@ -37,17 +37,17 @@ def expire_invalid():
 
 @pytest.fixture(scope='session')
 def permission_1() -> Permissions:
-    return Permissions(can_test_mission=False, can_upload_mission=True)
+    return Permissions(can_test_mission=False, can_upload_mission=True, can_manage_server=False)
 
 
 @pytest.fixture(scope='session')
 def permission_2() -> Permissions:
-    return Permissions(can_test_mission=True, can_upload_mission=False)
+    return Permissions(can_test_mission=True, can_upload_mission=False, can_manage_server=False)
 
 
 @pytest.fixture(scope='session')
 def permission_3() -> Permissions:
-    return Permissions(can_test_mission=False, can_upload_mission=False)
+    return Permissions(can_test_mission=False, can_upload_mission=False, can_manage_server=False)
 
 
 @pytest.fixture(scope='session')

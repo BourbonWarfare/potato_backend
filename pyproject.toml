@@ -47,6 +47,7 @@ testpaths = [
     "tests",
     "integrations"
 ]
+log_level = "DEBUG"
 
 [tool.alembic]
 

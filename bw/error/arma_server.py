@@ -1,4 +1,4 @@
-from bw.error import BwServerError, NotFoundError
+from bw.error.base import BwServerError, NotFoundError
 
 
 class ArmaServerError(BwServerError):

@@ -221,7 +221,7 @@ class MissionStore:
             try:
                 mission = session.execute(query).one()[0]
             except NoResultFound as e:
-                raise MissionDoesNotExist() from e
+                raise MissionDoesNotExist(uuid) from e
             session.expunge(mission)
         return mission
 
@@ -290,7 +290,7 @@ class MissionStore:
             try:
                 session.execute(query).one()
             except NoResultFound as e:
-                raise MissionDoesNotExist() from e
+                raise MissionDoesNotExist(mission.id) from e
             query = select(Iteration.iteration).where(Iteration.mission_id == mission.id).order_by(Iteration.iteration)
             try:
                 previous_iteration = session.scalars(query).one()

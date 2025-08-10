@@ -245,7 +245,7 @@ def define_process(process, *, command: list | None = None, return_instance: boo
     process._COMMAND = copy.deepcopy(command)
 
     for subprocess in process.__subclasses__():  # noqa: F402
-        subprocess.POSITIONAL_ARGUMENTS = process.POSITIONAL_ARGUMENTS + subprocess.POSITIONAL_ARGUMENTS
+        subprocess.POSITIONAL_ARGUMENTS = tuple(process.POSITIONAL_ARGUMENTS) + tuple(subprocess.POSITIONAL_ARGUMENTS)
         subprocess.KEYWORD_ARGUMENTS.update(process.KEYWORD_ARGUMENTS)
 
         if subprocess.COMMAND.startswith('-'):

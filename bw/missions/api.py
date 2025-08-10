@@ -7,11 +7,7 @@ from pathlib import Path
 
 from bw.state import State
 from bw.response import JsonResponse, WebResponse, Created
-from bw.error import (
-    BwServerError,
-    MissionDoesNotHaveMetadata,
-    CouldNotReviewMission,
-)
+from bw.error import BwServerError, MissionDoesNotHaveMetadata, CouldNotReviewMission, MissionDoesNotExist
 from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
 from bw.missions.tests import TestStore
@@ -180,6 +176,8 @@ class MissionsApi:
         # Error: JsonResponse({'status': 403, 'reason': 'Session is not valid'})
         ```
         """
+        if isinstance(stored_pbo_path, str):
+            stored_pbo_path = Path(stored_pbo_path)
         logger.info(f'uploading mission: {stored_pbo_path} to database')
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
         State.broker.publish(ServerEvent.MISSION_UPLOADED)
@@ -199,7 +197,10 @@ class MissionsApi:
             uuid = None
 
         if uuid is not None:
-            existing_mission = MissionStore().mission_with_uuid(state, uuid)
+            try:
+                existing_mission = MissionStore().mission_with_uuid(state, uuid)
+            except MissionDoesNotExist:
+                existing_mission = None
         else:
             existing_mission = None
 
@@ -244,7 +245,7 @@ class MissionsApi:
         iteration = MissionStore().add_iteration(
             state,
             existing_mission,
-            str(Path(stored_pbo_path).name),
+            stored_pbo_path.name,
             min_players=min_players,
             desired_players=desired_players,
             max_players=max_players,

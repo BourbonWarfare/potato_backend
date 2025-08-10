@@ -74,7 +74,7 @@ class Configuration(dict):
     @classmethod
     @enforce_lowercase_keys
     def load_toml(cls, configuration_file: Path) -> Self:
-        if 'toml' not in configuration_file.suffixes:
+        if '.toml' not in configuration_file.suffixes:
             raise ConfigIsNotToml(actual='.'.join(configuration_file.suffixes))
 
         with open(configuration_file, 'rb') as file:
@@ -87,7 +87,7 @@ class Configuration(dict):
     @classmethod
     @enforce_lowercase_keys
     def load_env(cls, configuration_file: Path) -> Self:
-        if 'env' not in configuration_file.suffixes:
+        if '.env' not in configuration_file.suffixes:
             raise ConfigIsNotEnv(actual='.'.join(configuration_file.suffixes))
         config = cls(
             **dotenv_values('.env'),

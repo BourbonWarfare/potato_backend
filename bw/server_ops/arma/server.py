@@ -1,5 +1,4 @@
 from pathlib import Path
-from enum import StrEnum
 from bw.configuration import Configuration
 from bw.server_ops.arma.mod import Modlist, MODLISTS
 from bw.error import ModlistNotFound
@@ -41,22 +40,4 @@ class Server:
         return MODLISTS[list_name]
 
 
-class ServerName(StrEnum):
-    MAIN = 'Main'
-    TRAINING = 'Training'
-    OFFNIGHT = 'Offnight/Alternate'
-
-    @classmethod
-    def list(cls) -> list[str]:
-        return [item.value for item in cls]
-
-
-server_main = Server(ServerName.MAIN)
-server_training = Server(ServerName.TRAINING)
-server_offnight = Server(ServerName.OFFNIGHT)
-
-SERVER_MAP = {
-    server_main.server_name(): server_main,
-    server_training.server_name(): server_training,
-    server_offnight.server_name(): server_offnight,
-}
+SERVER_MAP: dict[str, Server] = {}

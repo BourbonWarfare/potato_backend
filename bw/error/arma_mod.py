@@ -1,4 +1,4 @@
-from bw.error import BwServerError
+from bw.error.base import BwServerError
 
 
 class ArmaModError(BwServerError):

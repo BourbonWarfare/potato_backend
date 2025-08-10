@@ -1,4 +1,5 @@
 import logging
+import traceback
 import os
 import time
 from collections.abc import Callable, Awaitable
@@ -48,6 +49,7 @@ def define_async_api(func: Callable[..., Awaitable[WebResponse]]):
             return await func(*args, **kwargs)
         except BwServerError as e:
             logger.warning(f'API error: {e}')
+            logger.debug(f'Exception traceback:\n{traceback.format_exc()}')
             return e.as_response_code()
 
     wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
@@ -83,11 +85,10 @@ def define_api(func: Callable[..., WebResponse]):
 
     def wrapper(*args, **kwargs):
         try:
-            print('trying')
             return func(*args, **kwargs)
         except BwServerError as e:
-            print('excepting')
             logger.warning(f'API error: {e}')
+            logger.debug(f'Exception traceback:\n{traceback.format_exc()}')
             return e.as_response_code()
 
     wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]

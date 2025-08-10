@@ -94,7 +94,7 @@ class ArmaApi:
         )
         return JsonResponse(dataclasses.asdict(status))
 
-    async def _manage_server(command: Callable[..., Awaitable[ServerResult]], server: Server) -> ServerResult:
+    async def _manage_server(self, command: Callable[..., Awaitable[ServerResult]], server: Server) -> ServerResult:
         """
         ### Execute server management operations
 
@@ -168,7 +168,7 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.start.acall, SERVER_MAP[server_name])
-        return JsonResponse(response.asdict())
+        return JsonResponse(dataclasses.asdict(response))
 
     @define_async_api
     async def stop_server(self, server_name: str) -> JsonResponse:
@@ -202,7 +202,7 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.stop.acall, SERVER_MAP[server_name])
-        return JsonResponse(response.asdict())
+        return JsonResponse(dataclasses.asdict(response))
 
     @define_async_api
     async def restart_server(self, server_name: str) -> JsonResponse:
@@ -239,7 +239,7 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.restart.acall, SERVER_MAP[server_name])
-        return JsonResponse(response.asdict())
+        return JsonResponse(dataclasses.asdict(response))
 
     @define_async_api
     async def server_pid_status(self, server_name: str) -> JsonResponse:
@@ -273,7 +273,7 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.status.acall, SERVER_MAP[server_name])
-        return JsonResponse(response.asdict())
+        return JsonResponse(dataclasses.asdict(response))
 
     @define_api
     def deploy_mods(self, server_name: str) -> WebResponse:
