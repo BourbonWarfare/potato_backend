@@ -7,7 +7,13 @@ from pathlib import Path
 
 from bw.state import State
 from bw.response import JsonResponse, WebResponse, Created
-from bw.error import BwServerError, MissionDoesNotHaveMetadata, CouldNotReviewMission, MissionDoesNotExist
+from bw.error import (
+    BwServerError,
+    MissionDoesNotHaveMetadata,
+    MissionDoesNotExist,
+    NoResultFound,
+    AlreadyReviewedMission,
+)
 from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
 from bw.missions.tests import TestStore
@@ -290,7 +296,7 @@ class MissionsApi:
 class TestApi:
     @define_async_api
     async def review_mission(
-        self, state: State, tester: User, iteration_uuid: UUID, status: str, notes: dict[str, str]
+        self, state: State, tester: User, iteration_uuid: UUID, status: TestStatus, notes: dict[str, str]
     ) -> JsonResponse:
         """
         ### Review a mission iteration
@@ -303,11 +309,11 @@ class TestApi:
         - `state` (`State`): The application state containing the database connection.
         - `tester` (`User`): The user reviewing the mission.
         - `iteration_uuid` (`UUID`): The UUID of the mission iteration to review.
-        - `status` (`str`): The status of the review.
-        - `notes` (`dict[str, str]`): Notes for the review.
+        - `status` (`TestStatus`): The status of the review.
+        - `notes` (`dict[str, str]`): Notes for the review. Key:Value = `topic:review`.
 
         **Returns:**
-        - `JsonResponse`: A JSON response containing the new result's UUID, or an error message.
+        - `JsonResponse`: A JSON response containing the new result's UUID.
 
         **Example:**
         ```python
@@ -315,15 +321,17 @@ class TestApi:
         # Success: JsonResponse({'result_uuid': '...'})
         ```
         """
-        try:
-            test_status = TestStatus(status)
-        except ValueError:
-            raise CouldNotReviewMission()
-
         iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
+        try:
+            TestStore().get_test_result_by_user(state, iteration, tester)
+        except NoResultFound:
+            # We want to catch this, because it means the user has not yet reviewed this iteration.
+            pass
+        else:
+            raise AlreadyReviewedMission()
 
         with state.Session.begin() as session:
-            review = TestStore().create_review(state, tester, test_status, notes)
+            review = TestStore().create_review(state, tester, status, notes)
             try:
                 result = TestStore().create_result(state, iteration, review)
             except BwServerError as e:

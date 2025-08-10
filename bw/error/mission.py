@@ -82,3 +82,8 @@ class IterationDoesNotExist(MissionError):
 class CouldNotReviewMission(MissionError):
     def __init__(self):
         super().__init__('could not review mission')
+
+
+class AlreadyReviewedMission(MissionError):
+    def __init__(self):
+        super().__init__('mission has already been reviewed by this user')

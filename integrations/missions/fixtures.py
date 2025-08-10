@@ -6,7 +6,7 @@ import uuid
 from sqlalchemy import insert
 
 from bw.models.auth import User
-from bw.models.missions import Mission, MissionType, Iteration, Review, TestResult
+from bw.models.missions import Mission, MissionType, Iteration, Review, TestResult, TestCosign
 from bw.missions.test_status import TestStatus
 from integrations.fixtures import session, state
 
@@ -56,6 +56,15 @@ def db_user_1(state, session):
 def db_user_2(state, session):
     with state.Session.begin() as session:
         query = insert(User).values(id=2).returning(User)
+        user = session.execute(query).first()[0]
+        session.expunge(user)
+    yield user
+
+
+@pytest.fixture(scope='function')
+def db_user_3(state, session):
+    with state.Session.begin() as session:
+        query = insert(User).values(id=3).returning(User)
         user = session.execute(query).first()[0]
         session.expunge(user)
     yield user
@@ -223,3 +232,28 @@ def db_test_result_2(state, session, db_review_2, db_iteration_2):
         session.flush()
         session.expunge(test_result)
     yield test_result
+
+
+@pytest.fixture(scope='function')
+def db_test_cosign_1(state, session, db_test_result_1, db_user_2):
+    with state.Session.begin() as session:
+        test_cosign = TestCosign(test_result_id=db_test_result_1.id, tester_id=db_user_2.id)
+        session.add(test_cosign)
+        session.flush()
+        session.expunge(test_cosign)
+    yield test_cosign
+
+
+@pytest.fixture
+def invalid_uuid():
+    return uuid.UUID('00000000-0000-0000-0000-000000000000')
+
+
+@pytest.fixture
+def test_notes():
+    return {'briefing': 'good mission', 'gameplay': 'balanced'}
+
+
+@pytest.fixture
+def test_notes_multiple():
+    return {'briefing': 'excellent', 'gameplay': 'balanced', 'mission_flow': 'smooth'}
