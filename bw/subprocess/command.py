@@ -42,6 +42,7 @@ class Command:
 
         if ENVIRONMENT.use_subprocess():
             raise SubprocessNotFound(cls.COMMAND)
+        return ''
 
     @staticmethod
     def _map_stdout(result: str) -> Any:
