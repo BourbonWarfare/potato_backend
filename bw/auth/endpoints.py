@@ -15,9 +15,14 @@ from bw.state import State
 logger = logging.getLogger('bw.auth')
 
 
-def define(endpoint: Blueprint):
+def define(api: Blueprint, local: Blueprint, html: Blueprint):
+    local_session_blueprint = Blueprint('local_session', __name__, url_prefix='/session')
     session_blueprint = Blueprint('session', __name__, url_prefix='/session')
+
+    local_role_blueprint = Blueprint('local_role', __name__, url_prefix='/role')
     role_blueprint = Blueprint('role', __name__, url_prefix='/role')
+
+    local_group_blueprint = Blueprint('group', __name__, url_prefix='/group')
     group_blueprint = Blueprint('group', __name__, url_prefix='/group')
 
     @session_blueprint.post('/bot')
@@ -264,7 +269,7 @@ def define(endpoint: Blueprint):
         return AuthApi().leave_group(state=State.state, user=session_user, group_name=group_name)
 
     # required to bootstrap server
-    @endpoint.post('/api/local/users/create_bot')
+    @local_session_blueprint.post('/users/bot')
     @url_endpoint
     @require_local
     async def local_create_bot() -> JsonResponse:
@@ -290,7 +295,7 @@ def define(endpoint: Blueprint):
         logger.info('Creating new bot user (Local)')
         return AuthApi().create_new_user_bot(state=State.state)
 
-    @endpoint.post('/api/local/users/create_role')
+    @local_role_blueprint.post('/roles/create')
     @json_endpoint
     @require_local
     @require_session
@@ -329,7 +334,7 @@ def define(endpoint: Blueprint):
         role = Roles.from_keys(**kwargs)
         return AuthApi().create_role(State.state, role_name=role_name, roles=role)
 
-    @endpoint.post('/api/local/users/assign_role')
+    @local_role_blueprint.post('/assign')
     @json_endpoint
     @require_local
     @require_session
@@ -367,6 +372,10 @@ def define(endpoint: Blueprint):
         logger.info(f'Assigning {role_name} to user {user_uuid} (Local)')
         return AuthApi().assign_role(State.state, role_name=role_name, user_uuid=uuid.UUID(hex=user_uuid))
 
-    endpoint.register_blueprint(session_blueprint)
-    endpoint.register_blueprint(role_blueprint)
-    endpoint.register_blueprint(group_blueprint)
+    api.register_blueprint(session_blueprint)
+    api.register_blueprint(role_blueprint)
+    api.register_blueprint(group_blueprint)
+
+    local.register_blueprint(local_session_blueprint)
+    local.register_blueprint(local_role_blueprint)
+    local.register_blueprint(local_group_blueprint)

@@ -14,8 +14,8 @@ from bw.events import ServerEvent
 logger = logging.getLogger('bw.missions')
 
 
-def define(endpoint: Blueprint):
-    @endpoint.post('/upload/<string:location>')
+def define(api: Blueprint, local: Blueprint, html: Blueprint):
+    @api.post('/upload/<string:location>')
     @json_endpoint
     @require_session
     @require_group_permission(Permissions.can_upload_mission)
@@ -58,7 +58,7 @@ def define(endpoint: Blueprint):
         await MissionsApi().upload_mission_metadata(stored_pbo_path=Path(pbo_path))
         return JsonResponse({})
 
-    @endpoint.get('/')
+    @html.get('/')
     @html_endpoint(template_path='home.html', title='Bourbon Warfare')
     async def html_home(html: str) -> str:
         """
@@ -84,7 +84,7 @@ def define(endpoint: Blueprint):
             html,
         )
 
-    @endpoint.get('/list')
+    @html.get('/list')
     @html_endpoint(template_path='missions/home.html', title='BW Mission List', expire_event=ServerEvent.MISSION_UPLOADED)
     async def html_missions_list(html: str) -> str:
         """
