@@ -45,6 +45,6 @@ jobs:
           mkdir bin
           touch bin/hemtt
           chmod +x bin/hemtt
-          echo "${{ secrets.TEST_CONF }}" >> conf.txt
+          echo "${{ secrets.TEST_CONF }}" >> conf.kv
           uv run pytest --cov=bw
       
