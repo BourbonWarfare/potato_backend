@@ -45,6 +45,10 @@ jobs:
           mkdir bin
           touch bin/hemtt
           chmod +x bin/hemtt
+          touch bin/_server_manage.ps1
+          chmod +x bin/_server_manage.ps1
+          touch bin/a3sb
+          chmod +x bin/a3sb
           echo "${{ secrets.TEST_CONF }}" >> conf.kv
           uv run pytest --cov=bw
       
