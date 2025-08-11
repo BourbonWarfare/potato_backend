@@ -19,6 +19,9 @@ class Environment:
     def steam_cmd_path(self) -> Path:
         return Path(GC.require('steam_cmd_path').get())
 
+    def use_subprocess(self) -> bool:
+        raise NotImplementedError()
+
 
 class Local(Environment):
     def port(self) -> int:
@@ -29,6 +32,9 @@ class Local(Environment):
 
     def deploy_asgi(self) -> bool:
         return False
+
+    def use_subprocess(self) -> bool:
+        return True
 
 
 class Test(Environment):
@@ -41,6 +47,9 @@ class Test(Environment):
     def deploy_asgi(self) -> bool:
         return False
 
+    def use_subprocess(self) -> bool:
+        return False
+
 
 class Production(Environment):
     def port(self) -> int:
@@ -50,6 +59,9 @@ class Production(Environment):
         return True
 
     def deploy_asgi(self) -> bool:
+        return True
+
+    def use_subprocess(self) -> bool:
         return True
 
 

@@ -7,6 +7,7 @@ from typing import Any
 from collections.abc import Iterable
 from pathlib import Path
 
+from bw.environment import ENVIRONMENT
 from bw.subprocess.helpers import can_call_as_command
 from bw.error import SubprocessNotFound, SubprocessFailed
 
@@ -38,7 +39,9 @@ class Command:
             return f'./bin/{cls.COMMAND}'
         if can_call_as_command(cls.COMMAND):
             return cls.COMMAND
-        raise SubprocessNotFound(cls.COMMAND)
+
+        if ENVIRONMENT.use_subprocess():
+            raise SubprocessNotFound(cls.COMMAND)
 
     @staticmethod
     def _map_stdout(result: str) -> Any:
