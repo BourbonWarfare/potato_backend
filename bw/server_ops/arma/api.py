@@ -8,7 +8,8 @@ from collections.abc import Callable, Awaitable
 from collections.abc import Iterable
 from bw.server_ops.arma.server import Server, SERVER_MAP
 from bw.server_ops.arma.server_status import ServerStatus, ServerState
-from bw.server_ops.arma.mod import Kind, Mod, fetch_mod_details_from_workshop, WorkshopId, SteamWorkshopDetails, ModStore
+from bw.server_ops.arma.mod import Kind, Mod, fetch_mod_details_from_workshop, WorkshopId, SteamWorkshopDetails
+from bw.server_ops.arma.mod_store import ModStore
 from bw.subprocess.a3sb import a3sb
 from bw.subprocess.server_manage import server_manage, ServerResult
 from bw.subprocess.steam import steam

@@ -29,6 +29,7 @@ if config.config_file_name is not None:
 import bw.models
 from bw.models.auth import *
 from bw.models.missions import *
+from bw.models.arma import *
 target_metadata = bw.models.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
