@@ -1,4 +1,4 @@
-from bw.error.base import BwServerError
+from bw.error.base import BwServerError, ClientError
 
 
 class ArmaModError(BwServerError):
@@ -42,3 +42,29 @@ class DuplicateModWorkshopID(ArmaModError):
 class DuplicateModPath(ArmaModError):
     def __init__(self, mod_name: str, existing_mod: str, mod_path: str):
         super().__init__(f'"{mod_name}" has a path already defined by "{existing_mod}": {mod_path}.')
+
+
+class ModStoreError(ClientError):
+    def __init__(self, reason: str):
+        super().__init__(f'Database operation failed: {reason}')
+
+
+class ModAlreadyExists(ModStoreError):
+    def status(self):
+        return 409
+
+    def __init__(self, workshop_id: int):
+        super().__init__(f'Mod with workshop ID {workshop_id} already exists in the database.')
+
+
+class ModCreationFailed(ModStoreError):
+    def __init__(self, workshop_id: int):
+        super().__init__(f'Failed to create mod record for workshop ID {workshop_id}.')
+
+
+class ModNotFound(ModStoreError):
+    def status(self):
+        return 404
+
+    def __init__(self, workshop_id: int):
+        super().__init__(f'Mod with workshop ID {workshop_id} not found in the database.')

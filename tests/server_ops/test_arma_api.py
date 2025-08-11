@@ -47,25 +47,6 @@ def mock_server_manage():
 
 
 @pytest.fixture
-def mock_server_map(test_mods):
-    test_server = Mock(spec=Server)
-    test_server.server_name.return_value = 'test_server'
-    test_server.server_password.return_value = 'password123'
-    test_server.server_port.return_value = 2302
-    test_server.arma_base_path.return_value = Path('/arma3')
-    test_server.server_path.return_value = Path('/arma3/test_server')
-    test_server.mod_install_path.return_value = Path('/arma3/test_server/mods')
-    test_server.key_install_path.return_value = Path('/arma3/test_server/keys')
-    test_server.headless_client_count.return_value = 2
-    # Create mock modlist
-    mock_modlist = Mock(spec=Modlist)
-    mock_modlist.mods = test_mods
-    test_server.modlist.return_value = mock_modlist
-    with patch('bw.server_ops.arma.api.SERVER_MAP', {'test_server': test_server}):
-        yield test_server
-
-
-@pytest.fixture
 def test_mods():
     mod1 = Mock(spec=Mod)
     mod1.name = 'Test Mod 1'
@@ -99,6 +80,32 @@ def test_mods_with_keys(test_mods):
 
 
 @pytest.fixture
+def test_mods_for_update():
+    mod1 = Mock(spec=Mod)
+    mod1.name = 'Update Mod 1'
+    mod1.filename = 'update_mod1'
+    mod1.workshop_id = '123456'
+    mod1.manual_install = False
+    mod1.path.return_value = Path('/workshop/mods')
+
+    mod2 = Mock(spec=Mod)
+    mod2.name = 'Update Mod 2'
+    mod2.filename = 'update_mod2'
+    mod2.workshop_id = '789012'
+    mod2.manual_install = False
+    mod2.path.return_value = Path('/workshop/mods')
+
+    manual_mod = Mock(spec=Mod)
+    manual_mod.name = 'Manual Mod'
+    manual_mod.filename = 'manual_mod'
+    manual_mod.workshop_id = '345678'
+    manual_mod.manual_install = True
+    manual_mod.path.return_value = Path('/manual/mods')
+
+    return [mod1, mod2, manual_mod]
+
+
+@pytest.fixture
 def test_server_with_mixed_mods():
     server = Mock(spec=Server)
     server.server_name.return_value = 'mixed_server'
@@ -123,6 +130,60 @@ def test_server_with_mixed_mods():
     server.modlist.return_value = mock_modlist
 
     return server
+
+
+@pytest.fixture
+def mock_server_map(test_mods):
+    test_server = Mock(spec=Server)
+    test_server.server_name.return_value = 'test_server'
+    test_server.server_password.return_value = 'password123'
+    test_server.server_port.return_value = 2302
+    test_server.arma_base_path.return_value = Path('/arma3')
+    test_server.server_path.return_value = Path('/arma3/test_server')
+    test_server.mod_install_path.return_value = Path('/arma3/test_server/mods')
+    test_server.key_install_path.return_value = Path('/arma3/test_server/keys')
+    test_server.headless_client_count.return_value = 2
+    # Create mock modlist
+    mock_modlist = Mock(spec=Modlist)
+    mock_modlist.mods = test_mods
+    test_server.modlist.return_value = mock_modlist
+    with patch('bw.server_ops.arma.api.SERVER_MAP', {'test_server': test_server}):
+        yield test_server
+
+
+@pytest.fixture
+def mock_update_server_map(test_mods_for_update):
+    # Create main server
+    main_server = Mock(spec=Server)
+    main_server.server_name.return_value = 'main_server'
+    main_modlist = Mock(spec=Modlist)
+    main_modlist.mods = test_mods_for_update
+    main_server.modlist.return_value = main_modlist
+
+    # Create affected server
+    affected_server = Mock(spec=Server)
+    affected_server.server_name.return_value = 'affected_server'
+    affected_modlist = Mock(spec=Modlist)
+    affected_modlist.mods = test_mods_for_update[:2]  # Only first two mods
+    affected_modlist.has_mods_from.return_value = True
+    affected_server.modlist.return_value = affected_modlist
+
+    # Create unaffected server
+    unaffected_server = Mock(spec=Server)
+    unaffected_server.server_name.return_value = 'unaffected_server'
+    unaffected_modlist = Mock(spec=Modlist)
+    unaffected_modlist.mods = []
+    unaffected_modlist.has_mods_from.return_value = False
+    unaffected_server.modlist.return_value = unaffected_modlist
+
+    server_map = {
+        'main_server': main_server,
+        'affected_server': affected_server,
+        'unaffected_server': unaffected_server,
+    }
+
+    with patch('bw.server_ops.arma.api.SERVER_MAP', server_map):
+        yield server_map
 
 
 @pytest.fixture
@@ -212,6 +273,23 @@ def mock_steam_chain():
         mock_steam.quit.return_value = Mock()
 
         yield mock_chain
+
+
+@pytest.fixture
+def mock_steam_workshop_chain():
+    mock_chain = Mock()
+    mock_chain.acall = AsyncMock()
+
+    with (
+        patch('bw.server_ops.arma.api.Chain', return_value=mock_chain),
+        patch('bw.server_ops.arma.api.steam') as mock_steam,
+    ):
+        mock_steam.login.return_value = Mock()
+        mock_steam.force_install_dir.return_value = Mock()
+        mock_steam.workshop_download_item.return_value = Mock()
+        mock_steam.quit.return_value = Mock()
+
+        yield {'chain': mock_chain, 'steam': mock_steam}
 
 
 @pytest.fixture

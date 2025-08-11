@@ -13,7 +13,7 @@ class WebResponse(Response):
     def headers(self) -> dict[str, str]:
         return {}
 
-    def raise_if_unsuccessful(self):
+    def raise_if_unsuccessful(self) -> Self:
         if self.status_code >= 400:
             if self.exception is not None:
                 raise self.exception
@@ -21,6 +21,7 @@ class WebResponse(Response):
                 from bw.error import BwServerError
 
                 raise BwServerError(status=self.status_code, message='An error occurred for unknown reasons.')
+        return self
 
     def __init__(self, status: int, headers: dict = {}, response='', from_exception: Exception | None = None, **kwargs):  # ty: ignore[invalid-type-form]
         self.exception = from_exception
