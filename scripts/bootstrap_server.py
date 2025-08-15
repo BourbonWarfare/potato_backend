@@ -4,7 +4,7 @@ from bw.auth.roles import Roles
 
 
 def main():
-    url = f'https://localhost:{ENVIRONMENT.port()}'
+    url = f'http://localhost:{ENVIRONMENT.port()}'
 
     print('Creating bot user')
     response = requests.post(f'{url}/local/auth/user/bot')
