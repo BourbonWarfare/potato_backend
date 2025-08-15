@@ -1,47 +1,79 @@
 import requests
+import functools
 from bw.environment import ENVIRONMENT
 from bw.auth.roles import Roles
 
+url = f'http://localhost:{ENVIRONMENT.port()}'
 
-def main():
-    url = f'http://localhost:{ENVIRONMENT.port()}'
 
-    print('Creating bot user')
-    response = requests.post(f'{url}/local/auth/user/bot')
+class RequestException(Exception):
+    def __init__(self, message, response):
+        super().__init__(f'Bootstrap failure: {message}. {response.status_code} - {response.text}')
+
+
+def request_fixture(endpoint: str, description: str):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            full_url = f'{url}/{endpoint}'
+            print(f'{description} at {full_url}')
+            return func(url=full_url, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+@request_fixture('local/auth/user/bot', 'Creating bot user')
+def create_bot_user(url):
+    response = requests.post(url)
     if response.status_code != 201:
-        print(f'Failed to create bot user: {response.status_code} - {response.text}')
-        return
-    bot_token = response.text
+        raise RequestException('Failed to create bot user', response)
+    return response.text
 
-    print('Getting bot info')
-    response = requests.get(f'{url}/local/auth/user', headers={'Authorization': f'Bearer {bot_token}'})
+
+@request_fixture('local/auth/user', 'Getting bot info')
+def get_bot_info(url):
+    response = requests.get(url)
     if response.status_code != 200:
-        print(f'Failed to get bot info: {response.status_code} - {response.text}')
-        return
-    bot_uuid = response.json().get('uuid')
+        raise RequestException('Failed to get bot info', response)
+    return response.json()
 
-    print('Logging bot in')
-    response = requests.post(f'{url}/local/session/bot', json={'bot_token': bot_token})
-    if response.status_code != 200:
-        print(f'Failed to log bot in: {response.status_code} - {response.text}')
-        return
-    session_token = response.json().get('session_token')
 
-    print('Creating admin role')
+@request_fixture('local/session/bot', 'Creating bot session')
+def create_bot_session(url):
+    response = requests.post(url)
+    if response.status_code != 201:
+        raise RequestException('Failed to create bot session', response)
+    return response.json()
+
+
+@request_fixture('local/auth/role', 'Creating admin role')
+def create_admin_role(url, session_token):
     response = requests.post(
-        f'{url}/local/auth/role',
+        url,
         json={'role_name': 'admin', **Roles({k: True for k in Roles.__slots__}).as_dict()},
         headers={'Authorization': f'Bearer {session_token}'},
     )
     if response.status_code != 201:
-        print(f'Failed to create admin role: {response.status_code} - {response.text}')
-        return
+        raise RequestException('Failed to create admin role', response)
 
-    print('Assigning admin role to bot user')
-    response = requests.post(f'{url}/local/auth/role/assign', json={'role_name': 'admin', 'user_uuid': bot_uuid})
+
+@request_fixture('local/auth/role/assign', 'Assigning admin role to bot user')
+def assign_admin_role(url, session_token, bot_uuid):
+    response = requests.post(
+        url, json={'role_name': 'admin', 'user_uuid': bot_uuid}, headers={'Authorization': f'Bearer {session_token}'}
+    )
     if response.status_code != 200:
-        print(f'Failed to assign admin role to bot user: {response.status_code} - {response.text}')
-        return
+        raise RequestException('Failed to assign admin role to bot user', response)
+
+
+def main():
+    bot_token = create_bot_user()
+    bot_uuid = get_bot_info().get('uuid')
+    session_token = create_bot_session().get('session_token')
+    create_admin_role(session_token)
+    assign_admin_role(session_token, bot_uuid)
 
     print('Admin bot setup complete. Writing information to disk...')
 
