@@ -9,7 +9,6 @@ from bw.models.auth import User
 from bw.error import BwServerError, SessionExpired
 from bw.web_utils import define_api
 import uuid
-import datetime
 
 
 class AuthApi:
@@ -498,7 +497,7 @@ class AuthApi:
         public_info = {
             'uuid': user.uuid,
             'role_name': role_name,
-            'creation_date': datetime.datetime.fromtimestamp(user.creation_date).isoformat(),
+            'creation_date': user.creation_date.isoformat(),
             'groups': [group.name for group in GroupStore().get_user_groups(state, user)],
         }
         return JsonResponse(public_info)

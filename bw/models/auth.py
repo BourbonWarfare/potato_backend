@@ -22,7 +22,9 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     role: Mapped[int | None] = mapped_column(ForeignKey('user_roles.id'))
-    creation_date: Mapped[int] = mapped_column(TIMESTAMP(timezone=False), nullable=False, server_default=func.current_timestamp())
+    creation_date: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=False), nullable=False, server_default=func.current_timestamp()
+    )
 
 
 class DiscordUser(Base):
