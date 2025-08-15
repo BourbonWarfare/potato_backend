@@ -495,7 +495,7 @@ class AuthApi:
                 role_name = role.name
 
         public_info = {
-            'uuid': user.uuid,
+            'uuid': str(user.uuid),
             'role_name': role_name,
             'creation_date': user.creation_date.isoformat(),
             'groups': [group.name for group in GroupStore().get_user_groups(state, user)],
