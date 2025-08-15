@@ -29,7 +29,7 @@ def create_bot_user(url):
     response = requests.post(url)
     if response.status_code != 201:
         raise RequestException('Failed to create bot user', response)
-    return response.text
+    return response.json()
 
 
 @request_fixture('v1/auth/login/bot', 'Creating bot session')
@@ -69,7 +69,7 @@ def assign_admin_role(url, session_token, bot_uuid):
 
 
 def main():
-    bot_token = create_bot_user()
+    bot_token = create_bot_user().get('bot_token')
     session_token = create_bot_session(bot_token=bot_token).get('session_token')
     bot_uuid = get_bot_info(session_token=session_token).get('uuid')
     create_admin_role(session_token=session_token)
