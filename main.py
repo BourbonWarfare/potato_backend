@@ -8,12 +8,18 @@ def production():
     from bw.settings import GLOBAL_CONFIGURATION
     import uvicorn
 
-    GLOBAL_CONFIGURATION.require('ssl_ca_certs_path', 'ssl_certfile_path', 'ssl_keyfile_path')
-    ssl_ca_certs_path = GLOBAL_CONFIGURATION['ssl_ca_certs_path']
-    ssl_certfile_path = GLOBAL_CONFIGURATION['ssl_certfile_path']
-    ssl_keyfile_path = GLOBAL_CONFIGURATION['ssl_keyfile_path']
+    if ENVIRONMENT.use_ssl():
+        print('Starting production server with SSL')
+        GLOBAL_CONFIGURATION.require('ssl_ca_certs_path', 'ssl_certfile_path', 'ssl_keyfile_path')
+        ssl_ca_certs_path = GLOBAL_CONFIGURATION['ssl_ca_certs_path']
+        ssl_certfile_path = GLOBAL_CONFIGURATION['ssl_certfile_path']
+        ssl_keyfile_path = GLOBAL_CONFIGURATION['ssl_keyfile_path']
+    else:
+        print('Starting ASGI server !!WITHOUT!! SSL')
+        ssl_ca_certs_path = None
+        ssl_certfile_path = None
+        ssl_keyfile_path = None
 
-    print('Starting production server with SSL')
     uvicorn.run(
         'bw.server:app',
         host='0.0.0.0',
