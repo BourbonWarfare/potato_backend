@@ -35,7 +35,7 @@ def create_bot_user(url):
 @request_fixture('v1/auth/login/bot', 'Creating bot session')
 def create_bot_session(url, bot_token):
     response = requests.post(url, json={'bot_token': bot_token})
-    if response.status_code != 201:
+    if response.status_code != 200:
         raise RequestException('Failed to create bot session', response)
     return response.json()
 
