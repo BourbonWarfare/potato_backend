@@ -26,7 +26,7 @@ def main():
         shutil.rmtree(staging_dir, ignore_errors=True)
 
     print(f'Copying files from {main_arma_server_dir} to {staging_dir}')
-    shutil.copytree(main_arma_server_dir, staging_dir, dirs_exist_ok=True)
+    shutil.copytree(main_arma_server_dir, staging_dir, dirs_exist_ok=True, symlinks=True)
     # Make this path not exist anymore so we don't accidentally manipulate prod
     del main_arma_server_dir
 
