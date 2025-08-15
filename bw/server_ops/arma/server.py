@@ -1,5 +1,6 @@
 from pathlib import Path
 from bw.configuration import Configuration
+from bw.environment import ENVIRONMENT
 from bw.server_ops.arma.mod import Modlist, MODLISTS
 from bw.error import ModlistNotFound
 
@@ -7,7 +8,8 @@ from bw.error import ModlistNotFound
 class Server:
     def __init__(self, name: str):
         self._name = name
-        self._config = Configuration.load(Path(f'./server_configs/{self._name}.toml'))
+        self._config_path = ENVIRONMENT.server_config_directory()
+        self._config = Configuration.load(self._config_path / f'{self._name}.toml')
 
     def server_name(self) -> str:
         return self._name

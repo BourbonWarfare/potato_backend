@@ -264,3 +264,10 @@ def test__get_group__can_get_existing_group(state, session, db_group_1):
 def test__get_group__raises_on_nonexistent_group(state, session, group_name_1):
     with pytest.raises(NoGroupWithName):
         GroupStore().get_group(state, group_name_1)
+
+
+def test__get_user_groups__returns_all_groups(state, session, db_user_1, db_group_1, db_group_2, db_group_3):
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_2)
+    groups = GroupStore().get_user_groups(state, db_user_1)
+    assert {group.id for group in groups} == {db_group_1.id, db_group_2.id}

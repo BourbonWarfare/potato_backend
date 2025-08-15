@@ -9,6 +9,7 @@ from bw.models.auth import User
 from bw.error import BwServerError, SessionExpired
 from bw.web_utils import define_api
 import uuid
+import datetime
 
 
 class AuthApi:
@@ -462,3 +463,42 @@ class AuthApi:
         group = GroupStore().get_group(state=state, group_name=group_name)
         GroupStore().remove_user_from_group(state=state, user=user, group=group)
         return Ok()
+
+    def user_info(self, state: State, user: User) -> JsonResponse:
+        """
+        ### Returns all information that is publically available for a user
+
+        Returns information that is publically known. This includes roles, groups,
+        UUID, and other relevant details.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `user` (`User`): The user object to retrieve public information for.
+
+        **Returns:**
+        - `JsonResponse`: A JSON response containing the public information for the user.
+
+        **Example**
+        ```python
+        response = AuthApi().user_info(state, user)
+        # Success: JsonResponse({
+        #   'uuid': '12345678-1234-5678-9012-123456789012',
+        #   'role_name': 'admin',
+        #   'creation_date': '2023-01-01T00:00:00',
+        #   'groups': ['mission makers', 'mission testers']
+        #})
+        ```
+        """
+        role_name = 'None'
+        if user.role:
+            role = UserStore().get_users_role(state, user)
+            if role:
+                role_name = role.name
+
+        public_info = {
+            'uuid': user.uuid,
+            'role_name': role_name,
+            'creation_date': datetime.datetime.fromtimestamp(user.creation_date).isoformat(),
+            'groups': [group.name for group in GroupStore().get_user_groups(state, user)],
+        }
+        return JsonResponse(public_info)

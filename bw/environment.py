@@ -22,6 +22,11 @@ class Environment:
     def use_subprocess(self) -> bool:
         raise NotImplementedError()
 
+    def server_config_directory(self) -> Path:
+        if GC.get('server_config_directory'):
+            return Path(GC['server_config_directory'])
+        return Path('./server_configs')
+
 
 class Local(Environment):
     def port(self) -> int:
@@ -51,6 +56,20 @@ class Test(Environment):
         return False
 
 
+class Staging(Environment):
+    def port(self) -> int:
+        return 8500
+
+    def use_ssl(self) -> bool:
+        return True
+
+    def deploy_asgi(self) -> bool:
+        return True
+
+    def use_subprocess(self) -> bool:
+        return True
+
+
 class Production(Environment):
     def port(self) -> int:
         return 12239
@@ -69,5 +88,7 @@ if GC.get('environment', 'local') == 'prod':
     ENVIRONMENT = Production()
 elif GC.get('environment', 'local') == 'test':
     ENVIRONMENT = Test()
+elif GC.get('environment', 'local') == 'staging':
+    ENVIRONMENT = Staging()
 else:
     ENVIRONMENT = Local()
