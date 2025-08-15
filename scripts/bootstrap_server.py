@@ -52,7 +52,7 @@ def get_bot_info(url, session_token):
 def create_admin_role(url, session_token):
     response = requests.post(
         url,
-        json={'role_name': 'admin', **Roles({k: True for k in Roles.__slots__}).as_dict()},
+        json={'role_name': 'admin', **{k: True for k in Roles.__slots__}},
         headers={'Authorization': f'Bearer {session_token}'},
     )
     if response.status_code != 201:
