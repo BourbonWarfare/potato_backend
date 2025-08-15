@@ -2,6 +2,7 @@ import logging
 import traceback
 import os
 import time
+import functools
 from collections.abc import Callable, Awaitable
 from collections.abc import AsyncGenerator
 from pathlib import Path
@@ -44,6 +45,7 @@ def define_async_api(func: Callable[..., Awaitable[WebResponse]]):
     ```
     """
 
+    @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
@@ -52,7 +54,6 @@ def define_async_api(func: Callable[..., Awaitable[WebResponse]]):
             logger.debug(f'Exception traceback:\n{traceback.format_exc()}')
             return e.as_response_code()
 
-    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -83,6 +84,7 @@ def define_api(func: Callable[..., WebResponse]):
     ```
     """
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -91,7 +93,6 @@ def define_api(func: Callable[..., WebResponse]):
             logger.debug(f'Exception traceback:\n{traceback.format_exc()}')
             return e.as_response_code()
 
-    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -122,6 +123,7 @@ def url_endpoint(func: Callable[..., Awaitable[WebResponse]]):
     ```
     """
 
+    @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
@@ -129,7 +131,6 @@ def url_endpoint(func: Callable[..., Awaitable[WebResponse]]):
             logger.warning(f'Error in URL API: {e}')
             return e.as_response_code()
 
-    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -167,6 +168,7 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
     ```
     """
 
+    @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         converted_json = await request.get_json()
         if converted_json is not None:
@@ -180,6 +182,7 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
                 return await func(*args, **kwargs)
             except TypeError as e:
                 logger.warning(e)
+                logger.warning(f'Request passed args: {args}')
                 logger.warning(f'Request payload: {kwargs}')
                 return BadArguments().as_response_code()
             except BwServerError as e:
@@ -188,7 +191,6 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
         else:
             return ExpectedJson().as_response_code()
 
-    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
 
 
@@ -232,6 +234,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, expire
     template_path = templates_path / template_path
 
     def decorator(func: Callable[..., Awaitable[str]]):
+        @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             # We aggressivley cache the page and template to avoid unnecessary disk reads.
             # If the page or template has changed, we will re-read them and re-render the page.
@@ -276,7 +279,6 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, expire
                 State.cache.insert(page_hash, (full_page, time.time()), expire_event=expire_event)
             return full_page
 
-        wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
         return wrapper
 
     return decorator
@@ -310,6 +312,7 @@ def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent | BaseEvent]]):
     ```
     """
 
+    @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
         generator = func(*args, **kwargs)
 
@@ -323,5 +326,4 @@ def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent | BaseEvent]]):
 
         return await ServerSentEventResponse.from_async_generator(generator)
 
-    wrapper.__name__ = func.__name__  # ty: ignore[unresolved-attribute]
     return wrapper
