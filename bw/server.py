@@ -23,7 +23,7 @@ def run():
             'ssl_ca_certs_path', 'ssl_certfile_path', 'ssl_keyfile_path'
         ).get()
     else:
-        app.logger.info('ignoring ssl [LOCAL ONLY]')
+        app.logger.info('ignoring ssl [STAGING/LOCAL ONLY]')
         ssl_ca_certs_path = None
         ssl_certfile_path = None
         ssl_keyfile_path = None
