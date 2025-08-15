@@ -1,4 +1,5 @@
 from bw.error.base import ClientError, ConflictError, NotFoundError
+from typing import Any
 
 
 class AuthError(ClientError):
@@ -87,8 +88,11 @@ class NoGroupWithName(NotFoundError):
 
 
 class NoUserWithGivenCredentials(NotFoundError):
-    def __init__(self):
-        super().__init__('User does not exist')
+    def __init__(self, user_id: Any | None):
+        if user_id:
+            super().__init__(f'User "{user_id}" does not exist')
+        else:
+            super().__init__('User does not exist')
 
 
 class NoRoleWithName(NotFoundError):

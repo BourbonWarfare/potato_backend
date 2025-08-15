@@ -49,7 +49,7 @@ class UserStore:
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
-                raise NoUserWithGivenCredentials()
+                raise NoUserWithGivenCredentials(user_id)
             session.expunge(user)
         return user
 
@@ -74,7 +74,7 @@ class UserStore:
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
-                raise NoUserWithGivenCredentials()
+                raise NoUserWithGivenCredentials(uuid)
             session.expunge(user)
         return user
 
@@ -103,7 +103,7 @@ class UserStore:
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
-                raise NoUserWithGivenCredentials()
+                raise NoUserWithGivenCredentials(discord_id)
             session.expunge(user)
         return user
 
@@ -128,7 +128,7 @@ class UserStore:
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
-                raise NoUserWithGivenCredentials()
+                raise NoUserWithGivenCredentials(bot_token)
             session.expunge(user)
         return user
 
@@ -150,7 +150,7 @@ class UserStore:
         - `DbError`: If there is an attempt to violate model constraints.
         """
         if self.user_from_id(state, user.id) is None:
-            raise NoUserWithGivenCredentials()
+            raise NoUserWithGivenCredentials(user.uuid)
 
         with state.Session.begin() as session:
             try:
@@ -181,7 +181,7 @@ class UserStore:
         - `DbError`: If there is an attempt to violate model constraints.
         """
         if self.user_from_id(state, user.id) is None:
-            raise NoUserWithGivenCredentials()
+            raise NoUserWithGivenCredentials(user.uuid)
 
         with state.Session.begin() as session:
             try:
