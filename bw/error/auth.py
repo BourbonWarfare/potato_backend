@@ -89,8 +89,8 @@ class NoGroupWithName(NotFoundError):
 
 class NoUserWithGivenCredentials(NotFoundError):
     def __init__(self, user_id: Any | None):
-        if user_id:
-            super().__init__(f'User "{user_id}" does not exist')
+        if user_id is not None:
+            super().__init__(f'User [id: "{user_id}"] does not exist')
         else:
             super().__init__('User does not exist')
 
