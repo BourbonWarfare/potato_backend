@@ -1,7 +1,7 @@
+import bw.server  # noqa: F401
 from bw.server import run
 from bw.environment import ENVIRONMENT
 from bw.log import config as log_config
-import bw.endpoints  # noqa: F401
 
 
 def production():
