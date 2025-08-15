@@ -12,6 +12,7 @@ PRODUCTION_LOG_CONFIG = {
     'bw.auth': 'INFO',
     'bw.missions': 'INFO',
     'bw.psm': 'INFO',
+    'bw.server_ops': 'DEBUG',
     'bw.server_ops.arma': 'DEBUG',
 }
 
