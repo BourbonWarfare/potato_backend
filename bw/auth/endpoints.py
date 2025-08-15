@@ -91,8 +91,7 @@ def define_user(api: Blueprint, local: Blueprint, html: Blueprint):
         GET /api/v1/user/
         ```
         """
-        response = AuthApi().user_info(state=State.state, user=session_user)
-        return JsonResponse(response)
+        return AuthApi().user_info(state=State.state, user=session_user)
 
     @role_blueprint.post('/create')
     @json_endpoint
