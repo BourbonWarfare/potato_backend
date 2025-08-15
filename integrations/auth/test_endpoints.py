@@ -65,7 +65,6 @@ async def test__user__gets_user_data(
     response = await test_app.get(endpoint_user_url, headers={'Authorization': f'Bearer {token_1}'})
     assert response.status_code == 200
     data = await response.get_json()
-    print(data)
     assert data['uuid'] == str(db_user_1.uuid)
     assert data['creation_date'] == db_user_1.creation_date.isoformat()
     assert data['groups'] == [db_group_1.name, db_group_2.name]
