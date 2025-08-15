@@ -6,7 +6,7 @@ from sqlalchemy import insert
 
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
-from bw.models.auth import DiscordUser, BotUser, User, Session, GroupPermission, Group
+from bw.models.auth import DiscordUser, BotUser, User, Session, GroupPermission, Group, Role
 from integrations.fixtures import session, state
 
 
@@ -68,6 +68,11 @@ def role_1() -> Roles:
 @pytest.fixture(scope='session')
 def role_2() -> Roles:
     return Roles(can_create_group=True, can_create_role=False)
+
+
+@pytest.fixture(scope='session')
+def role_assigner() -> Roles:
+    return Roles(can_create_group=False, can_create_role=True)
 
 
 @pytest.fixture(scope='session')
@@ -221,6 +226,33 @@ def db_group_3(state, session, db_permission_3, group_name_3):
         group = session.execute(query).first()[0]
         session.expunge(group)
     yield group
+
+
+@pytest.fixture(scope='function')
+def db_role_1(state, session, role_1, role_name_1):
+    with state.Session.begin() as session:
+        query = insert(Role).values(id=1, name=role_name_1, **role_1.as_dict()).returning(Role)
+        role = session.execute(query).first()[0]
+        session.expunge(role)
+    yield role
+
+
+@pytest.fixture(scope='function')
+def db_role_2(state, session, role_2, role_name_2):
+    with state.Session.begin() as session:
+        query = insert(Role).values(id=2, name=role_name_2, **role_2.as_dict()).returning(Role)
+        role = session.execute(query).first()[0]
+        session.expunge(role)
+    yield role
+
+
+@pytest.fixture(scope='function')
+def db_role_assigner(state, session, role_assigner):
+    with state.Session.begin() as session:
+        query = insert(Role).values(id=666, name='role-assigner', **role_assigner.as_dict()).returning(Role)
+        role = session.execute(query).first()[0]
+        session.expunge(role)
+    yield role
 
 
 @pytest.fixture(scope='function')

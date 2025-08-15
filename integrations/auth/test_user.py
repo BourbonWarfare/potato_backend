@@ -24,6 +24,10 @@ from integrations.auth.fixtures import (
     group_name_1,
     permission_1,
     permission_name_1,
+    role_name_1,
+    role_name_2,
+    db_role_1,
+    db_role_2,
 )
 
 
@@ -332,3 +336,17 @@ def test__edit_role__does_not_change_other_roles(state, session, role_1, role_2)
         query = select(Role).where(Role.name == 'role_b')
         db_role_b = session.execute(query).one()[0]
         assert db_role_b.into_roles().as_dict() == role_b.into_roles().as_dict()
+
+
+def test__get_all_roles__success(state, session, role_1, role_2, db_role_1, db_role_2, role_name_1, role_name_2):
+    roles = UserStore().get_all_roles(state)
+    assert len(roles) == 2
+    assert roles[0].into_roles().as_dict() == role_1.as_dict()
+    assert roles[0].name == role_name_1
+    assert roles[1].into_roles().as_dict() == role_2.as_dict()
+    assert roles[1].name == role_name_2
+
+
+def test__get_all_roles__no_roles_empty(state, session):
+    roles = UserStore().get_all_roles(state)
+    assert len(roles) == 0

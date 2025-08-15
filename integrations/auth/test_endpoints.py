@@ -20,6 +20,8 @@ from integrations.auth.fixtures import (
     endpoint_local_user_role_assign_url,
     token_1,
     db_user_1,
+    token_2,
+    db_user_2,
     db_bot_user_1,
     db_session_1,
     group_name_1,
@@ -32,10 +34,20 @@ from integrations.auth.fixtures import (
     permission_2,
     db_permission_2,
     db_group_2,
+    role_1,
+    role_assigner,
+    expire_invalid,
+    db_expired_session_1,
+    role_name_1,
+    role_name_2,
+    db_role_1,
+    db_role_2,
+    db_role_assigner,
 )
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
 from bw.auth.session import SessionStore
+from bw.auth.roles import Roles
 
 
 @pytest.mark.asyncio
@@ -74,3 +86,135 @@ async def test__user__gets_user_data(
 async def test__user__no_token_gets_no_data(state, session, test_app, endpoint_user_url):
     response = await test_app.get(endpoint_user_url)
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__user__expired_session_no_data(state, session, test_app, endpoint_user_url, db_expired_session_1):
+    response = await test_app.get(endpoint_user_url, headers={'Authorization': f'Bearer {db_expired_session_1.token}'})
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__create_role__role_created(
+    state, session, test_app, db_user_1, role_1, db_session_1, db_role_assigner, endpoint_user_role_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_role_create_url,
+        json={'role_name': 'test_role', **role_1.as_dict()},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 201
+    data = await response.get_json()
+    assert data['name'] == 'test_role'
+
+
+@pytest.mark.asyncio
+async def test__create_role__cant_create_if_not_permitted(
+    state, session, test_app, db_user_1, role_1, db_session_1, endpoint_user_role_create_url
+):
+    response = await test_app.post(
+        endpoint_user_role_create_url,
+        json={'role_name': 'test_role', **role_1.as_dict()},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 403
+    assert len(UserStore().get_all_roles(state)) == 0
+
+
+@pytest.mark.asyncio
+async def test__create_role__expired_session_nothing(
+    state, session, test_app, db_user_1, role_1, db_expired_session_1, db_role_assigner, endpoint_user_role_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    assert len(UserStore().get_all_roles(state)) == 1
+
+    response = await test_app.post(
+        endpoint_user_role_create_url,
+        json={'role_name': 'test_role', **role_1.as_dict()},
+        headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+    )
+    assert response.status_code == 401
+    assert len(UserStore().get_all_roles(state)) == 1
+
+
+@pytest.mark.asyncio
+async def test__create_role__cant_create_duplicate(
+    state, session, test_app, db_user_1, role_1, db_role_1, db_session_1, db_role_assigner, endpoint_user_role_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_role_create_url,
+        json={'role_name': db_role_1.name, **role_1.as_dict()},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test__assign_role__can_assign_role(
+    state, session, test_app, db_user_1, db_user_2, db_role_1, db_session_1, db_role_assigner, endpoint_user_role_assign_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_role_assign_url,
+        json={'user_uuid': str(db_user_2.uuid), 'role_name': db_role_1.name},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 200
+    assert UserStore().get_users_role(state, db_user_1).as_dict() == db_role_1.into_roles().as_dict()
+
+
+@pytest.mark.asyncio
+async def test__assign_role__cant_assign_if_not_permitted(
+    state, session, test_app, db_user_1, db_user_2, role_1, db_session_1, endpoint_user_role_assign_url
+):
+    response = await test_app.post(
+        endpoint_user_role_assign_url,
+        json={'user_uuid': str(db_user_2.uuid), 'role_name': db_role_1.name},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 403
+    assert UserStore().get_users_role(state, db_user_1) is None
+
+
+@pytest.mark.asyncio
+async def test__assign_role__cant_assign_if_expired_session(
+    state,
+    session,
+    test_app,
+    db_user_1,
+    db_user_2,
+    db_role_1,
+    db_expired_session_1,
+    db_role_assigner,
+    endpoint_user_role_assign_url,
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_role_assign_url,
+        json={'user_uuid': str(db_user_2.uuid), 'role_name': db_role_1.name},
+        headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+    )
+    assert response.status_code == 401
+    assert UserStore().get_users_role(state, db_user_2) is None
+
+
+@pytest.mark.asyncio
+async def test__assign_role__cant_assign_nonexistent(
+    state, session, test_app, db_user_1, db_user_2, db_session_1, db_role_assigner, endpoint_user_role_assign_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_role_assign_url,
+        json={'user_uuid': str(db_user_2.uuid), 'role_name': 'fooeybarjkdsr'},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 404
+    assert UserStore().get_users_role(state, db_user_2) is None
