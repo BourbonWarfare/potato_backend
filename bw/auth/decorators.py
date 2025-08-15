@@ -1,4 +1,7 @@
 import logging
+import asyncio
+import functools
+from contextlib import contextmanager
 from bw.error import NonLocalIpAccessingLocalOnlyAddress, CannotDetermineSession, NotEnoughPermissions
 from bw.state import State
 from bw.models.auth import User
@@ -28,15 +31,28 @@ def require_local(func):
     ```
     """
 
-    async def wrapper(*args, **kwargs):
+    @contextmanager
+    def _validate_local():
+        print(request.remote_addr)
         try:
             validate_local(request.remote_addr)
         except NonLocalIpAccessingLocalOnlyAddress as e:
             logger.warning(f'Non-local API called from abroad: {e}')
             raise e
-        return await func(*args, **kwargs)
+        yield
 
-    wrapper.__name__ = func.__name__
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _validate_local():
+            if asyncio.iscoroutinefunction(func):
+
+                async def afnc():
+                    return await func(*args, **kwargs)
+
+                return afnc()
+            else:
+                return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -58,7 +74,8 @@ def require_session(func):
     ```
     """
 
-    async def wrapper(*args, **kwargs):
+    @contextmanager
+    def _session_user():
         auth = request.headers.get('Authorization')
         if auth is None:
             logger.warning("'Session Token' not present in header")
@@ -72,10 +89,20 @@ def require_session(func):
         session_token = auth[len(bearer_header) :]  # Remove 'Bearer ' prefix
 
         validate_session(State.state, session_token)
-        session_user = SessionStore().get_user_from_session_token(State.state, session_token=session_token)
-        return await func(session_user=session_user, *args, **kwargs)
+        yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)
 
-    wrapper.__name__ = func.__name__
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _session_user() as session_user:
+            if asyncio.iscoroutinefunction(func):
+
+                async def afnc(*args, **kwargs):
+                    return await func(session_user=session_user, *args, **kwargs)
+
+                return afnc()
+            else:
+                return func(session_user=session_user, *args, **kwargs)
+
     return wrapper
 
 
@@ -96,16 +123,28 @@ def require_group_permission(*required_permissions: bool):
     ```
     """
 
-    def decorator(func):
-        async def wrapper(session_user: User, *args, **kwargs):
-            permissions = GroupStore().get_all_permissions_user_has(State.state, session_user)
-            for permission in required_permissions:
-                if not permission.__get__(permissions):  # ty: ignore[unresolved-attribute]
-                    logger.warning(f'User {session_user.id} does not have required permission: {permission.__name__}')  # ty: ignore[unresolved-attribute]
-                    raise NotEnoughPermissions()
-            return await func(session_user=session_user, *args, **kwargs)
+    @contextmanager
+    def _validate_permissions(session_user: User):
+        permissions = GroupStore().get_all_permissions_user_has(State.state, session_user)
+        for permission in required_permissions:
+            if not permission.__get__(permissions):  # ty: ignore[unresolved-attribute]
+                logger.warning(f'User {session_user.id} does not have required permission: {permission.__name__}')  # ty: ignore[unresolved-attribute]
+                raise NotEnoughPermissions()
+        yield
 
-        wrapper.__name__ = func.__name__
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(session_user: User, *args, **kwargs):
+            with _validate_permissions(session_user):
+                if asyncio.iscoroutinefunction(func):
+
+                    async def afnc():
+                        return await func(session_user=session_user, *args, **kwargs)
+
+                    return afnc()
+                else:
+                    return func(session_user=session_user, *args, **kwargs)
+
         return wrapper
 
     return decorator
@@ -128,20 +167,31 @@ def require_user_role(*required_roles: bool):
     ```
     """
 
-    def decorator(func):
-        async def wrapper(session_user: User, *args, **kwargs):
-            user_role = UserStore().get_users_role(State.state, session_user)
-            if user_role is None:
-                logger.warning(f'User {session_user.id} does not have a role assigned')
+    @contextmanager
+    def _validate_roles(session_user: User):
+        user_role = UserStore().get_users_role(State.state, session_user)
+        if user_role is None:
+            logger.warning(f'User {session_user.id} does not have a role assigned')
+            raise NotEnoughPermissions()
+        for role in required_roles:
+            if not role.__get__(user_role):  # ty: ignore[unresolved-attribute]
+                logger.warning(f'User {session_user.id} does not have required role: {role.__name__}')  # ty: ignore[unresolved-attribute]
                 raise NotEnoughPermissions()
-            roles = user_role.into_roles()
-            for role in required_roles:
-                if not role.__get__(roles):  # ty: ignore[unresolved-attribute]
-                    logger.warning(f'User {session_user.id} does not have required role: {role.__name__}')  # ty: ignore[unresolved-attribute]
-                    raise NotEnoughPermissions()
-            return await func(session_user=session_user, *args, **kwargs)
+        yield
 
-        wrapper.__name__ = func.__name__
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(session_user: User, *args, **kwargs):
+            with _validate_roles(session_user):
+                if asyncio.iscoroutinefunction(func):
+
+                    async def afnc():
+                        return await func(session_user=session_user, *args, **kwargs)
+
+                    return afnc()
+                else:
+                    return func(session_user=session_user, *args, **kwargs)
+
         return wrapper
 
     return decorator
