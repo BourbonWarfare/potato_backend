@@ -1,0 +1,28 @@
+## Server Management
+- Link to bot
+- Test bot in staging
+
+## Missions
+- Deploy mission DB
+- Deploy mission testing
+- Add webpage to summarize missions
+- Log mission play history
+
+## Recruits
+- Architect system
+- Add bot commands
+- Track
+- Create website for voting/management
+
+## Overall
+- Add admin webpage
+- Add webpage endpoints for all
+- Add OAuth login methods for Steam, Discord, Gmail, etc.
+- Keep adding tests till 100% coverage
+
+## Groups
+- Add group management commands
+
+## Server management
+- Add server manager via user groups
+- Deploy servers as members want them

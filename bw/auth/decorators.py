@@ -33,7 +33,6 @@ def require_local(func):
 
     @contextmanager
     def _validate_local():
-        print(request.remote_addr)
         try:
             validate_local(request.remote_addr)
         except NonLocalIpAccessingLocalOnlyAddress as e:
@@ -92,16 +91,16 @@ def require_session(func):
         yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(**kwargs):
         with _session_user() as session_user:
             if asyncio.iscoroutinefunction(func):
 
                 async def afnc():
-                    return await func(session_user=session_user, *args, **kwargs)
+                    return await func(session_user=session_user, **kwargs)
 
                 return afnc()
             else:
-                return func(session_user=session_user, *args, **kwargs)
+                return func(session_user=session_user, **kwargs)
 
     return wrapper
 
@@ -134,16 +133,16 @@ def require_group_permission(*required_permissions: bool):
 
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(session_user: User, *args, **kwargs):
+        def wrapper(session_user: User, **kwargs):
             with _validate_permissions(session_user):
                 if asyncio.iscoroutinefunction(func):
 
                     async def afnc():
-                        return await func(session_user=session_user, *args, **kwargs)
+                        return await func(session_user=session_user, **kwargs)
 
                     return afnc()
                 else:
-                    return func(session_user=session_user, *args, **kwargs)
+                    return func(session_user=session_user, **kwargs)
 
         return wrapper
 
@@ -181,16 +180,16 @@ def require_user_role(*required_roles: bool):
 
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(session_user: User, *args, **kwargs):
+        def wrapper(session_user: User, **kwargs):
             with _validate_roles(session_user):
                 if asyncio.iscoroutinefunction(func):
 
                     async def afnc():
-                        return await func(session_user=session_user, *args, **kwargs)
+                        return await func(session_user=session_user, **kwargs)
 
                     return afnc()
                 else:
-                    return func(session_user=session_user, *args, **kwargs)
+                    return func(session_user=session_user, **kwargs)
 
         return wrapper
 

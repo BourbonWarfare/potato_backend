@@ -58,6 +58,15 @@ class TestRequireLocal:
             mock_request.remote_addr = '127.0.0.1'
             tester(42, arg2='test')
 
+    def test__require_local__sync__proper_return(self):
+        @require_local
+        def tester():
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+            mock_request.remote_addr = '127.0.0.1'
+            assert 42 == tester()
+
     @pytest.mark.asyncio
     async def test__require_local__async__local_ip_succeeds(self):
         called = False
@@ -101,6 +110,16 @@ class TestRequireLocal:
             mock_request.remote_addr = '127.0.0.1'
             await tester(42, arg2='test')
 
+    @pytest.mark.asyncio
+    async def test__require_local__async__proper_return(self):
+        @require_local
+        async def tester():
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+            mock_request.remote_addr = '127.0.0.1'
+            assert 42 == await tester()
+
 
 class TestRequireSession:
     def test__require_session__sync__with_header_succeeds(self):
@@ -122,6 +141,32 @@ class TestRequireSession:
         assert mock_validator.called
         assert mock_get_session_user.called
         assert called
+
+    def test__require_session__sync__arguments_passed(self):
+        @require_session
+        def tester(session_user, arg1: int, arg2: str):
+            assert isinstance(arg1, int)
+            assert arg1 == 42
+
+            assert isinstance(arg2, str)
+            assert arg2 == 'test'
+
+        with unittest.mock.patch('bw.auth.decorators.validate_session'):
+            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
+                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
+                    tester(arg1=42, arg2='test')
+
+    def test__require_session__sync__proper_return(self):
+        @require_session
+        def tester(session_user):
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.validate_session'):
+            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
+                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
+                    assert 42 == tester()
 
     def test__require_session__sync__without_header_fails(self):
         called = False
@@ -229,6 +274,34 @@ class TestRequireSession:
         assert called
 
     @pytest.mark.asyncio
+    async def test__require_session__async__arguments_passed(self):
+        @require_session
+        async def tester(session_user, arg1: int, arg2: str):
+            assert isinstance(arg1, int)
+            assert arg1 == 42
+
+            assert isinstance(arg2, str)
+            assert arg2 == 'test'
+
+        with unittest.mock.patch('bw.auth.decorators.validate_session'):
+            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
+                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
+                    await tester(arg1=42, arg2='test')
+
+    @pytest.mark.asyncio
+    async def test__require_session__async__proper_return(self):
+        @require_session
+        async def tester(session_user):
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.validate_session'):
+            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
+                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
+                    assert 42 == await tester()
+
+    @pytest.mark.asyncio
     async def test__require_session__async__without_header_fails(self):
         called = False
 
@@ -333,6 +406,28 @@ class TestRequireGroupPermission:
         assert mock_getter.called
         assert called
 
+    def test__require_group_permission__sync__arguments_passed(self, mock_session_user):
+        @require_group_permission(Permissions.can_test_mission)
+        def tester(session_user, arg1: int, arg2: str):
+            assert isinstance(arg1, int)
+            assert arg1 == 42
+
+            assert isinstance(arg2, str)
+            assert arg2 == 'test'
+
+        with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
+            mock_getter.return_value = Permissions(can_manage_server=False, can_test_mission=True, can_upload_mission=False)
+            tester(mock_session_user, arg1=42, arg2='test')
+
+    def test__require_group_permission__sync__proper_return(self, mock_session_user):
+        @require_group_permission(Permissions.can_test_mission)
+        def tester(session_user):
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
+            mock_getter.return_value = Permissions(can_manage_server=False, can_test_mission=True, can_upload_mission=False)
+            assert 42 == tester(mock_session_user)
+
     def test__require_group_permission__sync__fails_on_invalid_perms(self, mock_session_user):
         called = False
 
@@ -386,6 +481,30 @@ class TestRequireGroupPermission:
             await tester(mock_session_user)
         assert mock_getter.called
         assert called
+
+    @pytest.mark.asyncio
+    async def test__require_session__async__arguments_passed(self):
+        @require_group_permission(Permissions.can_test_mission)
+        async def tester(session_user, arg1: int, arg2: str):
+            assert isinstance(arg1, int)
+            assert arg1 == 42
+
+            assert isinstance(arg2, str)
+            assert arg2 == 'test'
+
+        with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
+            mock_getter.return_value = Permissions(can_manage_server=False, can_test_mission=True, can_upload_mission=False)
+            await tester(mock_session_user, arg1=42, arg2='test')
+
+    @pytest.mark.asyncio
+    async def test__require_group_permission__async__proper_return(self, mock_session_user):
+        @require_group_permission(Permissions.can_test_mission)
+        async def tester(session_user):
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
+            mock_getter.return_value = Permissions(can_manage_server=False, can_test_mission=True, can_upload_mission=False)
+            assert 42 == await tester(mock_session_user)
 
     @pytest.mark.asyncio
     async def test__require_group_permission__async__fails_on_invalid_perms(self, mock_session_user):
@@ -447,6 +566,34 @@ class TestRequireUserRole:
             tester(mock_session_user)
         assert mock_getter.called
         assert called
+
+    def test__require_session__sync__arguments_passed(self, mock_session_user):
+        @require_user_role(Roles.can_create_role)
+        def tester(session_user, arg1: int, arg2: str):
+            assert isinstance(arg1, int)
+            assert arg1 == 42
+
+            assert isinstance(arg2, str)
+            assert arg2 == 'test'
+
+        with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
+            mock_getter.return_value = Roles(
+                can_create_group=False,
+                can_create_role=True,
+            )
+            tester(mock_session_user, arg1=42, arg2='test')
+
+    def test__require_session__sync__proper_return(self, mock_session_user):
+        @require_user_role(Roles.can_create_role)
+        def tester(session_user):
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
+            mock_getter.return_value = Roles(
+                can_create_group=False,
+                can_create_role=True,
+            )
+            assert 42 == tester(mock_session_user)
 
     def test__require_user_role__sync__no_role_fails(self, mock_session_user):
         called = False
@@ -526,6 +673,36 @@ class TestRequireUserRole:
             await tester(mock_session_user)
         assert mock_getter.called
         assert called
+
+    @pytest.mark.asyncio
+    async def test__require_session__async__arguments_passed(self, mock_session_user):
+        @require_user_role(Roles.can_create_role)
+        async def tester(session_user, arg1: int, arg2: str):
+            assert isinstance(arg1, int)
+            assert arg1 == 42
+
+            assert isinstance(arg2, str)
+            assert arg2 == 'test'
+
+        with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
+            mock_getter.return_value = Roles(
+                can_create_group=False,
+                can_create_role=True,
+            )
+            await tester(mock_session_user, arg1=42, arg2='test')
+
+    @pytest.mark.asyncio
+    async def test__require_session__async__proper_return(self, mock_session_user):
+        @require_user_role(Roles.can_create_role)
+        async def tester(session_user):
+            return 42
+
+        with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
+            mock_getter.return_value = Roles(
+                can_create_group=False,
+                can_create_role=True,
+            )
+            assert 42 == await tester(mock_session_user)
 
     @pytest.mark.asyncio
     async def test__require_user_role__async__no_role_fails(self, mock_session_user):

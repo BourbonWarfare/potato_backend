@@ -221,3 +221,73 @@ def db_group_3(state, session, db_permission_3, group_name_3):
         group = session.execute(query).first()[0]
         session.expunge(group)
     yield group
+
+
+@pytest.fixture(scope='function')
+def endpoint_api_url():
+    return '/api'
+
+
+@pytest.fixture(scope='function')
+def endpoint_api_v1_url(endpoint_api_url):
+    return f'{endpoint_api_url}/v1'
+
+
+@pytest.fixture(scope='function')
+def endpoint_api_local_url(endpoint_api_url):
+    return f'{endpoint_api_url}/local'
+
+
+@pytest.fixture(scope='function')
+def endpoint_login_bot_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/auth/login/bot'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/user/'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_role_create_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/user/role/create'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_role_assign_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/user/role/assign'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_group_create_permission_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/group/create/permission'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_group_create_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/group/create'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_group_join_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/group/join'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_group_leave_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/group/leave'
+
+
+@pytest.fixture(scope='function')
+def endpoint_local_user_create_bot_url(endpoint_api_local_url):
+    return f'{endpoint_api_local_url}/user/create/bot'
+
+
+@pytest.fixture(scope='function')
+def endpoint_local_user_role_create_url(endpoint_api_local_url):
+    return f'{endpoint_api_local_url}/user/role/create'
+
+
+@pytest.fixture(scope='function')
+def endpoint_local_user_role_assign_url(endpoint_api_local_url):
+    return f'{endpoint_api_local_url}/user/role/assign'

@@ -65,7 +65,7 @@ class DoesNotExist(Exists):
 
 class JsonResponse(WebResponse):
     def content_type(self) -> str:
-        return 'text/json'
+        return 'application/json'
 
     def __init__(self, json_payload: dict, headers: dict = {}, status=200):
         contained_status = json_payload.pop('status', None)

@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy.sql import text
 
 from bw.state import State
+from bw.server import app
 
 
 @pytest.fixture(scope='function')
@@ -37,3 +38,8 @@ def session(request, state):
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'DROP DATABASE {test_db_name}'))
+
+
+@pytest.fixture(scope='function')
+def test_app():
+    yield app.test_client()
