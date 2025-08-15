@@ -83,8 +83,8 @@ def main():
     with open('metadata/bot_info.txt', 'w') as f:
         f.writelines(
             [
-                f'Bot Token: <{bot_token}>',
-                f'Bot UUID: <{bot_uuid}>',
+                f'Bot Token: <{bot_token}>\n',
+                f'Bot UUID: <{bot_uuid}>\n',
             ]
         )
 
