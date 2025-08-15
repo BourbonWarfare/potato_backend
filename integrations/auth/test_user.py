@@ -317,8 +317,7 @@ def test__get_users_role__expected_role_returned(state, session, db_user_1, role
     role = UserStore().create_role(state, 'role', role_1)
     UserStore().assign_user_role(state, db_user_1, 'role')
     returned_role = UserStore().get_users_role(state, db_user_1)
-    assert role.id == returned_role.id
-    assert role.into_roles().as_dict() == returned_role.into_roles().as_dict()
+    assert role.into_roles().as_dict() == returned_role.as_dict()
 
 
 def test__get_users_role__none_returned_if_no_role(state, session, db_user_1):
