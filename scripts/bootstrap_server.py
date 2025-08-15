@@ -3,7 +3,7 @@ import functools
 from bw.environment import ENVIRONMENT
 from bw.auth.roles import Roles
 
-url = f'http://localhost:{ENVIRONMENT.port()}'
+url = f'http://localhost:{ENVIRONMENT.port()}/api'
 
 
 class RequestException(Exception):
