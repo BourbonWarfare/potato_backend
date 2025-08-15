@@ -49,6 +49,6 @@ jobs:
           chmod +x bin/_server_manage.ps1
           touch bin/a3sb
           chmod +x bin/a3sb
-          echo "${{ secrets.TEST_CONF }}" >> conf.kv
+          cp tests/test_config.kv conf.kv
           uv run pytest --cov=bw
       

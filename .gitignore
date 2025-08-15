@@ -1,5 +1,6 @@
 # server-only conf
 *.kv
+!test_config.kv
 *.env
 *.toml
 conf.txt*
