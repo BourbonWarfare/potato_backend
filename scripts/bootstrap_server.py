@@ -1,5 +1,6 @@
 import requests
 import functools
+import os
 from bw.environment import ENVIRONMENT
 from bw.auth.roles import Roles
 
@@ -77,6 +78,8 @@ def main():
 
     print('Admin bot setup complete. Writing information to disk...')
 
+    if not os.path.exists('metadata'):
+        os.makedirs('metadata')
     with open('metadata/bot_info.txt', 'w') as f:
         f.writelines(
             [
