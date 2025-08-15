@@ -192,7 +192,7 @@ class AuthApi:
         if user_roles is None:
             return DoesNotExist()
 
-        test_roles = user_roles.into_roles().as_dict()
+        test_roles = user_roles.as_dict()
         for role, expecting_role in wanted_roles.as_dict().items():
             if expecting_role and not test_roles[role]:
                 return DoesNotExist()
