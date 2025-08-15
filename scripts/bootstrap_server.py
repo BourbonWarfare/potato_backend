@@ -70,10 +70,10 @@ def assign_admin_role(url, session_token, bot_uuid):
 
 def main():
     bot_token = create_bot_user()
-    session_token = create_bot_session(bot_token).get('session_token')
-    bot_uuid = get_bot_info(session_token).get('uuid')
-    create_admin_role(session_token)
-    assign_admin_role(session_token, bot_uuid)
+    session_token = create_bot_session(bot_token=bot_token).get('session_token')
+    bot_uuid = get_bot_info(session_token=session_token).get('uuid')
+    create_admin_role(session_token=session_token)
+    assign_admin_role(session_token=session_token, bot_uuid=bot_uuid)
 
     print('Admin bot setup complete. Writing information to disk...')
 
