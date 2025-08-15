@@ -8,7 +8,7 @@ url = f'http://localhost:{ENVIRONMENT.port()}/api'
 
 class RequestException(Exception):
     def __init__(self, message, response):
-        super().__init__(f'Bootstrap failure: {message}. {response.status_code} - {response.text}')
+        super().__init__(f'Bootstrap failure: {message}. {response.status_code} - {response.content}')
 
 
 def request_fixture(endpoint: str, description: str):

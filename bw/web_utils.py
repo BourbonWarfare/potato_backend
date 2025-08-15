@@ -180,6 +180,7 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
                 return await func(*args, **kwargs)
             except TypeError as e:
                 logger.warning(e)
+                logger.warning(f'Request payload: {kwargs}')
                 return BadArguments().as_response_code()
             except BwServerError as e:
                 logger.warning(e)
