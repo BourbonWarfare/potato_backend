@@ -96,7 +96,7 @@ def require_session(func):
         with _session_user() as session_user:
             if asyncio.iscoroutinefunction(func):
 
-                async def afnc(*args, **kwargs):
+                async def afnc():
                     return await func(session_user=session_user, *args, **kwargs)
 
                 return afnc()
