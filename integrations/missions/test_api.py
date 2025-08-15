@@ -1,7 +1,9 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import unittest
 import re
+import csv
 from bw.response import JsonResponse, Created, WebResponse
 from bw.missions.api import MissionsApi, TestApi
 from bw.error import CouldNotCreateIteration
@@ -33,6 +35,8 @@ from integrations.missions.fixtures import (
     invalid_uuid,
     test_notes,
     test_notes_multiple,
+    metadata_1,
+    disk_metadata_1,
 )
 
 
@@ -154,6 +158,63 @@ class TestMissionsApi:
         resp = await api.upload_mission_metadata('fake_path')
         assert isinstance(resp, Created)
         assert resp.status == '201 CREATED'
+
+    @pytest.mark.asyncio
+    async def test__missions_api__get_stored_metadata__success(self, mocker, disk_metadata_1, metadata_1):
+        api = MissionsApi()
+        mocker.patch.object(api, 'metadata_path', disk_metadata_1)
+
+        resp = await api.get_stored_metadata()
+
+        assert isinstance(resp, JsonResponse)
+        assert resp.status_code == 200
+        assert resp.contained_json['fields'] == metadata_1['fields']
+        assert resp.contained_json['metadata'] == metadata_1['metadata']
+        assert len(resp.contained_json['metadata']) == len(metadata_1['metadata'])
+
+    @pytest.mark.asyncio
+    async def test__missions_api__get_stored_metadata__returns_empty_on_no_file(self, mocker):
+        api = MissionsApi()
+        mocker.patch.object(api, 'metadata_path', '/nonexistent/path/log.csv')
+
+        resp = await api.get_stored_metadata()
+
+        assert isinstance(resp, JsonResponse)
+        assert resp.status_code == 200
+        assert resp.contained_json['fields'] == []
+        assert resp.contained_json['metadata'] == []
+
+    @pytest.mark.asyncio
+    async def test__missions_api__get_stored_metadata__all_fields_found(self, mocker, disk_metadata_1, metadata_1):
+        api = MissionsApi()
+        mocker.patch.object(api, 'metadata_path', disk_metadata_1)
+
+        resp = await api.get_stored_metadata()
+
+        assert isinstance(resp, JsonResponse)
+        assert resp.status_code == 200
+
+        # Verify all expected fields are present
+        assert resp.contained_json['fields'] == metadata_1['fields']
+
+        # Verify specific field values from first entry
+        first_entry = resp.contained_json['metadata'][0]
+        assert first_entry['Mission Name'] == 'gn502_co30_TestMission_v1'
+        assert first_entry['uuid'] == 'b3d7e343-d244-45fd-a614-a40e3da5de90'
+        assert first_entry['tag'] == '1'
+
+    @pytest.mark.asyncio
+    async def test__missions_api__get_stored_metadata__returns_empty_on_csv_error(self, mocker, disk_metadata_1):
+        api = MissionsApi()
+        mocker.patch.object(api, 'metadata_path', disk_metadata_1)
+
+        with unittest.mock.patch('bw.missions.api.csv.DictReader', side_effect=csv.Error):
+            resp = await api.get_stored_metadata()
+
+        assert isinstance(resp, JsonResponse)
+        assert resp.status_code == 200
+        assert resp.contained_json['fields'] == []
+        assert resp.contained_json['metadata'] == []
 
 
 # god i love naming conventions

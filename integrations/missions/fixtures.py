@@ -2,6 +2,8 @@
 
 import pytest
 import uuid
+import tempfile
+import csv
 
 from sqlalchemy import insert
 
@@ -257,3 +259,83 @@ def test_notes():
 @pytest.fixture
 def test_notes_multiple():
     return {'briefing': 'excellent', 'gameplay': 'balanced', 'mission_flow': 'smooth'}
+
+
+@pytest.fixture
+def metadata_1():
+    return {
+        'fields': [
+            'Mission Name',
+            'Has `missionTestingInfo`',
+            'Has `missionType`',
+            'uuid',
+            'tag',
+            'flag1',
+            'flag2',
+            'flag3',
+            'minPlayers',
+            'desiredPlayers',
+            'maxPlayers',
+            'safeStartTime',
+            'missionTime',
+        ],
+        'metadata': [
+            {
+                'Mission Name': 'gn502_co30_TestMission_v1',
+                'Has `missionTestingInfo`': '1',
+                'Has `missionType`': '1',
+                'uuid': 'b3d7e343-d244-45fd-a614-a40e3da5de90',
+                'tag': '1',
+                'flag1': '2',
+                'flag2': '0',
+                'flag3': '0',
+                'minPlayers': '20',
+                'desiredPlayers': '60',
+                'maxPlayers': '30',
+                'safeStartTime': '15',
+                'missionTime': '75',
+            },
+            {
+                'Mission Name': 'Bailey_TVT30_TestMission_v2',
+                'Has `missionTestingInfo`': '1',
+                'Has `missionType`': '1',
+                'uuid': '',
+                'tag': '2',
+                'flag1': '4',
+                'flag2': '2',
+                'flag3': '0',
+                'minPlayers': '25',
+                'desiredPlayers': '80',
+                'maxPlayers': '35',
+                'safeStartTime': '10',
+                'missionTime': '35',
+            },
+            {
+                'Mission Name': 'Mom_Co25_TestNightMission_v1',
+                'Has `missionTestingInfo`': '1',
+                'Has `missionType`': '1',
+                'uuid': '713cb2d8-2af1-4833-8521-1356423f4be4',
+                'tag': '1',
+                'flag1': '1',
+                'flag2': '0',
+                'flag3': '0',
+                'minPlayers': '15',
+                'desiredPlayers': '60',
+                'maxPlayers': '25',
+                'safeStartTime': '10',
+                'missionTime': '90',
+            },
+        ],
+    }
+
+
+@pytest.fixture
+def disk_metadata_1(metadata_1):
+    with tempfile.NamedTemporaryFile(delete_on_close=False, mode='w', suffix='.csv') as tmp_file:
+        writer = csv.DictWriter(tmp_file, fieldnames=metadata_1['fields'])
+        writer.writeheader()
+        for row in metadata_1['metadata']:
+            writer.writerow(row)
+        tmp_file.flush()
+        tmp_file.close()
+        yield tmp_file.name

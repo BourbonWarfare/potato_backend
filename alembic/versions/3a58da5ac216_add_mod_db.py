@@ -1,8 +1,8 @@
 """add mod db
 
-Revision ID: 22eaf1214898
+Revision ID: 3a58da5ac216
 Revises: d8424a17839f
-Create Date: 2025-08-11 00:39:26.750010
+Create Date: 2025-08-14 21:31:27.933334
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '22eaf1214898'
+revision: str = '3a58da5ac216'
 down_revision: Union[str, Sequence[str], None] = 'd8424a17839f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('mods',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('workshop_id', sa.Integer(), nullable=False),
-    sa.Column('last_update_date', sa.TIMESTAMP(), nullable=False),
+    sa.Column('last_update_date', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_mods_workshop_id'), 'mods', ['workshop_id'], unique=True)

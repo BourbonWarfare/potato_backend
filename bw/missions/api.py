@@ -282,11 +282,16 @@ class MissionsApi:
         ```
         """
         if not os.path.exists(self.metadata_path):
+            logger.warning(f'Mission metadata file does not exist: {self.metadata_path}')
             return JsonResponse({'fields': [], 'metadata': []})
 
         fields = []
         with open(self.metadata_path, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
+            try:
+                reader = csv.DictReader(csvfile)
+            except csv.Error as e:
+                logger.error(f'Error reading CSV file: {e}')
+                return JsonResponse({'fields': [], 'metadata': []})
             fields = reader.fieldnames or []
             metadata = [row for row in reader]
 
