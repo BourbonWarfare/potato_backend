@@ -68,3 +68,9 @@ async def test__user__gets_user_data(
     assert data['uuid'] == str(db_user_1.uuid)
     assert data['creation_date'] == db_user_1.creation_date.isoformat()
     assert data['groups'] == [db_group_1.name, db_group_2.name]
+
+
+@pytest.mark.asyncio
+async def test__user__no_token_gets_no_data(state, session, test_app, endpoint_user_url):
+    response = await test_app.get(endpoint_user_url)
+    assert response.status_code == 401
