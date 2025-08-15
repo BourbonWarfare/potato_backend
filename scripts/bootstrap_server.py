@@ -3,7 +3,7 @@ import functools
 from bw.environment import ENVIRONMENT
 from bw.auth.roles import Roles
 
-url = f'http://localhost:{ENVIRONMENT.port()}/api'
+url = f'http://localhost:{ENVIRONMENT.port()}/api/'
 
 
 class RequestException(Exception):
@@ -24,7 +24,7 @@ def request_fixture(endpoint: str, description: str):
     return decorator
 
 
-@request_fixture('local/auth/user/bot', 'Creating bot user')
+@request_fixture('local/user/create/bot', 'Creating bot user')
 def create_bot_user(url):
     response = requests.post(url)
     if response.status_code != 201:
@@ -32,7 +32,7 @@ def create_bot_user(url):
     return response.text
 
 
-@request_fixture('local/auth/user', 'Getting bot info')
+@request_fixture('v1/user/', 'Getting bot info')
 def get_bot_info(url):
     response = requests.get(url)
     if response.status_code != 200:
@@ -40,7 +40,7 @@ def get_bot_info(url):
     return response.json()
 
 
-@request_fixture('local/session/bot', 'Creating bot session')
+@request_fixture('v1/auth/login/bot', 'Creating bot session')
 def create_bot_session(url):
     response = requests.post(url)
     if response.status_code != 201:
@@ -48,7 +48,7 @@ def create_bot_session(url):
     return response.json()
 
 
-@request_fixture('local/auth/role', 'Creating admin role')
+@request_fixture('local/user/role/create', 'Creating admin role')
 def create_admin_role(url, session_token):
     response = requests.post(
         url,
@@ -59,7 +59,7 @@ def create_admin_role(url, session_token):
         raise RequestException('Failed to create admin role', response)
 
 
-@request_fixture('local/auth/role/assign', 'Assigning admin role to bot user')
+@request_fixture('local/user/role/assign', 'Assigning admin role to bot user')
 def assign_admin_role(url, session_token, bot_uuid):
     response = requests.post(
         url, json={'role_name': 'admin', 'user_uuid': bot_uuid}, headers={'Authorization': f'Bearer {session_token}'}
