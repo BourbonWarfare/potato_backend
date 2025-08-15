@@ -3,7 +3,7 @@ import functools
 from bw.environment import ENVIRONMENT
 from bw.auth.roles import Roles
 
-url = f'http://localhost:{ENVIRONMENT.port()}/api/'
+url = f'http://localhost:{ENVIRONMENT.port()}/api'
 
 
 class RequestException(Exception):
@@ -32,19 +32,19 @@ def create_bot_user(url):
     return response.text
 
 
-@request_fixture('v1/user/', 'Getting bot info')
-def get_bot_info(url):
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise RequestException('Failed to get bot info', response)
-    return response.json()
-
-
 @request_fixture('v1/auth/login/bot', 'Creating bot session')
 def create_bot_session(url):
     response = requests.post(url)
     if response.status_code != 201:
         raise RequestException('Failed to create bot session', response)
+    return response.json()
+
+
+@request_fixture('v1/user/', 'Getting bot info')
+def get_bot_info(url, session_token):
+    response = requests.get(url, headers={'Authorization': f'Bearer {session_token}'})
+    if response.status_code != 200:
+        raise RequestException('Failed to get bot info', response)
     return response.json()
 
 
@@ -70,8 +70,8 @@ def assign_admin_role(url, session_token, bot_uuid):
 
 def main():
     bot_token = create_bot_user()
-    bot_uuid = get_bot_info().get('uuid')
     session_token = create_bot_session().get('session_token')
+    bot_uuid = get_bot_info(session_token).get('uuid')
     create_admin_role(session_token)
     assign_admin_role(session_token, bot_uuid)
 
