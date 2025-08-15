@@ -463,6 +463,7 @@ class AuthApi:
         GroupStore().remove_user_from_group(state=state, user=user, group=group)
         return Ok()
 
+    @define_api
     def user_info(self, state: State, user: User) -> JsonResponse:
         """
         ### Returns all information that is publically available for a user
