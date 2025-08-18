@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from uuid import UUID
-from sqlalchemy import ForeignKey, String, func, TIMESTAMP, Boolean, UniqueConstraint, Uuid
+from sqlalchemy import ForeignKey, String, func, DateTime, Boolean, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.models import Base
@@ -23,7 +23,7 @@ class User(Base):
     uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     role: Mapped[int | None] = mapped_column(ForeignKey('user_roles.id'))
     creation_date: Mapped[datetime.datetime] = mapped_column(
-        TIMESTAMP(timezone=False), nullable=False, server_default=func.current_timestamp()
+        DateTime(timezone=False), nullable=False, server_default=func.current_timestamp()
     )
 
 
@@ -62,8 +62,8 @@ class Session(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
     token: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
-    expire_time: Mapped[int] = mapped_column(
-        TIMESTAMP(timezone=False),
+    expire_time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=False),
         nullable=False,
         server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
     )

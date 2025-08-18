@@ -1,6 +1,8 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import unittest
+import unittest.mock
 
 from integrations.fixtures import test_app, session, state
 from integrations.auth.fixtures import (
@@ -218,3 +220,173 @@ async def test__assign_role__cant_assign_nonexistent(
     )
     assert response.status_code == 404
     assert UserStore().get_users_role(state, db_user_2) is None
+
+
+@pytest.mark.asyncio
+async def test__local_create_bot__can_create(state, session, test_app, endpoint_local_user_create_bot_url):
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '127.0.0.1'
+        response = await test_app.post(endpoint_local_user_create_bot_url)
+    assert response.status_code == 201
+    json = await response.get_json()
+    assert UserStore().user_from_bot_token(state, json['bot_token']) is not None
+
+
+@pytest.mark.asyncio
+async def test__local_create_bot__cant_create_remote(state, session, test_app, endpoint_local_user_create_bot_url):
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '8.8.8.8'
+        response = await test_app.post(endpoint_local_user_create_bot_url)
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test__local_create_role__role_created(
+    state, session, test_app, db_user_1, role_1, db_session_1, db_role_assigner, endpoint_local_user_role_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '127.0.0.1'
+        mock_request.headers = {'Authorization': f'Bearer {db_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_create_url,
+            json={'role_name': 'test_role', **role_1.as_dict()},
+            headers={'Authorization': f'Bearer {db_session_1.token}'},
+        )
+    assert response.status_code == 201
+    data = await response.get_json()
+    assert data['name'] == 'test_role'
+
+
+@pytest.mark.asyncio
+async def test__local_create_role__expired_session_nothing(
+    state, session, test_app, db_user_1, role_1, db_expired_session_1, db_role_assigner, endpoint_local_user_role_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    assert len(UserStore().get_all_roles(state)) == 1
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '127.0.0.1'
+        mock_request.headers = {'Authorization': f'Bearer {db_expired_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_create_url,
+            json={'role_name': 'test_role', **role_1.as_dict()},
+            headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+        )
+    assert response.status_code == 401
+    assert len(UserStore().get_all_roles(state)) == 1
+
+
+@pytest.mark.asyncio
+async def test__local_create_role__cant_create_duplicate(
+    state, session, test_app, db_user_1, role_1, db_role_1, db_session_1, db_role_assigner, endpoint_local_user_role_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '127.0.0.1'
+        mock_request.headers = {'Authorization': f'Bearer {db_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_create_url,
+            json={'role_name': db_role_1.name, **role_1.as_dict()},
+            headers={'Authorization': f'Bearer {db_session_1.token}'},
+        )
+    assert response.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test__local_assign_role__can_local_assign_role(
+    state, session, test_app, db_user_1, db_user_2, db_role_1, db_session_1, db_role_assigner, endpoint_local_user_role_assign_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '127.0.0.1'
+        mock_request.headers = {'Authorization': f'Bearer {db_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_assign_url,
+            json={'user_uuid': str(db_user_2.uuid), 'role_name': db_role_1.name},
+            headers={'Authorization': f'Bearer {db_session_1.token}'},
+        )
+    assert response.status_code == 200
+    assert UserStore().get_users_role(state, db_user_1).as_dict() == db_role_1.into_roles().as_dict()
+
+
+@pytest.mark.asyncio
+async def test__local_assign_role__cant_assign_if_expired_session(
+    state,
+    session,
+    test_app,
+    db_user_1,
+    db_user_2,
+    db_role_1,
+    db_expired_session_1,
+    db_role_assigner,
+    endpoint_local_user_role_assign_url,
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '127.0.0.1'
+        mock_request.headers = {'Authorization': f'Bearer {db_expired_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_assign_url,
+            json={'user_uuid': str(db_user_2.uuid), 'role_name': db_role_1.name},
+            headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+        )
+    assert response.status_code == 401
+    assert UserStore().get_users_role(state, db_user_2) is None
+
+
+@pytest.mark.asyncio
+async def test__local_assign_role__cant_assign_nonexistent(
+    state, session, test_app, db_user_1, db_user_2, db_session_1, db_role_assigner, endpoint_local_user_role_assign_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '127.0.0.1'
+        mock_request.headers = {'Authorization': f'Bearer {db_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_assign_url,
+            json={'user_uuid': str(db_user_2.uuid), 'role_name': 'fooeybarjkdsr'},
+            headers={'Authorization': f'Bearer {db_session_1.token}'},
+        )
+    assert response.status_code == 404
+    assert UserStore().get_users_role(state, db_user_2) is None
+
+
+@pytest.mark.asyncio
+async def test__local_create_role__cant_create_remote(
+    state, session, test_app, db_user_1, role_1, db_session_1, db_role_assigner, endpoint_local_user_role_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '8.8.8.8'
+        mock_request.headers = {'Authorization': f'Bearer {db_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_create_url,
+            json={'role_name': 'test_role', **role_1.as_dict()},
+            headers={'Authorization': f'Bearer {db_session_1.token}'},
+        )
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test__local_assign_role__cant_assign_remote(
+    state, session, test_app, db_user_1, db_user_2, db_role_1, db_session_1, db_role_assigner, endpoint_local_user_role_assign_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
+
+    with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
+        mock_request.remote_addr = '8.8.8.8'
+        mock_request.headers = {'Authorization': f'Bearer {db_session_1.token}'}
+        response = await test_app.post(
+            endpoint_local_user_role_assign_url,
+            json={'user_uuid': str(db_user_2.uuid), 'role_name': db_role_1.name},
+            headers={'Authorization': f'Bearer {db_session_1.token}'},
+        )
+    assert response.status_code == 403
