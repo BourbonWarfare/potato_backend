@@ -76,6 +76,11 @@ def role_assigner() -> Roles:
 
 
 @pytest.fixture(scope='session')
+def group_assigner() -> Roles:
+    return Roles(can_create_group=True, can_create_role=False)
+
+
+@pytest.fixture(scope='session')
 def permission_name_1() -> str:
     return 'perm 1'
 
@@ -250,6 +255,15 @@ def db_role_2(state, session, role_2, role_name_2):
 def db_role_assigner(state, session, role_assigner):
     with state.Session.begin() as session:
         query = insert(Role).values(id=666, name='role-assigner', **role_assigner.as_dict()).returning(Role)
+        role = session.execute(query).first()[0]
+        session.expunge(role)
+    yield role
+
+
+@pytest.fixture(scope='function')
+def db_group_assigner(state, session, group_assigner):
+    with state.Session.begin() as session:
+        query = insert(Role).values(id=777, name='group-assigner', **group_assigner.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role

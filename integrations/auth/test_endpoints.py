@@ -38,6 +38,7 @@ from integrations.auth.fixtures import (
     db_group_2,
     role_1,
     role_assigner,
+    group_assigner,
     expire_invalid,
     db_expired_session_1,
     role_name_1,
@@ -45,6 +46,7 @@ from integrations.auth.fixtures import (
     db_role_1,
     db_role_2,
     db_role_assigner,
+    db_group_assigner,
 )
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
@@ -390,3 +392,173 @@ async def test__local_assign_role__cant_assign_remote(
             headers={'Authorization': f'Bearer {db_session_1.token}'},
         )
     assert response.status_code == 403
+
+
+# Group endpoint tests
+@pytest.mark.asyncio
+async def test__create_group_permission__permission_created(
+    state, session, test_app, db_user_1, permission_1, db_session_1, db_group_assigner, endpoint_user_group_create_permission_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_group_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_group_create_permission_url,
+        json={'permission_name': 'test_permission', **permission_1.as_dict()},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 201
+    data = await response.get_json()
+    assert data['name'] == 'test_permission'
+
+
+@pytest.mark.asyncio
+async def test__create_group_permission__cant_create_if_not_permitted(
+    state, session, test_app, db_user_1, permission_1, db_session_1, endpoint_user_group_create_permission_url
+):
+    response = await test_app.post(
+        endpoint_user_group_create_permission_url,
+        json={'permission_name': 'test_permission', **permission_1.as_dict()},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test__create_group_permission__expired_session_nothing(
+    state,
+    session,
+    test_app,
+    db_user_1,
+    permission_1,
+    db_expired_session_1,
+    db_group_assigner,
+    endpoint_user_group_create_permission_url,
+):
+    UserStore().assign_user_role(state, db_user_1, db_group_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_group_create_permission_url,
+        json={'permission_name': 'test_permission', **permission_1.as_dict()},
+        headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__create_group__group_created(
+    state, session, test_app, db_user_1, db_permission_1, db_session_1, db_group_assigner, endpoint_user_group_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_group_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_group_create_url,
+        json={'group_name': 'test_group', 'permissions': db_permission_1.name},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 201
+    data = await response.get_json()
+    assert data['name'] == 'test_group'
+
+
+@pytest.mark.asyncio
+async def test__create_group__cant_create_if_not_permitted(
+    state, session, test_app, db_user_1, db_permission_1, db_session_1, endpoint_user_group_create_url
+):
+    response = await test_app.post(
+        endpoint_user_group_create_url,
+        json={'group_name': 'test_group', 'permissions': db_permission_1.name},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test__create_group__expired_session_nothing(
+    state, session, test_app, db_user_1, db_permission_1, db_expired_session_1, db_group_assigner, endpoint_user_group_create_url
+):
+    UserStore().assign_user_role(state, db_user_1, db_group_assigner.name)
+
+    response = await test_app.post(
+        endpoint_user_group_create_url,
+        json={'group_name': 'test_group', 'permissions': db_permission_1.name},
+        headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__join_group__can_join_group(
+    state, session, test_app, db_user_1, db_group_1, db_session_1, endpoint_user_group_join_url
+):
+    response = await test_app.post(
+        endpoint_user_group_join_url,
+        json={'group_name': db_group_1.name},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 200
+
+    user_groups = GroupStore().get_user_groups(state, db_user_1)
+    assert any(group.name == db_group_1.name for group in user_groups)
+
+
+@pytest.mark.asyncio
+async def test__join_group__cant_join_nonexistent_group(
+    state, session, test_app, db_user_1, db_session_1, endpoint_user_group_join_url
+):
+    response = await test_app.post(
+        endpoint_user_group_join_url,
+        json={'group_name': 'nonexistent_group'},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test__join_group__expired_session_nothing(
+    state, session, test_app, db_user_1, db_group_1, db_expired_session_1, endpoint_user_group_join_url
+):
+    response = await test_app.post(
+        endpoint_user_group_join_url,
+        json={'group_name': db_group_1.name},
+        headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__leave_group__can_leave_group(
+    state, session, test_app, db_user_1, db_group_1, db_session_1, endpoint_user_group_leave_url
+):
+    response = await test_app.post(
+        endpoint_user_group_leave_url,
+        json={'group_name': db_group_1.name},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 200
+
+    user_groups = GroupStore().get_user_groups(state, db_user_1)
+    assert not any(group.name == db_group_1.name for group in user_groups)
+
+
+@pytest.mark.asyncio
+async def test__leave_group__cant_leave_nonexistent_group(
+    state, session, test_app, db_user_1, db_session_1, endpoint_user_group_leave_url
+):
+    response = await test_app.post(
+        endpoint_user_group_leave_url,
+        json={'group_name': 'nonexistent_group'},
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test__leave_group__expired_session_nothing(
+    state, session, test_app, db_user_1, db_group_1, db_expired_session_1, endpoint_user_group_leave_url
+):
+    response = await test_app.post(
+        endpoint_user_group_leave_url,
+        json={'group_name': db_group_1.name},
+        headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+    )
+    assert response.status_code == 401
