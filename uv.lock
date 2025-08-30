@@ -498,6 +498,7 @@ dependencies = [
     { name = "alembic" },
     { name = "objsize" },
     { name = "pg8000" },
+    { name = "potatolib" },
     { name = "python-dotenv" },
     { name = "quart" },
     { name = "sqlalchemy" },
@@ -527,6 +528,7 @@ requires-dist = [
     { name = "alembic" },
     { name = "objsize" },
     { name = "pg8000" },
+    { name = "potatolib", git = "https://github.com/BourbonWarfare/potato_lib.git" },
     { name = "pre-commit", marker = "extra == 'development'" },
     { name = "pytest", marker = "extra == 'tests'" },
     { name = "pytest-asyncio", marker = "extra == 'tests'" },
@@ -541,6 +543,16 @@ requires-dist = [
     { name = "werkzeug" },
 ]
 provides-extras = ["development", "tests", "prod"]
+
+[[package]]
+name = "potatolib"
+version = "1.0.0"
+source = { git = "https://github.com/BourbonWarfare/potato_lib.git#d02fd377c57f967c53d58621ec54665a1bd14bfd" }
+dependencies = [
+    { name = "aiodns" },
+    { name = "aiohttp" },
+    { name = "python-dotenv" },
+]
 
 [[package]]
 name = "pre-commit"
