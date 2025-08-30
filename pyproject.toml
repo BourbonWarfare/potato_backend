@@ -153,4 +153,4 @@ include = [
 ]
 
 [tool.uv.sources]
-potatolib = { git = "https://github.com/BourbonWarfare/potato_lib.git" }
+potatolib = { git = "https://github.com/BourbonWarfare/potato_lib.git", branch = "release" }
