@@ -19,3 +19,8 @@ class ModlistNotFound(NotFoundError):
 class ServerConfigNotFound(NotFoundError):
     def __init__(self, server_name: str):
         super().__init__(f'Server "{server_name}" not found in the configuration.')
+
+
+class ServerConfigNameNotPermitted(ArmaServerError):
+    def __init__(self, server_name: str):
+        super().__init__(f'Server name "{server_name}" is URL safe.')

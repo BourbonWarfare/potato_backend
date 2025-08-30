@@ -2,11 +2,14 @@ from pathlib import Path
 from bw.configuration import Configuration
 from bw.environment import ENVIRONMENT
 from bw.server_ops.arma.mod import Modlist, MODLISTS
-from bw.error import ModlistNotFound
+from bw.error import ModlistNotFound, ServerConfigNameNotPermitted
 
 
 class Server:
     def __init__(self, name: str):
+        present_characters = set(name.lower()).intersection(set('abcdefghijklmnopqrstuvwxyz0123456789-_'))
+        if len(present_characters) != len(set(name.lower())):
+            raise ServerConfigNameNotPermitted(name)
         self._name = name
         self._config_path = ENVIRONMENT.server_config_directory()
         self._config = Configuration.load(self._config_path / f'{self._name}.toml')

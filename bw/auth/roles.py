@@ -7,3 +7,4 @@ from bw.combined_dataclass import SlotCombiner
 class Roles(SlotCombiner):
     can_create_role: bool
     can_create_group: bool
+    can_manage_server: bool

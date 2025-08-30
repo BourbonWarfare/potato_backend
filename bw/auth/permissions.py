@@ -7,4 +7,3 @@ from bw.combined_dataclass import SlotCombiner
 class Permissions(SlotCombiner):
     can_upload_mission: bool
     can_test_mission: bool
-    can_manage_server: bool
