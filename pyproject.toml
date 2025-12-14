@@ -12,8 +12,7 @@ dependencies = [
     "objsize",
     "python-dotenv",
     "aiohttp",
-    "aiodns",
-    "potatolib",
+    "aiodns"
 ]
 authors = [
     {name="Bailey Danyluk"}

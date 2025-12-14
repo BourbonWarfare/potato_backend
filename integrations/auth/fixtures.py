@@ -37,17 +37,17 @@ def expire_invalid():
 
 @pytest.fixture(scope='session')
 def permission_1() -> Permissions:
-    return Permissions(can_test_mission=False, can_upload_mission=True, can_manage_server=False)
+    return Permissions(can_test_mission=False, can_upload_mission=True)
 
 
 @pytest.fixture(scope='session')
 def permission_2() -> Permissions:
-    return Permissions(can_test_mission=True, can_upload_mission=False, can_manage_server=False)
+    return Permissions(can_test_mission=True, can_upload_mission=False)
 
 
 @pytest.fixture(scope='session')
 def permission_3() -> Permissions:
-    return Permissions(can_test_mission=False, can_upload_mission=False, can_manage_server=False)
+    return Permissions(can_test_mission=False, can_upload_mission=False)
 
 
 @pytest.fixture(scope='session')
@@ -62,22 +62,22 @@ def role_name_2() -> str:
 
 @pytest.fixture(scope='session')
 def role_1() -> Roles:
-    return Roles(can_create_group=False, can_create_role=True)
+    return Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
 
 
 @pytest.fixture(scope='session')
 def role_2() -> Roles:
-    return Roles(can_create_group=True, can_create_role=False)
+    return Roles(can_create_group=True, can_create_role=False, can_manage_server=True)
 
 
 @pytest.fixture(scope='session')
 def role_assigner() -> Roles:
-    return Roles(can_create_group=False, can_create_role=True)
+    return Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
 
 
 @pytest.fixture(scope='session')
 def group_assigner() -> Roles:
-    return Roles(can_create_group=True, can_create_role=False)
+    return Roles(can_create_group=True, can_create_role=False, can_manage_server=True)
 
 
 @pytest.fixture(scope='session')
