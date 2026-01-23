@@ -33,6 +33,7 @@ class DiscordUser(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
     discord_id: Mapped[int] = mapped_column(unique=True)
+    secret: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
 
 
 class BotUser(Base):
@@ -80,6 +81,22 @@ class Session(Base):
     @classmethod
     def api_session_length(cls):
         return cls.now() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['api_session_length']))
+
+
+class DiscordSession(Base):
+    __tablename__ = 'discord_sessions'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
+    access_token: Mapped[str] = mapped_column(nullable=False)
+    access_token_type: Mapped[str] = mapped_column(nullable=False)
+    refresh_token: Mapped[str] = mapped_column(nullable=False)
+    expires_in: Mapped[int] = mapped_column(nullable=False)
+    session_start_time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=False),
+        nullable=False,
+        server_default=func.localtimestamp(),
+    )
 
 
 class GroupPermission(Base):

@@ -3,7 +3,7 @@ from quart import Blueprint
 
 from bw.web_utils import url_endpoint
 from bw.response import JsonResponse, WebResponse
-from bw.auth.decorators import require_user_role
+from bw.auth.decorators import require_user_role, require_session
 from bw.auth.roles import Roles
 from bw.server_ops.arma.api import ArmaApi
 
@@ -14,6 +14,7 @@ logger = logging.getLogger('bw.server_ops.arma')
 def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
     @api.post('/<string:server>/start')
     @url_endpoint
+    @require_session
     @require_user_role(Roles.can_manage_server)
     async def start_server(server: str) -> WebResponse:
         """
@@ -36,7 +37,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
         **Example:**
         ```
-        POST /api/v1/arma/main_server/start
+        POST /api/v1/server_ops/arma/main_server/start
 
         Success response (200):
         {
@@ -51,6 +52,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.post('/<string:server>/stop')
     @url_endpoint
+    @require_session
     @require_user_role(Roles.can_manage_server)
     async def stop_server(server: str) -> WebResponse:
         """
@@ -73,7 +75,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
         **Example:**
         ```
-        POST /api/v1/arma/main_server/stop
+        POST /api/v1/server_ops/arma/main_server/stop
 
         Success response (200):
         {
@@ -87,6 +89,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.post('/<string:server>/restart')
     @url_endpoint
+    @require_session
     @require_user_role(Roles.can_manage_server)
     async def restart_server(server: str) -> WebResponse:
         """
@@ -109,7 +112,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
         **Example:**
         ```
-        POST /api/v1/arma/main_server/restart
+        POST /api/v1/server_ops/arma/main_server/restart
 
         Success response (200):
         {
@@ -124,6 +127,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.post('/<string:server>/update')
     @url_endpoint
+    @require_session
     @require_user_role(Roles.can_manage_server)
     async def update_server(server: str) -> WebResponse:
         """
@@ -147,7 +151,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
         **Example:**
         ```
-        POST /api/v1/arma/main_server/update
+        POST /api/v1/server_ops/arma/main_server/update
 
         Success response (200):
         {
@@ -161,6 +165,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.post('/<string:server>/update_mods')
     @url_endpoint
+    @require_session
     @require_user_role(Roles.can_manage_server)
     async def update_server_mods(server: str) -> WebResponse:
         """
@@ -184,7 +189,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
         **Example:**
         ```
-        POST /api/v1/arma/main_server/update_mods
+        POST /api/v1/server_ops/arma/main_server/update_mods
 
         Success response (200):
         {
@@ -223,7 +228,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
         **Example:**
         ```
-        GET /api/v1/arma/main_server/healthcheck
+        GET /api/v1/server_ops/arma/main_server/healthcheck
 
         Success response (200):
         {
