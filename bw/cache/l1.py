@@ -1,6 +1,6 @@
 import objsize
 import logging
-from typing import Any
+from typing import Any, Optional
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.events import ServerEvent
 
@@ -10,8 +10,8 @@ logger = logging.getLogger('bw.cache')
 class Entry:
     key: str
     expire_event: ServerEvent | None
-    next: 'Entry' | None
-    prev: 'Entry' | None
+    next: Optional['Entry']
+    prev: Optional['Entry']
 
     def __init__(self, key: str, expire_event: ServerEvent | None):
         self.key = key

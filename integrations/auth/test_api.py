@@ -77,7 +77,7 @@ async def test__login_with_discord__can_login_when_user_exists(
         def raise_for_status(self):
             pass
 
-        def json(self) -> str:
+        async def json(self) -> str:
             return json.dumps({'id': db_discord_user_1.discord_id})
 
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
@@ -103,7 +103,7 @@ async def test__login_with_discord__nonexistant_id_creates_user(mocker, state, e
         def raise_for_status(self):
             pass
 
-        def json(self) -> str:
+        async def json(self) -> str:
             return json.dumps({'id': discord_id_1})
 
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
@@ -129,7 +129,7 @@ async def test__login_with_discord__bad_token_fails(mocker, state, session, toke
         def raise_for_status(self):
             raise aiohttp.ClientResponseError(None, None, status=401, message='bad')
 
-        def json(self) -> str:
+        async def json(self) -> str:
             return json.dumps({'id': db_discord_user_1.discord_id})
 
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
