@@ -58,7 +58,7 @@ class Command:
 
     @classmethod
     def _validate_arguments(cls, *args, **kwargs) -> list[str]:
-        full_command = f'"{" ".join(cls._COMMAND)}"'
+        full_command = f'"{" ".join(cls._COMMAND)}"'  # ty: ignore[unresolved-attribute]
         required_arguments = len([t for t in cls.POSITIONAL_ARGUMENTS if not isinstance(None, t)])
         if len(args) < required_arguments:
             raise TypeError(f'{full_command} takes at least {required_arguments} positional arguments ({len(args)} given)')
@@ -137,7 +137,7 @@ class Command:
 
         command_prefix = [cls.COMMAND_PREFIX + cls.COMMAND]
         if entire_chain:
-            command_prefix = cls.RUNNER.split() + cls._COMMAND
+            command_prefix = cls.RUNNER.split() + cls._COMMAND  # ty: ignore[unresolved-attribute]
 
         if cls.POSITIONAL_ARGUMENTS_FIRST:
             final_command = command_prefix + list(args) + commands
@@ -172,15 +172,15 @@ class Command:
 class DryCommand(Command):
     @classmethod
     def call(cls, *args, **kwargs) -> str:
-        return cls._get_command(*args, **kwargs, entire_chain=False)
+        return ' '.join(cls._get_command(*args, **kwargs, entire_chain=False))
 
     @classmethod
     async def acall(cls, *args, **kwargs) -> Any:
-        return cls._get_command(*args, **kwargs, entire_chain=False)
+        return ' '.join(cls._get_command(*args, **kwargs, entire_chain=False))
 
     @classmethod
     def start(cls, *args, **kwargs) -> str:
-        return cls._get_command(*args, **kwargs, entire_chain=True)
+        return ' '.join(cls._get_command(*args, **kwargs, entire_chain=True))
 
 
 class Runner:
@@ -219,7 +219,7 @@ class Runner:
             *self.command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-        )  # ty: ignore[missing-argument]
+        )
 
         stdout, stderr = await process.communicate()
         if process.returncode != 0:

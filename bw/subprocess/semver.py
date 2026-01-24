@@ -18,7 +18,7 @@ class Semver:
         return self._patch
 
     @property
-    def special(self) -> int:
+    def special(self) -> str:
         return self._special
 
     def __repr__(self) -> str:

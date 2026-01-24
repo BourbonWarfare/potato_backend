@@ -17,7 +17,7 @@ class Environment:
         raise NotImplementedError()
 
     def steam_cmd_path(self) -> Path:
-        return Path(GC.require('steam_cmd_path').get())
+        return Path(GC.require('steam_cmd_path').get())  # ty: ignore[invalid-argument-type]
 
     def use_subprocess(self) -> bool:
         raise NotImplementedError()
@@ -28,7 +28,7 @@ class Environment:
         return Path('./server_configs')
 
     def discord_api_url(self) -> str:
-        return GC.require('discord_api_url').get().strip('/')
+        return GC.require('discord_api_url').get().strip('/')  # ty: ignore[possibly-missing-attribute]
 
 
 class Local(Environment):

@@ -2,6 +2,7 @@ from quart import Response
 from werkzeug.datastructures.headers import Headers
 from dataclasses import dataclass
 from typing import Self
+from collections.abc import Callable
 from collections.abc import AsyncGenerator
 import json
 
@@ -23,9 +24,9 @@ class WebResponse(Response):
                 raise BwServerError(status=self.status_code, message='An error occurred for unknown reasons.')
         return self
 
-    def __init__(self, status: int, headers: dict = {}, response='', from_exception: Exception | None = None, **kwargs):  # ty: ignore[invalid-type-form]
+    def __init__(self, status: int, headers: dict = {}, response='', from_exception: Exception | None = None, **kwargs):
         self.exception = from_exception
-        headers.update(self.headers())
+        headers.update(self.headers())  # ty: ignore [call-non-callable]
         lower_headers = {key.lower(): value for key, value in headers.items()}
         if 'content-type' not in lower_headers:
             lower_headers['content-type'] = self.content_type()
@@ -83,7 +84,7 @@ class HtmlResponse(WebResponse):
         super().__init__(status=200, headers=headers, response=html)
 
 
-@dataclass(kw_only=True)
+@dataclass
 class WebEvent:
     event: str
     data: str | dict = ''
@@ -111,11 +112,7 @@ class ServerSentEventResponse(WebResponse):
         }
 
     @classmethod
-    async def from_async_generator(cls, async_generator: AsyncGenerator[WebEvent]) -> AsyncGenerator[Self]:
-        async def async_generator_wrapper() -> AsyncGenerator[bytes]:
-            async for event in async_generator:
-                yield event.encode()
-
-        response = cls(status=200, response=async_generator_wrapper())
+    def from_async_generator(cls, async_generator: Callable[[], AsyncGenerator[bytes]]) -> Self:
+        response = cls(status=200, response=async_generator())
         response.timeout = None  # Disable timeout for SSE
         return response

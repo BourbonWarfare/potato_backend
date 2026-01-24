@@ -522,10 +522,12 @@ class ArmaApi:
         # Error: WebResponse(status=500, reason='Server operation failed')
         ```
         """
-        mod_workshop_id_map: dict[WorkshopId, Mod] = {mod.workshop_id: mod for mod in mod_list if not mod.manual_install}
+        mod_workshop_id_map: dict[WorkshopId, Mod] = {
+            mod.workshop_id: mod for mod in mod_list if not mod.manual_install and mod.workshop_id is not None
+        }
 
         out_of_date_steam_mods = [
-            SteamWorkshopDetails(**detail)  # ty: ignore[missing-argument]
+            SteamWorkshopDetails(**detail)
             for detail in (await self.get_out_of_date_workshop_mods(state, mod_list).raise_if_unsuccessful()).contained_json.get(
                 'mods_to_update', []
             )
@@ -567,10 +569,14 @@ class ArmaApi:
             *[
                 (
                     steam.force_install_dir(install_path),
-                    *[steam.workshop_download_item(107410, int(mod.workshop_id), validate=True) for mod in mods],
+                    *[
+                        steam.workshop_download_item(107410, int(mod.workshop_id), validate=True)
+                        for mod in mods
+                        if mod.workshop_id is not None
+                    ],
                 )
                 for install_path, mods in mod_install_directories.items()
-            ],
+            ],  # ty: ignore[invalid-argument-type]
             steam.quit(),
         ).acall()
 

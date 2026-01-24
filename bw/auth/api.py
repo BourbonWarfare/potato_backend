@@ -50,7 +50,7 @@ class AuthApi:
         return JsonResponse({'bot_token': bot.bot_token}, status=201)
 
     @define_async_api
-    async def login_with_discord(self, state: State, token: str) -> dict:
+    async def login_with_discord(self, state: State, token: str) -> JsonResponse:
         """
         ### Log in with Discord ID
 
@@ -80,7 +80,7 @@ class AuthApi:
                         raise ReauthNeededError(e.message, 'Discord OAuth')
                     raise AuthError(e.message)
 
-                user = json.loads(response.json())
+                user = json.loads(await response.json())
 
         discord_id = user['id']
         try:

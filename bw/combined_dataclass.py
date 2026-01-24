@@ -3,12 +3,12 @@ from bw.error import MismatchedArguments
 
 class SlotCombiner:
     def as_dict(self) -> dict:
-        return {slot: getattr(self, slot) for slot in self.__slots__}
+        return {slot: getattr(self, slot) for slot in self.__slots__}  # ty: ignore[unresolved-attribute]
 
     @classmethod
     def from_keys(cls, default_if_key_not_present=None, **keys):
-        expected_keys = [key for key in cls.__slots__ if key not in keys]
-        extra_keys = [key for key in keys if key not in cls.__slots__]
+        expected_keys = [key for key in cls.__slots__ if key not in keys]  # ty: ignore[unresolved-attribute]
+        extra_keys = [key for key in keys if key not in cls.__slots__]  # ty: ignore[unresolved-attribute]
 
         if default_if_key_not_present is not None and expected_keys != []:
             for key in expected_keys:
@@ -21,7 +21,7 @@ class SlotCombiner:
 
     @classmethod
     def from_many(cls, *permissions):
-        final = cls(**{slot: False for slot in cls.__slots__})
+        final = cls(**{slot: False for slot in cls.__slots__})  # ty: ignore[unresolved-attribute]
         for permission in permissions:
             for grant, value in permission.as_dict().items():
                 current_value = getattr(final, grant)

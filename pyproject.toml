@@ -24,7 +24,7 @@ maintainers = [
 [project.optional-dependencies]
 development = [
     "ruff",
-    "ty",
+    "ty>=0.0.13",
     "pre-commit"
 ]
 tests = [

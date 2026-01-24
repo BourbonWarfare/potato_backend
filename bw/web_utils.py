@@ -3,7 +3,7 @@ import traceback
 import functools
 from typing import Any
 from collections.abc import Callable, Awaitable
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterator, AsyncGenerator
 from pathlib import Path
 from quart import request, render_template_string
 
@@ -247,7 +247,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
     return decorator
 
 
-def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent | BaseEvent]]):
+def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
     """
     ### Decorator for Server-Sent Events endpoint functions
 
@@ -261,7 +261,7 @@ def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent | BaseEvent]]):
     **Async:** No (decorator function itself is synchronous)
 
     **Args:**
-    - `func` (`Callable[..., AsyncGenerator[WebEvent | BaseEvent]]`): The SSE endpoint function that yields events.
+    - `func` (`Callable[..., AsyncIterator[WebEvent | BaseEvent]]`): The SSE endpoint function that yields events.
 
     **Returns:**
     - `Callable[..., Awaitable[ServerSentEventResponse]]`: A wrapped function that returns a proper SSE response.
@@ -277,17 +277,12 @@ def sse_endpoint(func: Callable[..., AsyncGenerator[WebEvent | BaseEvent]]):
 
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
-        generator = func(*args, **kwargs)
+        async def async_byte_generator() -> AsyncGenerator[bytes]:
+            async for event in func(*args, **kwargs):
+                yield event.encode()
+            StopAsyncIteration
 
-        if isinstance(generator, AsyncGenerator[BaseEvent]):
-
-            async def wrapped_generator() -> AsyncGenerator[WebEvent]:
-                async for event in func(*args, **kwargs):
-                    yield event.as_web_event()
-
-            generator = wrapped_generator()
-
-        return await ServerSentEventResponse.from_async_generator(generator)
+        return ServerSentEventResponse.from_async_generator(async_byte_generator)
 
     return wrapper
 

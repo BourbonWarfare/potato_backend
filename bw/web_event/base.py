@@ -41,6 +41,9 @@ class BaseEvent(metaclass=MetaEvent):
             event = f':{self.event}'
         return WebEvent(event=event, data=self.data(), id=self.id, retry=self.retry)
 
+    def encode(self) -> bytes:
+        return self.as_web_event().encode()
+
 
 class UniqueEvent(BaseEvent):
     def __init__(self, id: Any | None = None):

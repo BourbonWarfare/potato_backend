@@ -104,7 +104,9 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
     # {WorkshopId(463939057): SteamWorkshopDetails(...), WorkshopId(450814997): SteamWorkshopDetails(...)}
     ```
     """
-    mod_workshop_ids = {mod.workshop_id: mod.name for mod in mods if not mod.manual_install}
+    mod_workshop_ids: dict[WorkshopId, str] = {
+        mod.workshop_id: mod.name for mod in mods if not mod.manual_install and mod.workshop_id is not None
+    }
 
     request_url = 'http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
     params: dict[str, Any] = {
@@ -117,7 +119,7 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
     logger.info('Fetching mod names from Steam Workshop')
     logger.debug(f'Using URL: {url}')
 
-    details: dict[str, SteamWorkshopDetails] = {}
+    details: dict[WorkshopId, SteamWorkshopDetails] = {}
     async with aiohttp.ClientSession() as session:
         async with session.post(url, params=params, data=params) as response:
             if response.status != 200:
@@ -232,7 +234,7 @@ def load_mods(mods_file: Path):
     if not isinstance(defaults['server_mod_directory'], str):
         raise ModFieldInvalid('defaults', 'server_mod_directory', 'must be a string')
 
-    mod_list: dict[str, Any] = config['mod']
+    mod_list: dict[str, str] = config['mod']
 
     for mod_name, mod_data in mod_list.items():
         # Check if mod already exists
@@ -288,7 +290,7 @@ def load_mods(mods_file: Path):
 
         mod = Mod(
             filename=mod_data['filename'],
-            workshop_id=str(mod_data['workshop_id']),
+            workshop_id=mod_data['workshop_id'],
             kind=kind,
             directory=directory,
             manual_install=mod_data.get('manual_install', False),
@@ -300,14 +302,15 @@ def load_mods(mods_file: Path):
     async def update_mod_details():
         if mods_added:
             logger.info('Fetching mod details from Steam Workshop')
-            details: dict[WorkshopId, Mod] = await fetch_mod_details_from_workshop(mods_added.values())
+            details = await fetch_mod_details_from_workshop(mods_added.values())
         else:
             logger.info('No mods to fetch details for')
             return
 
         for mod_name, mod in mods_added.items():
-            detail = details.get(mod_name)
-            mod.name = detail.title if detail else mod.name
+            if mod.workshop_id:
+                detail = details.get(mod.workshop_id)
+                mod.name = detail.title if detail else mod_name
 
     asyncio.run(update_mod_details())
 

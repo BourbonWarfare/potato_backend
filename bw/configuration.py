@@ -3,7 +3,7 @@ import tomllib
 
 from enum import StrEnum
 from pathlib import Path
-from typing import Self, Any
+from typing import Self
 from collections.abc import Sequence
 from collections.abc import Callable
 
@@ -51,10 +51,10 @@ class ConfigContext:
         self._config = config
         self._keys = list(keys)
 
-    def get(self) -> tuple[Any] | Any:
+    def get(self) -> tuple[str, ...] | str:
         if len(self._keys) == 1:
-            return self._config.get(self._keys[0])
-        return tuple([self._config.get(key) for key in self._keys])
+            return self._config.get(self._keys[0], '')
+        return tuple([self._config.get(key, '') for key in self._keys])
 
 
 class Configuration(dict):

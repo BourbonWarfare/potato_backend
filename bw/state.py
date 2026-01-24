@@ -1,4 +1,3 @@
-from typing import Self
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -15,7 +14,7 @@ class DatabaseConnection:
 
 
 class State:
-    state: Self = None  # ty: ignore[invalid-assignment]
+    state: 'State' = None  # ty: ignore[invalid-assignment]
     cache: Cache = None  # ty: ignore[invalid-assignment]
     broker: Broker = None  # ty: ignore[invalid-assignment]
 

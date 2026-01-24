@@ -1,6 +1,6 @@
 import objsize
 import logging
-from typing import Any, Self
+from typing import Any
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.events import ServerEvent
 
@@ -9,9 +9,9 @@ logger = logging.getLogger('bw.cache')
 
 class Entry:
     key: str
-    expire_event: ServerEvent
-    next: Self | None
-    prev: Self | None
+    expire_event: ServerEvent | None
+    next: 'Entry' | None
+    prev: 'Entry' | None
 
     def __init__(self, key: str, expire_event: ServerEvent | None):
         self.key = key
@@ -98,7 +98,7 @@ class L1Cache:
             self.entry_map[key] = entry
             self.current_size_bytes += entry_size
 
-        if self.oldest_entry is None:
+        if self.oldest_entry is None or self.newest_entry is None:
             # if this is the first entry, set it as both oldest and newest
             self.oldest_entry = entry
             self.newest_entry = self.oldest_entry
@@ -119,6 +119,7 @@ class L1Cache:
             entry = self.entry_map[key]
 
             self._remove_entry(entry)
+            assert self.newest_entry is not None
             entry.prev = self.newest_entry
             self.newest_entry.next = entry
             self.newest_entry = entry
