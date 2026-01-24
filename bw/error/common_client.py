@@ -6,6 +6,11 @@ class BadArguments(ClientError):
         super().__init__('Arguments are invalid')
 
 
+class BadHeader(ClientError):
+    def __init__(self):
+        super().__init__('A malformed header parameter exists')
+
+
 class MismatchedArguments(ClientError):
     def __init__(self, expected_keys=[], extra_keys=[]):
         if expected_keys == [] and extra_keys == []:

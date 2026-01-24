@@ -14,6 +14,46 @@ from quart import request
 logger = logging.getLogger('bw.auth')
 
 
+def with_token(func):
+    """
+    ### Add the session token to the function arguments
+
+    **Raises:**
+    - `CannotDetermineSession`: If the request is malformed such that we can't determine session.
+
+    **Example:**
+    ```python
+    @with_token
+    def my_view(token, ...):
+        ...
+    ```
+    """
+
+    @functools.wraps(func)
+    def wrapper(**kwargs):
+        auth = request.headers.get('Authorization')
+        if auth is None:
+            logger.warning("'Session Token' not present in header")
+            raise CannotDetermineSession()
+
+        bearer_header = 'Bearer '
+        if not auth.startswith(bearer_header):
+            logger.warning("'Session Token' does not start with 'Bearer '")
+            raise CannotDetermineSession()
+
+        session_token = auth[len(bearer_header) :]  # Remove 'Bearer ' prefix
+        if asyncio.iscoroutinefunction(func):
+
+            async def afnc():
+                return await func(token=session_token, **kwargs)
+
+            return afnc()
+        else:
+            return func(token=session_token, **kwargs)
+
+    return wrapper
+
+
 def require_local(func):
     """
     ### Restrict access to local network requests

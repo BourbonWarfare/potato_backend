@@ -14,17 +14,47 @@ logger = logging.getLogger('bw.auth')
 class SessionStore:
     def expire_session_from_user(self, state: State, user: User):
         """
-        ### Expire all sessions for a user
+        ### Expire session for a user
 
-        Expires (removes) all sessions associated with the given user.
+        Expires (removes) session associated with the given user.
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.
-        - `user` (`User`): The user whose sessions should be expired.
+        - `user` (`User`): The user whose session should be expired.
         """
         with state.Session.begin() as session:
             query = delete(Session).where(Session.user_id == user.id)
             session.execute(query)
+
+    def start_user_session(self, state: State, user: User) -> dict:
+        """
+        ### Start a new human session for a user
+
+        Starts a new human session for the given user, does not expire any existing sessions.
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `user` (`User`): The user for whom to start a new session.
+
+        **Returns:**
+        - `dict`: A dictionary containing session-specific information.
+
+        **Raises:**
+        - `SessionExpired`: If the session could not be created.
+        """
+        token = secrets.token_urlsafe()[:TOKEN_LENGTH]
+        with state.Session.begin() as session:
+            query = (
+                insert(Session)
+                .values(user_id=user.id, token=token, expire_time=Session.human_session_length())
+                .returning(Session.expire_time)
+            )
+            expire_time = session.scalar(query)
+
+        if expire_time is None:
+            raise SessionExpired()
+
+        return {'session_token': token, 'expire_time': str(expire_time)}
 
     def start_api_session(self, state: State, user: User) -> dict:
         """

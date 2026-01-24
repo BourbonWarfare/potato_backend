@@ -5,7 +5,7 @@ from quart import Blueprint
 from bw.web_utils import json_endpoint, url_endpoint
 from bw.response import JsonResponse, WebResponse
 from bw.models.auth import User
-from bw.auth.decorators import require_session, require_local, require_user_role
+from bw.auth.decorators import require_session, require_local, require_user_role, with_token
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.auth.api import AuthApi
@@ -18,6 +18,7 @@ logger = logging.getLogger('bw.auth')
 Authentication & Authorization Endpoints Summary:
 
 API Endpoints:
+- GET /auth/login/discord - Endpoint for Discord OAuth2 login flow
 - POST /api/v1/auth/login/bot - Authenticate bot user and create API session
 - GET /api/v1/user/ - Get authenticated user information
 - POST /api/v1/user/role/create - Create a new role (requires can_create_role)
@@ -35,6 +36,34 @@ Local Endpoints:
 
 
 def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
+    @api.post('/login/discord')
+    @json_endpoint
+    @with_token
+    async def login_discord(token) -> JsonResponse:
+        """
+        ### Redirect for Discord OAuth2
+
+        Log in the Discord user via their access token.
+        If the users access token is expired, we return 401
+        We use the access token to identify the user
+
+        **Args:**
+        - None
+
+        **Returns:**
+        - `JsonResponse`:
+          - **Success (200)**: `{ 'session_token': 'potato' }`
+          - **Error (401)**: `{'status': 401, 'reauth_url': 'Discord OAuth'}`
+
+        **Example:**
+        ```
+        POST /api/v1/auth/login/discord
+        Authorization: Bearer potato
+        ```
+        """
+        logger.info('Creating new session (Discord)')
+        return await AuthApi().login_with_discord(state=State.state, token=token)
+
     @api.post('/login/bot')
     @json_endpoint
     async def login_bot(bot_token: str) -> JsonResponse:

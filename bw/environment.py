@@ -27,6 +27,9 @@ class Environment:
             return Path(GC['server_config_directory'])
         return Path('./server_configs')
 
+    def discord_api_url(self) -> str:
+        return GC.require('discord_api_url').get().strip('/')
+
 
 class Local(Environment):
     def port(self) -> int:
