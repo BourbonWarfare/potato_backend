@@ -98,3 +98,8 @@ class NoUserWithGivenCredentials(NotFoundError):
 class NoRoleWithName(NotFoundError):
     def __init__(self, role_name: str):
         super().__init__(f'No role with name "{role_name}" exists.')
+
+
+class NoAccessCodeFound(NotFoundError):
+    def __init__(self):
+        super().__init__('No access code was found.')

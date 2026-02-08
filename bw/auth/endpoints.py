@@ -2,7 +2,7 @@ import logging
 import uuid
 from quart import Blueprint
 
-from bw.web_utils import json_endpoint, url_endpoint
+from bw.web_utils import json_endpoint, url_endpoint, html_endpoint
 from bw.response import JsonResponse, WebResponse
 from bw.models.auth import User
 from bw.auth.decorators import require_session, require_local, require_user_role, with_token
@@ -36,6 +36,59 @@ Local Endpoints:
 
 
 def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
+    @html.get('/login/discord')
+    @html_endpoint(template_path='auth/discord.html', title='Logged in with Discord')
+    async def login_discord_redirect(code: str, state: str) -> str:
+        """
+        ### Redirect for Discord OAuth2
+
+        Store the access code in the database.
+        The client will then request `GET .../<state>/` to gain access
+
+        **Args:**
+        - code: str: The access code of the user
+        - state: str: The state associated with the access code
+
+        **Returns:**
+        Redirect HTML page
+
+        **Example:**
+        ```
+        GET /login/discord/?code=foobar&state=potato
+        ```
+        """
+        logger.info('OAuth redirect (Discord)')
+        try:
+            AuthApi().register_access_code(state=State.state, code=code, code_state=state)
+        finally:
+            return ''
+
+    @api.get('/login/discord/<state>')
+    @json_endpoint
+    async def get_discord_access_code(state: str) -> JsonResponse:
+        """
+        ### Get a Discord access code
+
+        Return the access code through the state they initialised the
+        oauth token with
+
+        **Args:**
+        - state: str
+
+        **Returns:**
+        - `JsonResponse`:
+          - **Success (200)**: `{ 'access_code': 'potato' }`
+          - **Error (401)**: `{'status': 404}`
+
+        **Example:**
+        ```
+        GET /api/v1/auth/login/discord/potato
+        // { 'access_code': 'foobar' }
+        ```
+        """
+        logger.info('Retrieving access code (Discord)')
+        return AuthApi().retrieve_access_code(state=State.state, code_state=state)
+
     @api.post('/login/discord')
     @json_endpoint
     @with_token

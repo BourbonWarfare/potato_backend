@@ -100,7 +100,7 @@ class Group(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     permissions: Mapped[int] = mapped_column(ForeignKey('group_permissions.id'), nullable=False)
-    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
 
 
 class UserGroup(Base):
@@ -111,3 +111,15 @@ class UserGroup(Base):
     group_id: Mapped[int] = mapped_column(ForeignKey('groups.id'), nullable=False)
 
     __table_args__ = (UniqueConstraint('user_id', 'group_id', name='can_be_added_to_group_once'),)
+
+
+class DiscordOAuthCode(Base):
+    __tablename__ = 'discord_oauth_codes'
+
+    state: Mapped[str] = mapped_column(String(TOKEN_LENGTH), primary_key=True)
+    code: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
+    expire_time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=False),
+        nullable=False,
+        server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
+    )

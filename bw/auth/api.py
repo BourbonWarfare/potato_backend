@@ -479,3 +479,12 @@ class AuthApi:
             'groups': [group.name for group in GroupStore().get_user_groups(state, user)],
         }
         return JsonResponse(public_info)
+
+    @define_api
+    def register_access_code(self, state: State, code: str, code_state: str) -> WebResponse:
+        SessionStore().register_discord_oauth_code(state, code, code_state)
+        return Ok()
+
+    @define_api
+    def retrieve_access_code(self, state: State, code_state: str) -> JsonResponse:
+        return JsonResponse({'access_code': SessionStore().get_discord_oauth_code(state, code_state)})

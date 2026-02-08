@@ -4,8 +4,8 @@ import logging
 from sqlalchemy import insert, delete, select
 
 from bw.state import State
-from bw.models.auth import Session, User, TOKEN_LENGTH
-from bw.error import SessionExpired
+from bw.models.auth import Session, User, DiscordOAuthCode, TOKEN_LENGTH
+from bw.error import SessionExpired, NoAccessCodeFound
 
 
 logger = logging.getLogger('bw.auth')
@@ -162,3 +162,56 @@ class SessionStore:
             user = session.execute(query).one()[0]
             session.expunge(user)
         return user
+
+    def register_discord_oauth_code(self, state: State, access_code: str, access_code_state: str):
+        """
+        ### Register Discord OAuth access code
+
+        Stores access code in DB to be queried later. Short expirey time
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `access_code` (`str`): The access code that the OAuth flow gave.
+        - `access_code_state` (`str`): The access code state that the OAuth flow gave.
+
+        **Returns:**
+        - None
+        """
+        with state.Session.begin() as session:
+            model = DiscordOAuthCode(state=access_code_state, code=access_code)
+            session.add(model)
+            session.commit()
+
+    def get_discord_oauth_code(self, state: State, access_code_state: str) -> str:
+        """
+        ### Get Discord access code
+
+        Retrives access code as given by OAuth flow
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `access_code_state` (`str`): The access code state that the OAuth flow gave.
+
+        **Returns:**
+        - Access code: str
+
+        **Raises:**
+        - NoAccessCodeFound: If the access code for the given state doesn't exist
+        """
+        with state.Session.begin() as session:
+            query = select(DiscordOAuthCode.code, DiscordOAuthCode.expire_time).where(DiscordOAuthCode.state == access_code_state)
+            code, expire_time = session.scalar(session)
+
+            if code is None:
+                raise NoAccessCodeFound()
+
+            query = select(Session.now())
+            current_time = session.scalar(query)
+            if current_time > expire_time:
+                raise NoAccessCodeFound()
+
+            query = delete(DiscordOAuthCode).where(DiscordOAuthCode.state == access_code_state)
+            session.delete(query)
+
+            session.commit()
+        return code
