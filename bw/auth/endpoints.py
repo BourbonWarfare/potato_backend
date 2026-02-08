@@ -3,7 +3,7 @@ import uuid
 import secrets
 from quart import Blueprint, request
 
-from bw.web_utils import json_endpoint, url_endpoint, html_endpoint
+from bw.web_utils import json_endpoint, url_endpoint, html_endpoint, unwrap_headers
 from bw.response import JsonResponse, WebResponse
 from bw.models.auth import User
 from bw.auth.decorators import require_session, require_local, require_user_role, with_token
@@ -84,8 +84,9 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
         finally:
             return html
 
-    @api.get('/login/discord/<string:state>')
+    @api.get('/login/discord')
     @url_endpoint
+    @unwrap_headers(('state', str))
     async def get_discord_access_code(state: str) -> JsonResponse:
         """
         ### Retrieve Discord OAuth access code
@@ -105,7 +106,8 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
 
         **Example:**
         ```
-        GET /api/v1/auth/login/discord/random_state_token
+        GET /api/v1/auth/login/discord
+        Authorization: Bearer discord_access_code_here
         ```
         """
         logger.info('Retrieving access code (Discord)')
