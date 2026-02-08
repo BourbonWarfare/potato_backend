@@ -1,6 +1,6 @@
 from quart import Blueprint, Quart
 
-from bw.auth.endpoints import define_auth, define_user, define_group
+from bw.auth.endpoints import define_auth, define_user, define_group, define_admin
 from bw.missions.endpoints import define as missions_define
 from bw.server_ops.endpoints import define as server_ops_define
 
@@ -19,6 +19,9 @@ def define(app: Quart):
     local_group_blueprint = Blueprint('local_group', __name__, url_prefix='/group')
     group_blueprint = Blueprint('group', __name__, url_prefix='/group')
 
+    local_admin_blueprint = Blueprint('local_admin', __name__, url_prefix='/admin')
+    admin_blueprint = Blueprint('admin', __name__, url_prefix='/admin')
+
     local_mission_blueprint = Blueprint('local_mission', __name__, url_prefix='/missions')
     mission_blueprint = Blueprint('missions', __name__, url_prefix='/missions')
 
@@ -28,6 +31,7 @@ def define(app: Quart):
     define_auth(auth_blueprint, local_auth_blueprint, html_blueprint)
     define_user(user_blueprint, local_user_blueprint, html_blueprint)
     define_group(group_blueprint, local_group_blueprint, html_blueprint)
+    define_admin(admin_blueprint, local_admin_blueprint, html_blueprint)
     missions_define(mission_blueprint, local_mission_blueprint, html_blueprint)
     server_ops_define(server_ops_blueprint, local_server_ops_blueprint, html_blueprint)
 

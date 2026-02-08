@@ -33,6 +33,8 @@ from integrations.auth.fixtures import (
     db_group_1,
     db_group_2,
     db_group_3,
+    db_role_1,
+    db_role_2,
     role_1,
     role_2,
     role_name_1,
@@ -401,3 +403,414 @@ def test__auth_api__user_info_different_users_different_data(state, session, db_
     assert response1.contained_json['uuid'] != response2.contained_json['uuid']
     assert len(response1.contained_json['groups']) == 1
     assert len(response2.contained_json['groups']) == 0
+
+
+def test__list_all_users__empty_database_returns_empty_json(state, session):
+    """Test that empty database returns empty users list"""
+    response = AuthApi().list_all_users(state, page=1, page_size=50)
+    assert response.status_code == 200
+    assert response.contained_json['users'] == []
+    assert response.contained_json['total'] == 0
+    assert response.contained_json['page'] == 1
+    assert response.contained_json['page_size'] == 50
+    assert response.contained_json['total_pages'] == 0
+
+
+def test__list_all_users__single_user_returns_correct_structure(state, session, db_user_1):
+    """Test that single user returns correct JSON structure"""
+    response = AuthApi().list_all_users(state, page=1, page_size=50)
+    assert response.status_code == 200
+    assert len(response.contained_json['users']) == 1
+    assert response.contained_json['total'] == 1
+
+
+def test__list_all_users__pagination_works(state, session):
+    """Test that pagination parameters are passed through"""
+    # Create 3 users
+    for _ in range(3):
+        UserStore().create_user(state)
+
+    response = AuthApi().list_all_users(state, page=1, page_size=2)
+    assert response.status_code == 200
+    assert len(response.contained_json['users']) == 2
+    assert response.contained_json['total'] == 3
+    assert response.contained_json['page'] == 1
+    assert response.contained_json['total_pages'] == 2
+
+
+def test__list_all_users__second_page_works(state, session):
+    """Test that second page returns remaining users"""
+    # Create 3 users
+    for _ in range(3):
+        UserStore().create_user(state)
+
+    response = AuthApi().list_all_users(state, page=2, page_size=2)
+    assert response.status_code == 200
+    assert len(response.contained_json['users']) == 1
+    assert response.contained_json['page'] == 2
+
+
+def test__list_all_users__default_pagination_values(state, session):
+    """Test that default pagination values work"""
+    UserStore().create_user(state)
+
+    response = AuthApi().list_all_users(state)
+    assert response.status_code == 200
+    assert response.contained_json['page'] == 1
+    assert response.contained_json['page_size'] == 50
+
+
+# Tests for get_all_roles
+
+
+def test__get_all_roles__empty_database_returns_empty_json(state, session):
+    """Test that empty database returns empty roles list"""
+    response = AuthApi().get_all_roles(state)
+    assert response.status_code == 200
+    assert response.contained_json['roles'] == []
+
+
+def test__get_all_roles__single_role_returns_correctly(state, session, db_role_1, role_name_1, role_1):
+    """Test that single role is returned with correct structure"""
+    response = AuthApi().get_all_roles(state)
+    assert response.status_code == 200
+    assert len(response.contained_json['roles']) == 1
+
+    role = response.contained_json['roles'][0]
+    assert role['name'] == role_name_1
+    assert role == {'name': role_name_1, **role_1.as_dict()}
+
+
+def test__get_all_roles__multiple_roles_returns_all(
+    state, session, db_role_1, db_role_2, role_name_1, role_name_2, role_1, role_2
+):
+    """Test that all roles are returned"""
+    response = AuthApi().get_all_roles(state)
+    assert response.status_code == 200
+    assert len(response.contained_json['roles']) == 2
+
+    role_names = {role['name'] for role in response.contained_json['roles']}
+    assert role_names == {role_name_1, role_name_2}
+
+
+def test__get_all_roles__role_permissions_included(state, session, db_role_1, role_1):
+    """Test that role permissions are included in response"""
+    response = AuthApi().get_all_roles(state)
+    role = response.contained_json['roles'][0]
+
+    for key, value in role_1.as_dict().items():
+        assert role[key] == value
+
+
+# Tests for get_all_permissions
+
+
+def test__get_all_permissions__empty_database_returns_empty_json(state, session):
+    """Test that empty database returns empty permissions list"""
+    response = AuthApi().get_all_permissions(state)
+    assert response.status_code == 200
+    assert response.contained_json['permissions'] == []
+
+
+def test__get_all_permissions__single_permission_returns_correctly(
+    state, session, db_permission_1, permission_name_1, permission_1
+):
+    """Test that single permission is returned with correct structure"""
+    response = AuthApi().get_all_permissions(state)
+    assert response.status_code == 200
+    assert len(response.contained_json['permissions']) == 1
+
+    perm = response.contained_json['permissions'][0]
+    assert perm['name'] == permission_name_1
+    assert perm == {'name': permission_name_1, **permission_1.as_dict()}
+
+
+def test__get_all_permissions__multiple_permissions_returns_all(
+    state, session, db_permission_1, db_permission_2, db_permission_3
+):
+    """Test that all permissions are returned"""
+    response = AuthApi().get_all_permissions(state)
+    assert response.status_code == 200
+    assert len(response.contained_json['permissions']) == 3
+
+    perm_names = {perm['name'] for perm in response.contained_json['permissions']}
+    assert perm_names == {db_permission_1.name, db_permission_2.name, db_permission_3.name}
+
+
+def test__get_all_permissions__permission_grants_included(state, session, db_permission_1, permission_1):
+    """Test that permission grants are included in response"""
+    response = AuthApi().get_all_permissions(state)
+    perm = response.contained_json['permissions'][0]
+
+    for key, value in permission_1.as_dict().items():
+        assert perm[key] == value
+
+
+# Tests for get_all_groups
+
+
+def test__get_all_groups__empty_database_returns_empty_json(state, session):
+    """Test that empty database returns empty groups list"""
+    response = AuthApi().get_all_groups(state)
+    assert response.status_code == 200
+    assert response.contained_json['groups'] == []
+
+
+def test__get_all_groups__single_group_returns_correctly(state, session, db_group_1, group_name_1):
+    """Test that single group is returned with correct structure"""
+    response = AuthApi().get_all_groups(state)
+    assert response.status_code == 200
+    assert len(response.contained_json['groups']) == 1
+
+    group = response.contained_json['groups'][0]
+    assert group['id'] == db_group_1.id
+    assert group['name'] == group_name_1
+    assert group['permissions'] == db_group_1.permissions
+
+
+def test__get_all_groups__multiple_groups_returns_all(state, session, db_group_1, db_group_2, db_group_3):
+    """Test that all groups are returned"""
+    response = AuthApi().get_all_groups(state)
+    assert response.status_code == 200
+    assert len(response.contained_json['groups']) == 3
+
+    group_ids = {group['id'] for group in response.contained_json['groups']}
+    assert group_ids == {db_group_1.id, db_group_2.id, db_group_3.id}
+
+
+def test__get_all_groups__group_permission_id_included(state, session, db_group_1, db_permission_1):
+    """Test that group permission ID is included"""
+    response = AuthApi().get_all_groups(state)
+    group = response.contained_json['groups'][0]
+    assert group['permissions'] == db_permission_1.id
+
+
+# Tests for delete_role
+
+
+def test__delete_role__success_returns_ok(state, session, db_role_1, role_name_1):
+    """Test that deleting existing role returns OK"""
+    response = AuthApi().delete_role(state, role_name_1)
+    assert response.status_code == 200
+
+
+def test__delete_role__actually_deletes_role(state, session, db_role_1, role_name_1):
+    """Test that role is actually deleted from database"""
+    AuthApi().delete_role(state, role_name_1)
+
+    # Verify it's gone
+    roles = UserStore().get_all_roles(state)
+    assert len(roles) == 0
+
+
+def test__delete_role__nonexistent_role_returns_error(state, session):
+    """Test that deleting non-existent role returns 404"""
+    response = AuthApi().delete_role(state, 'nonexistent_role')
+    assert response.status_code == 404
+
+
+def test__delete_role__removes_from_users(state, session, db_role_1, db_user_1, role_name_1):
+    """Test that role is removed from users who have it"""
+    UserStore().assign_user_role(state, db_user_1, role_name_1)
+    AuthApi().delete_role(state, role_name_1)
+
+    user_role = UserStore().get_users_role(state, db_user_1)
+    assert user_role is None
+
+
+def test__delete_role__does_not_affect_other_roles(state, session, db_role_1, db_role_2, role_name_1):
+    """Test that deleting one role doesn't affect others"""
+    AuthApi().delete_role(state, role_name_1)
+
+    roles = UserStore().get_all_roles(state)
+    assert len(roles) == 1
+    assert roles[0].id == db_role_2.id
+
+
+# Tests for delete_permission
+
+
+def test__delete_permission__success_returns_ok(state, session, db_permission_1, permission_name_1):
+    """Test that deleting existing permission returns OK"""
+    response = AuthApi().delete_permission(state, permission_name_1)
+    assert response.status_code == 200
+
+
+def test__delete_permission__actually_deletes_permission(state, session, db_permission_1, permission_name_1):
+    """Test that permission is actually deleted from database"""
+    AuthApi().delete_permission(state, permission_name_1)
+
+    # Verify it's gone
+    permissions = GroupStore().get_all_permissions(state)
+    assert len(permissions) == 0
+
+
+def test__delete_permission__nonexistent_permission_returns_error(state, session):
+    """Test that deleting non-existent permission returns 404"""
+    response = AuthApi().delete_permission(state, 'nonexistent_permission')
+    assert response.status_code == 404
+
+
+def test__delete_permission__does_not_affect_other_permissions(
+    state, session, db_permission_1, db_permission_2, permission_name_1
+):
+    """Test that deleting one permission doesn't affect others"""
+    AuthApi().delete_permission(state, permission_name_1)
+
+    permissions = GroupStore().get_all_permissions(state)
+    assert len(permissions) == 1
+    assert permissions[0].id == db_permission_2.id
+
+
+# Tests for delete_group
+
+
+def test__delete_group__success_returns_ok(state, session, db_group_1, group_name_1):
+    """Test that deleting existing group returns OK"""
+    response = AuthApi().delete_group(state, group_name_1)
+    assert response.status_code == 200
+
+
+def test__delete_group__actually_deletes_group(state, session, db_group_1, group_name_1):
+    """Test that group is actually deleted from database"""
+    AuthApi().delete_group(state, group_name_1)
+
+    # Verify it's gone
+    groups = GroupStore().get_all_groups(state)
+    assert len(groups) == 0
+
+
+def test__delete_group__nonexistent_group_succeeds(state, session):
+    """Test that deleting non-existent group doesn't error"""
+    response = AuthApi().delete_group(state, 'nonexistent_group')
+    assert response.status_code == 200
+
+
+def test__delete_group__removes_user_associations(state, session, db_group_1, db_user_1, group_name_1):
+    """Test that user associations are removed"""
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    AuthApi().delete_group(state, group_name_1)
+
+    groups = GroupStore().get_user_groups(state, db_user_1)
+    assert len(groups) == 0
+
+
+def test__delete_group__does_not_affect_other_groups(state, session, db_group_1, db_group_2, group_name_1):
+    """Test that deleting one group doesn't affect others"""
+    AuthApi().delete_group(state, group_name_1)
+
+    groups = GroupStore().get_all_groups(state)
+    assert len(groups) == 1
+    assert groups[0].id == db_group_2.id
+
+
+# Tests for edit_role
+
+
+def test__edit_role__success_returns_json_with_name(state, session, db_role_1, role_name_1, role_2):
+    """Test that editing role returns JSON with role name"""
+    response = AuthApi().edit_role(state, role_name_1, role_2)
+    assert response.status_code == 200
+    assert response.contained_json['name'] == role_name_1
+
+
+def test__edit_role__actually_updates_role(state, session, db_role_1, role_name_1, role_1, role_2):
+    """Test that role is actually updated in database"""
+    AuthApi().edit_role(state, role_name_1, role_2)
+
+    roles = UserStore().get_all_roles(state)
+    updated_role = roles[0]
+    assert updated_role.into_roles().as_dict() == role_2.as_dict()
+    assert updated_role.into_roles().as_dict() != role_1.as_dict()
+
+
+def test__edit_role__nonexistent_role_returns_error(state, session, role_1):
+    """Test that editing non-existent role returns 404"""
+    response = AuthApi().edit_role(state, 'nonexistent_role', role_1)
+    assert response.status_code == 404
+
+
+def test__edit_role__keeps_same_id(state, session, db_role_1, role_name_1, role_2):
+    """Test that editing role keeps the same ID"""
+    original_id = db_role_1.id
+    AuthApi().edit_role(state, role_name_1, role_2)
+
+    roles = UserStore().get_all_roles(state)
+    assert roles[0].id == original_id
+
+
+def test__edit_role__does_not_affect_other_roles(state, session, db_role_1, db_role_2, role_name_1, role_2):
+    """Test that editing one role doesn't affect others"""
+    original_role_2_data = db_role_2.into_roles().as_dict()
+    AuthApi().edit_role(state, role_name_1, role_2)
+
+    roles = UserStore().get_all_roles(state)
+    role_2_after = [r for r in roles if r.id == db_role_2.id][0]
+    assert role_2_after.into_roles().as_dict() == original_role_2_data
+
+
+# Tests for edit_permission
+
+
+def test__edit_permission__success_returns_json_with_name(state, session, db_permission_1, permission_name_1, permission_2):
+    """Test that editing permission returns JSON with permission name"""
+    response = AuthApi().edit_permission(state, permission_name_1, permission_2)
+    assert response.status_code == 200
+    assert response.contained_json['name'] == permission_name_1
+
+
+def test__edit_permission__actually_updates_permission(
+    state, session, db_permission_1, permission_name_1, permission_1, permission_2
+):
+    """Test that permission is actually updated in database"""
+    AuthApi().edit_permission(state, permission_name_1, permission_2)
+
+    permissions = GroupStore().get_all_permissions(state)
+    updated_perm = permissions[0]
+    assert updated_perm.into_permissions().as_dict() == permission_2.as_dict()
+    assert updated_perm.into_permissions().as_dict() != permission_1.as_dict()
+
+
+def test__edit_permission__nonexistent_permission_returns_error(state, session, permission_1):
+    """Test that editing non-existent permission returns 404"""
+    response = AuthApi().edit_permission(state, 'nonexistent_permission', permission_1)
+    assert response.status_code == 404
+
+
+def test__edit_permission__keeps_same_id(state, session, db_permission_1, permission_name_1, permission_2):
+    """Test that editing permission keeps the same ID"""
+    original_id = db_permission_1.id
+    AuthApi().edit_permission(state, permission_name_1, permission_2)
+
+    permissions = GroupStore().get_all_permissions(state)
+    assert permissions[0].id == original_id
+
+
+def test__edit_permission__does_not_affect_other_permissions(
+    state, session, db_permission_1, db_permission_2, permission_name_1, permission_2
+):
+    """Test that editing one permission doesn't affect others"""
+    original_perm_2_data = db_permission_2.into_permissions().as_dict()
+    AuthApi().edit_permission(state, permission_name_1, permission_2)
+
+    permissions = GroupStore().get_all_permissions(state)
+    perm_2_after = [p for p in permissions if p.id == db_permission_2.id][0]
+    assert perm_2_after.into_permissions().as_dict() == original_perm_2_data
+
+
+def test__edit_permission__groups_using_permission_get_updated_permissions(
+    state, session, db_group_1, db_user_1, db_permission_1, permission_name_1, permission_1, permission_2
+):
+    """Test that groups using edited permission get the updated permissions"""
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+
+    # User should have permission_1 grants
+    perms_before = GroupStore().get_all_permissions_user_has(state, db_user_1)
+    assert perms_before.as_dict() == permission_1.as_dict()
+
+    # Edit the permission
+    AuthApi().edit_permission(state, permission_name_1, permission_2)
+
+    # User should now have permission_2 grants
+    perms_after = GroupStore().get_all_permissions_user_has(state, db_user_1)
+    assert perms_after.as_dict() == permission_2.as_dict()

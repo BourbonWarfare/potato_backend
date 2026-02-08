@@ -233,7 +233,12 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
             with open(page_path, encoding='utf-8') as file:
                 page = file.read()
 
-            inner_html = await func(html=html, *args, **kwargs)
+            try:
+                inner_html = await func(html=html, *args, **kwargs)
+            except BwServerError as e:
+                logger.warning(e)
+                with open(templates_path / 'error' / f'{e.status()}.html', encoding='utf-8') as file:
+                    inner_html = file.read()
             full_page = await render_template_string(
                 page,
                 inner_html=inner_html,
