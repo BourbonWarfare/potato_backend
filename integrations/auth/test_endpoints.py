@@ -578,7 +578,7 @@ async def test__leave_group__expired_session_nothing(
 @pytest.mark.asyncio
 async def test__login_discord_redirect__returns_html(state, session, test_app, oauth_code_1, oauth_state_1):
     """Test that Discord OAuth redirect endpoint returns HTML response"""
-    response = await test_app.get(f'/login/discord?code={oauth_code_1}&state={oauth_state_1}')
+    response = await test_app.get(f'/auth/login/discord?code={oauth_code_1}&state={oauth_state_1}')
     assert response.status_code == 200
     assert response.content_type.startswith('text/html')
 
@@ -587,7 +587,7 @@ async def test__login_discord_redirect__returns_html(state, session, test_app, o
 async def test__login_discord_redirect__handles_missing_code(state, session, test_app, oauth_state_2):
     """Test that Discord OAuth redirect endpoint handles missing code parameter"""
     # Should still return 200 but store empty code
-    response = await test_app.get(f'/login/discord?state={oauth_state_2}')
+    response = await test_app.get(f'/auth/login/discord?state={oauth_state_2}')
     assert response.status_code == 200
 
 

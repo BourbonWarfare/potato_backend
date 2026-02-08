@@ -44,6 +44,7 @@ Local Endpoints:
 - POST /api/local/user/role/assign - Assign role to user (local only, requires session)
 
 HTML Endpoints:
+- GET /auth/login/discord - Discord OAuth redirect
 - GET /admin - Admin panel page (requires can_create_role)
 """
 
