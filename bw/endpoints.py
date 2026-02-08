@@ -45,3 +45,4 @@ def define(app: Quart):
 
     app.register_blueprint(api_blueprint)
     app.register_blueprint(local_blueprint)
+    app.register_blueprint(html_blueprint)
