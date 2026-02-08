@@ -200,21 +200,18 @@ class SessionStore:
         """
         with state.Session.begin() as session:
             query = select(DiscordOAuthCode.code, DiscordOAuthCode.expire_time).where(DiscordOAuthCode.state == access_code_state)
-            result = session.scalar(query)
+            result = session.execute(query).one_or_none()
 
             if result is None:
                 raise NoAccessCodeFound()
 
-            print(result)
-            code, expire_time = result[0]
-
             query = select(Session.now())
             current_time = session.scalar(query)
-            if current_time > expire_time:
+            if current_time > result.expire_time:
                 raise NoAccessCodeFound()
 
             query = delete(DiscordOAuthCode).where(DiscordOAuthCode.state == access_code_state)
-            session.delete(query)
+            session.execute(query)
 
             session.commit()
-        return code
+            return result.code
