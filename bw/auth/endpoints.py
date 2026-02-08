@@ -86,8 +86,8 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.get('/login/discord')
     @url_endpoint
-    @unwrap_headers(('state', str))
-    async def get_discord_access_code(state: str) -> JsonResponse:
+    @unwrap_headers(('Authorization', str))
+    async def get_discord_access_code(authorization: str) -> JsonResponse:
         """
         ### Retrieve Discord OAuth access code
 
@@ -110,6 +110,7 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
         Authorization: Bearer discord_access_code_here
         ```
         """
+        state = authorization[6:]
         logger.info('Retrieving access code (Discord)')
         return AuthApi().retrieve_access_code(state=State.state, code_state=state)
 
