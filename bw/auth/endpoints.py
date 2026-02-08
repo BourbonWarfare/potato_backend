@@ -49,7 +49,7 @@ HTML Endpoints:
 
 
 def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
-    @html.get('/login/discord')
+    @html.get('/auth/login/discord')
     @html_endpoint(template_path='auth/discord.html', title='Logged in with Discord')
     async def login_discord_redirect(html: str) -> str:
         """
