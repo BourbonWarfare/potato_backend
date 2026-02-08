@@ -63,7 +63,7 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
         finally:
             return ''
 
-    @api.get('/login/discord/<state:str>')
+    @api.get('/login/discord/<string:state>')
     @url_endpoint
     async def get_discord_access_code(state: str) -> JsonResponse:
         """
