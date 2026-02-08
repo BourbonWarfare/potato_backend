@@ -301,17 +301,13 @@ def unwrap_headers(*headers: tuple[str, Any]):
     **Async:** No (decorator function itself is synchronous)
 
     **Args:**
-    - `func` (`Callable[..., AsyncGenerator[WebEvent | BaseEvent]]`): The SSE endpoint function that yields events.
-
-    **Returns:**
-    - `Callable[..., Awaitable[ServerSentEventResponse]]`: A wrapped function that returns a proper SSE response.
+    - `headers` (`tuple[str, type]`): The headers and their expected types.
 
     **Example:**
     ```python
-    @sse_endpoint
-    async def event_stream():
-        yield WebEvent('message', {'data': 'Hello'})
-    # Callable[..., Awaitable[ServerSentEventResponse]]
+    @unwrap_headers(('foo': int))
+    def event_stream(foo: int):
+        print(foo)
     ```
     """
 
@@ -324,10 +320,12 @@ def unwrap_headers(*headers: tuple[str, Any]):
         async def wrapper(*args, **kwargs):
             for header, header_type in headers:
                 try:
+                    if header not in request.headers:
+                        raise KeyError(header, request.headers)
                     kwargs[transform(header)] = header_type(request.headers.get(header))
-                except TypeError:
+                except TypeError | KeyError:
                     raise BadHeader()
-            return func(*args, **kwargs)
+            return await func(*args, **kwargs)
 
         return wrapper
 
