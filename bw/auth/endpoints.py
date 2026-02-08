@@ -1,6 +1,7 @@
 import logging
 import uuid
-from quart import Blueprint
+import secrets
+from quart import Blueprint, request
 
 from bw.web_utils import json_endpoint, url_endpoint, html_endpoint
 from bw.response import JsonResponse, WebResponse
@@ -38,7 +39,7 @@ Local Endpoints:
 def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
     @html.get('/login/discord')
     @html_endpoint(template_path='auth/discord.html', title='Logged in with Discord')
-    async def login_discord_redirect(html: str, code: str, state: str) -> str:
+    async def login_discord_redirect(html: str) -> str:
         """
         ### Redirect for Discord OAuth2
 
@@ -57,6 +58,8 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
         GET /login/discord/?code=foobar&state=potato
         ```
         """
+        code = request.args.get('code', default='', type=str)
+        state = request.args.get('state', default=secrets.token_urlsafe(32), type=str)
         logger.info('OAuth redirect (Discord)')
         try:
             AuthApi().register_access_code(state=State.state, code=code, code_state=state)
