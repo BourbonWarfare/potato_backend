@@ -47,6 +47,17 @@ from integrations.auth.fixtures import (
     db_role_2,
     db_role_assigner,
     db_group_assigner,
+    invalid_discord_token,
+    expire_valid,
+    discord_id_1,
+    db_discord_user_1,
+    discord_token_1,
+    discord_token_2,
+    oauth_state_1,
+    oauth_state_2,
+    oauth_code_1,
+    make_mock_discord_response,
+    new_discord_id,
 )
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
@@ -561,4 +572,90 @@ async def test__leave_group__expired_session_nothing(
         json={'group_name': db_group_1.name},
         headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
     )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__login_discord_redirect__returns_html(state, session, test_app, oauth_code_1, oauth_state_1):
+    """Test that Discord OAuth redirect endpoint returns HTML response"""
+    response = await test_app.get(f'/login/discord?code={oauth_code_1}&state={oauth_state_1}')
+    assert response.status_code == 200
+    assert response.content_type.startswith('text/html')
+
+
+@pytest.mark.asyncio
+async def test__login_discord_redirect__handles_missing_code(state, session, test_app, oauth_state_2):
+    """Test that Discord OAuth redirect endpoint handles missing code parameter"""
+    # Should still return 200 but store empty code
+    response = await test_app.get(f'/login/discord?state={oauth_state_2}')
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test__login_discord__creates_session_for_existing_user(
+    mocker,
+    state,
+    session,
+    test_app,
+    db_discord_user_1,
+    discord_id_1,
+    token_1,
+    expire_valid,
+    discord_token_1,
+    make_mock_discord_response,
+):
+    """Test that Discord login creates a session for an existing Discord user"""
+    mock_response = make_mock_discord_response(discord_id_1)
+
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
+    mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
+    mocker.patch('aiohttp.ClientSession.post', return_value=mock_response)
+
+    response = await test_app.post('/api/v1/auth/login/discord', headers={'Authorization': f'Bearer {discord_token_1}'})
+
+    assert response.status_code == 200
+    data = await response.get_json()
+    assert 'session_token' in data
+    assert 'expire_time' in data
+
+
+@pytest.mark.asyncio
+async def test__login_discord__creates_new_user_for_new_discord_id(
+    mocker, state, session, test_app, token_1, expire_valid, discord_token_2, new_discord_id, make_mock_discord_response
+):
+    """Test that Discord login creates a new user for a Discord ID that doesn't exist"""
+    mock_response = make_mock_discord_response(new_discord_id)
+
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
+    mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
+    mocker.patch('aiohttp.ClientSession.post', return_value=mock_response)
+
+    response = await test_app.post('/api/v1/auth/login/discord', headers={'Authorization': f'Bearer {discord_token_2}'})
+
+    assert response.status_code == 200
+    data = await response.get_json()
+    assert 'session_token' in data
+    assert 'expire_time' in data
+
+
+@pytest.mark.asyncio
+async def test__login_discord__returns_401_for_invalid_token(
+    mocker, state, session, test_app, invalid_discord_token, make_mock_discord_response
+):
+    """Test that Discord login returns 401 for invalid Discord token"""
+    mock_response = make_mock_discord_response(discord_id=0, should_raise=True, error_status=401)
+
+    mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
+    mocker.patch('aiohttp.ClientSession.post', return_value=mock_response)
+
+    response = await test_app.post('/api/v1/auth/login/discord', headers={'Authorization': f'Bearer {invalid_discord_token}'})
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__login_discord__requires_authorization_header(state, session, test_app):
+    response = await test_app.post('/api/v1/auth/login/discord')
     assert response.status_code == 401

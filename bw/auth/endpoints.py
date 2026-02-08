@@ -99,7 +99,7 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
         return AuthApi().retrieve_access_code(state=State.state, code_state=state)
 
     @api.post('/login/discord')
-    @json_endpoint
+    @url_endpoint
     @with_token
     async def login_discord(token) -> JsonResponse:
         """

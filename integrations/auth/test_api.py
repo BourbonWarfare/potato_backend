@@ -350,3 +350,54 @@ def test__leave_group__success(state, session, db_user_1, db_group_1):
 def test__leave_group__no_group(state, session, db_user_1):
     response = AuthApi().leave_group(state, db_user_1, 'nonexistent_group')
     assert response.status_code == 404
+
+
+def test__auth_api__user_info_returns_uuid(state, session, db_user_1):
+    response = AuthApi().user_info(state, db_user_1)
+    assert response.status_code == 200
+    assert response.contained_json['uuid'] == str(db_user_1.uuid)
+
+
+def test__auth_api__user_info_returns_creation_date(state, session, db_user_1):
+    response = AuthApi().user_info(state, db_user_1)
+    assert response.status_code == 200
+    assert response.contained_json['creation_date'] == db_user_1.creation_date.isoformat()
+
+
+def test__auth_api__user_info_returns_empty_groups_when_no_memberships(state, session, db_user_1):
+    response = AuthApi().user_info(state, db_user_1)
+    assert response.status_code == 200
+    assert response.contained_json['groups'] == []
+
+
+def test__auth_api__user_info_returns_all_groups(state, session, db_user_1, db_group_1, db_group_2):
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_2)
+
+    response = AuthApi().user_info(state, db_user_1)
+    assert response.status_code == 200
+    assert set(response.contained_json['groups']) == {db_group_1.name, db_group_2.name}
+
+
+def test__auth_api__user_info_returns_correct_group_order(state, session, db_user_1, db_group_1, db_group_2):
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_2)
+
+    response = AuthApi().user_info(state, db_user_1)
+    assert response.status_code == 200
+    groups = response.contained_json['groups']
+    assert len(groups) == 2
+    assert db_group_1.name in groups
+    assert db_group_2.name in groups
+
+
+def test__auth_api__user_info_different_users_different_data(state, session, db_user_1, db_user_2, db_group_1):
+    GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
+    # db_user_2 is not in any groups
+
+    response1 = AuthApi().user_info(state, db_user_1)
+    response2 = AuthApi().user_info(state, db_user_2)
+
+    assert response1.contained_json['uuid'] != response2.contained_json['uuid']
+    assert len(response1.contained_json['groups']) == 1
+    assert len(response2.contained_json['groups']) == 0

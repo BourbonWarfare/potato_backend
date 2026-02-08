@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import json
 
 from sqlalchemy import insert
 
@@ -337,3 +338,129 @@ def endpoint_local_user_role_create_url(endpoint_api_local_url):
 @pytest.fixture(scope='function')
 def endpoint_local_user_role_assign_url(endpoint_api_local_url):
     return f'{endpoint_api_local_url}/user/role/assign'
+
+
+# OAuth code fixtures for session tests
+@pytest.fixture(scope='session')
+def oauth_code_1():
+    return 'test_oauth_code_123'
+
+
+@pytest.fixture(scope='session')
+def oauth_code_2():
+    return 'test_oauth_code_456'
+
+
+@pytest.fixture(scope='session')
+def oauth_code_3():
+    return 'test_oauth_code_789'
+
+
+@pytest.fixture(scope='session')
+def oauth_state_1():
+    return 'test_state_abc'
+
+
+@pytest.fixture(scope='session')
+def oauth_state_2():
+    return 'test_state_def'
+
+
+@pytest.fixture(scope='session')
+def oauth_state_3():
+    return 'test_state_ghi'
+
+
+@pytest.fixture(scope='session')
+def oauth_state_4():
+    return 'test_state_uvw'
+
+
+# Database fixtures for OAuth codes (function scope for test isolation)
+@pytest.fixture(scope='function')
+def db_oauth_code_1(state, session, oauth_code_1, oauth_state_1):
+    """OAuth code in database with valid expiry time"""
+    from bw.models.auth import DiscordOAuthCode
+
+    with state.Session.begin() as db_session:
+        query = insert(DiscordOAuthCode).values(code=oauth_code_1, state=oauth_state_1).returning(DiscordOAuthCode)
+        oauth = db_session.execute(query).first()[0]
+        db_session.expunge(oauth)
+    yield oauth
+
+
+@pytest.fixture(scope='function')
+def db_oauth_code_2(state, session, oauth_code_2, oauth_state_2):
+    """Second OAuth code in database with valid expiry time"""
+    from bw.models.auth import DiscordOAuthCode
+
+    with state.Session.begin() as db_session:
+        query = insert(DiscordOAuthCode).values(code=oauth_code_2, state=oauth_state_2).returning(DiscordOAuthCode)
+        oauth = db_session.execute(query).first()[0]
+        db_session.expunge(oauth)
+    yield oauth
+
+
+@pytest.fixture(scope='function')
+def db_oauth_code_expired(state, session, oauth_code_3, oauth_state_3, expire_invalid):
+    """OAuth code in database with expired time"""
+    from bw.models.auth import DiscordOAuthCode
+
+    with state.Session.begin() as db_session:
+        query = (
+            insert(DiscordOAuthCode)
+            .values(code=oauth_code_3, state=oauth_state_3, expire_time=expire_invalid)
+            .returning(DiscordOAuthCode)
+        )
+        oauth = db_session.execute(query).first()[0]
+        db_session.expunge(oauth)
+    yield oauth
+
+
+# Discord token fixtures for endpoint tests
+@pytest.fixture(scope='session')
+def discord_token_1():
+    return 'discord_bearer_token_123'
+
+
+@pytest.fixture(scope='session')
+def discord_token_2():
+    return 'discord_bearer_token_456'
+
+
+@pytest.fixture(scope='session')
+def invalid_discord_token():
+    return 'invalid_discord_token'
+
+
+# Discord ID fixtures for endpoint tests
+@pytest.fixture(scope='session')
+def new_discord_id():
+    return 999999999
+
+
+# Mock Discord API response helpers
+@pytest.fixture(scope='session')
+def make_mock_discord_response():
+    """Factory fixture for creating mock Discord API responses"""
+
+    def _make_response(discord_id: int, should_raise: bool = False, error_status: int = 401):
+        class MockSessionObject:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_args, **_kwargs):
+                pass
+
+            def raise_for_status(self):
+                if should_raise:
+                    import aiohttp
+
+                    raise aiohttp.ClientResponseError(None, None, status=error_status, message='Unauthorized')
+
+            async def json(self):
+                return json.dumps({'id': discord_id})
+
+        return MockSessionObject()
+
+    return _make_response
