@@ -38,7 +38,7 @@ Local Endpoints:
 def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
     @html.get('/login/discord')
     @html_endpoint(template_path='auth/discord.html', title='Logged in with Discord')
-    async def login_discord_redirect(code: str, state: str) -> str:
+    async def login_discord_redirect(html: str, code: str, state: str) -> str:
         """
         ### Redirect for Discord OAuth2
 
@@ -61,7 +61,7 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
         try:
             AuthApi().register_access_code(state=State.state, code=code, code_state=state)
         finally:
-            return ''
+            return html
 
     @api.get('/login/discord/<string:state>')
     @url_endpoint
