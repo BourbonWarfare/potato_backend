@@ -110,7 +110,7 @@ def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
         Authorization: Bearer discord_access_code_here
         ```
         """
-        state = authorization[6:]
+        state = authorization[7:]
         logger.info('Retrieving access code (Discord)')
         return AuthApi().retrieve_access_code(state=State.state, code_state=state)
 
