@@ -79,7 +79,7 @@ class AuthApi:
         """
         headers = {'Authorization': f'Bearer {token}'}
         async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.post(f'{ENVIRONMENT.discord_api_url()}/users/@me') as response:
+            async with session.get(f'{ENVIRONMENT.discord_api_url()}/users/@me') as response:
                 try:
                     response.raise_for_status()
                 except aiohttp.ClientResponseError as e:
