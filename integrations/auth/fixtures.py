@@ -459,7 +459,7 @@ def make_mock_discord_response():
                     raise aiohttp.ClientResponseError(None, None, status=error_status, message='Unauthorized')
 
             async def json(self):
-                return json.dumps({'id': discord_id})
+                return {'id': discord_id}
 
         return MockSessionObject()
 

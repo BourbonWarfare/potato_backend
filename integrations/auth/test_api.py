@@ -79,13 +79,13 @@ async def test__login_with_discord__can_login_when_user_exists(
         def raise_for_status(self):
             pass
 
-        async def json(self) -> str:
-            return json.dumps({'id': db_discord_user_1.discord_id})
+        async def json(self) -> dict:
+            return {'id': db_discord_user_1.discord_id}
 
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
     mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://example.com')
-    mocker.patch('bw.auth.api.aiohttp.ClientSession.post', return_value=MockSessionObject())
+    mocker.patch('bw.auth.api.aiohttp.ClientSession.get', return_value=MockSessionObject())
 
     response = await AuthApi().login_with_discord(state, token_2)
     assert response.status_code == 200
@@ -105,13 +105,13 @@ async def test__login_with_discord__nonexistant_id_creates_user(mocker, state, e
         def raise_for_status(self):
             pass
 
-        async def json(self) -> str:
-            return json.dumps({'id': discord_id_1})
+        async def json(self) -> dict:
+            return {'id': discord_id_1}
 
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
     mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://example.com')
-    mocker.patch('bw.auth.api.aiohttp.ClientSession.post', return_value=MockSessionObject())
+    mocker.patch('bw.auth.api.aiohttp.ClientSession.get', return_value=MockSessionObject())
 
     response = await AuthApi().login_with_discord(state, token_2)
     assert response.status_code == 200
@@ -131,13 +131,13 @@ async def test__login_with_discord__bad_token_fails(mocker, state, session, toke
         def raise_for_status(self):
             raise aiohttp.ClientResponseError(None, None, status=401, message='bad')
 
-        async def json(self) -> str:
-            return json.dumps({'id': db_discord_user_1.discord_id})
+        async def json(self) -> dict:
+            return {'id': db_discord_user_1.discord_id}
 
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
     mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://example.com')
-    mocker.patch('bw.auth.api.aiohttp.ClientSession.post', return_value=MockSessionObject())
+    mocker.patch('bw.auth.api.aiohttp.ClientSession.get', return_value=MockSessionObject())
 
     response = await AuthApi().login_with_discord(state, token_2)
     assert response.status_code == 401

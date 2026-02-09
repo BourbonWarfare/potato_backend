@@ -88,6 +88,7 @@ class AuthApi:
 
                 user = await response.json()
 
+        print(user)
         discord_id = user['id']
         try:
             user = UserStore().user_from_discord_id(state, discord_id)

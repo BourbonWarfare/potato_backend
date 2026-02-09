@@ -610,7 +610,7 @@ async def test__login_discord__creates_session_for_existing_user(
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
     mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
-    mocker.patch('aiohttp.ClientSession.post', return_value=mock_response)
+    mocker.patch('aiohttp.ClientSession.get', return_value=mock_response)
 
     response = await test_app.post('/api/v1/auth/login/discord', headers={'Authorization': f'Bearer {discord_token_1}'})
 
@@ -630,7 +630,7 @@ async def test__login_discord__creates_new_user_for_new_discord_id(
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
     mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
-    mocker.patch('aiohttp.ClientSession.post', return_value=mock_response)
+    mocker.patch('aiohttp.ClientSession.get', return_value=mock_response)
 
     response = await test_app.post('/api/v1/auth/login/discord', headers={'Authorization': f'Bearer {discord_token_2}'})
 
