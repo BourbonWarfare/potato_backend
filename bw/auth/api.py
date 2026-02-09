@@ -1,3 +1,4 @@
+import logging
 from bw.state import State
 from bw.response import JsonResponse, Ok, WebResponse, Exists, DoesNotExist
 from bw.auth.session import SessionStore
@@ -12,6 +13,8 @@ from bw.environment import ENVIRONMENT
 from bw.error import ReauthNeededError, AuthError, NoUserWithGivenCredentials
 import uuid
 import aiohttp
+
+logger = logging.getLogger('bw.auth')
 
 
 class AuthApi:
@@ -88,7 +91,9 @@ class AuthApi:
 
                 user = await response.json()
 
-        discord_id = user['id']
+        discord_id = int(user['id'])
+        logger.info(f'Discord user {discord_id} is logging in')
+        logger.debug(f'id: {discord_id} type={type(discord_id)}')
         try:
             user = UserStore().user_from_discord_id(state, discord_id)
         except NoUserWithGivenCredentials:
