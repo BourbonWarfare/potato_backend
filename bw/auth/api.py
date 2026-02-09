@@ -11,7 +11,6 @@ from bw.web_utils import define_api, define_async_api
 from bw.environment import ENVIRONMENT
 from bw.error import ReauthNeededError, AuthError, NoUserWithGivenCredentials
 import uuid
-import json
 import aiohttp
 
 
@@ -87,7 +86,7 @@ class AuthApi:
                         raise ReauthNeededError(e.message, 'Discord OAuth')
                     raise AuthError(e.message)
 
-                user = json.loads(await response.json())
+                user = await response.json()
 
         discord_id = user['id']
         try:
