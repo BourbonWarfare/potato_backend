@@ -8,6 +8,7 @@ from bw.models import Base
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
+from bw.auth.types import DiscordSnowflake
 
 GLOBAL_CONFIGURATION.require('default_session_length')
 GLOBAL_CONFIGURATION.require('api_session_length')
@@ -32,7 +33,7 @@ class DiscordUser(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
-    discord_id: Mapped[int] = mapped_column(unique=True)
+    discord_id: Mapped[DiscordSnowflake] = mapped_column(unique=True)
 
 
 class BotUser(Base):

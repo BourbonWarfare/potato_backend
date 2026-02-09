@@ -323,7 +323,7 @@ def unwrap_headers(*headers: tuple[str, Any]):
                     if header not in request.headers:
                         raise KeyError(header, request.headers)
                     kwargs[transform(header)] = header_type(request.headers.get(header))
-                except TypeError | KeyError:
+                except TypeError or KeyError:
                     raise BadHeader()
             return await func(*args, **kwargs)
 

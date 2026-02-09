@@ -4,6 +4,7 @@ from bw.response import JsonResponse, Ok, WebResponse, Exists, DoesNotExist
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
+from bw.auth.types import DiscordSnowflake
 from bw.auth.roles import Roles
 from bw.auth.permissions import Permissions
 from bw.models.auth import User
@@ -91,7 +92,7 @@ class AuthApi:
 
                 user = await response.json()
 
-        discord_id = int(user['id'])
+        discord_id = DiscordSnowflake(user['id'])
         logger.info(f'Discord user {discord_id} is logging in')
         logger.debug(f'id: {discord_id} type={type(discord_id)}')
         try:
@@ -241,7 +242,7 @@ class AuthApi:
         return Exists()
 
     @define_api
-    def revoke_discord_user_session(self, state: State, discord_id: int) -> WebResponse:
+    def revoke_discord_user_session(self, state: State, discord_id: DiscordSnowflake) -> WebResponse:
         """
         ### Revoke all sessions for a Discord user
 

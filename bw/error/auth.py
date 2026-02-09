@@ -1,4 +1,5 @@
 from bw.error.base import ClientError, ConflictError, NotFoundError
+from bw.auth.types import DiscordSnowflake
 from typing import Any
 
 
@@ -8,7 +9,7 @@ class AuthError(ClientError):
 
 
 class DiscordUserAlreadyExists(ConflictError):
-    def __init__(self, discord_id: int, user_id: int):
+    def __init__(self, discord_id: DiscordSnowflake, user_id: int):
         super().__init__(f'Discord user with id {discord_id} already exists for user {user_id}')
 
 

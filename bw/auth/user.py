@@ -8,6 +8,7 @@ from bw.auth.group import GroupStore
 
 from bw.state import State
 from bw.auth.roles import Roles
+from bw.auth.types import DiscordSnowflake
 from bw.models.auth import User, DiscordUser, BotUser, TOKEN_LENGTH, Role
 from bw.error import AuthError, NoUserWithGivenCredentials, DbError, RoleCreationFailed, NoRoleWithName, DiscordUserAlreadyExists
 
@@ -113,7 +114,7 @@ class UserStore:
             session.expunge(user)
         return user
 
-    def user_from_discord_id(self, state: State, discord_id: int) -> User:
+    def user_from_discord_id(self, state: State, discord_id: DiscordSnowflake) -> User:
         """
         ### Retrieve a user by Discord ID
 
@@ -125,7 +126,7 @@ class UserStore:
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.
-        - `discord_id` (`int`): The Discord ID of the user to retrieve.
+        - `discord_id` (`DiscordSnowflake`): The Discord ID of the user to retrieve.
 
         **Returns:**
         - `User`: The user object associated with the given Discord ID.
@@ -136,7 +137,7 @@ class UserStore:
         **Example:**
         ```python
         user_store = UserStore()
-        user = user_store.user_from_discord_id(state, 123456789)
+        user = user_store.user_from_discord_id(state, '123456789')
         # User(id=1, uuid=UUID('...'))
         ```
         """
@@ -230,7 +231,7 @@ class UserStore:
             session.expunge(user)
         return user
 
-    def link_discord_user(self, state: State, discord_id: int, user: User) -> DiscordUser:
+    def link_discord_user(self, state: State, discord_id: DiscordSnowflake, user: User) -> DiscordUser:
         """
         ### Link a Discord user to an existing user
 
@@ -242,7 +243,7 @@ class UserStore:
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.
-        - `discord_id` (`int`): The Discord ID to link.
+        - `discord_id` (`DiscordSnowflake`): The Discord ID to link.
         - `user` (`User`): The user to link as a Discord user.
 
         **Returns:**
