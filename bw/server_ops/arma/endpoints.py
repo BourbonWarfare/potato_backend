@@ -6,6 +6,7 @@ from bw.response import JsonResponse, WebResponse
 from bw.auth.decorators import require_user_role, require_session
 from bw.auth.roles import Roles
 from bw.server_ops.arma.api import ArmaApi
+from bw.models.auth import User
 
 
 logger = logging.getLogger('bw.server_ops.arma')
@@ -16,7 +17,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
     @url_endpoint
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def start_server(server: str) -> WebResponse:
+    async def start_server(session_user: User, server: str) -> WebResponse:
         """
         ### Start an Arma server
 
@@ -54,7 +55,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
     @url_endpoint
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def stop_server(server: str) -> WebResponse:
+    async def stop_server(session_user: User, server: str) -> WebResponse:
         """
         ### Stop an Arma server
 
@@ -91,7 +92,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
     @url_endpoint
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def restart_server(server: str) -> WebResponse:
+    async def restart_server(session_user: User, server: str) -> WebResponse:
         """
         ### Restart an Arma server
 
@@ -129,7 +130,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
     @url_endpoint
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def update_server(server: str) -> WebResponse:
+    async def update_server(session_user: User, server: str) -> WebResponse:
         """
         ### Update an Arma server
 
@@ -167,7 +168,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
     @url_endpoint
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def update_server_mods(server: str) -> WebResponse:
+    async def update_server_mods(session_user: User, server: str) -> WebResponse:
         """
         ### Update mods for a specific Arma server
 
@@ -207,7 +208,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.get('/<string:server>/healthcheck')
     @url_endpoint
-    async def healthcheck_server(server: str) -> JsonResponse:
+    async def healthcheck_server(session_user: User, server: str) -> JsonResponse:
         """
         ### Check server health status
 
