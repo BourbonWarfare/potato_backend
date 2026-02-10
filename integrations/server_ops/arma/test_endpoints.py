@@ -34,6 +34,8 @@ from integrations.server_ops.arma.fixtures import (
     mock_modlist_name_6,
     server_name_1,
     server_name_2,
+    server_name_3,
+    server_name_4,
     existing_mod_name,
     nonexistent_mod_name,
     endpoint_mods_url,
@@ -43,6 +45,7 @@ from integrations.server_ops.arma.fixtures import (
     endpoint_reload_mods_url,
     endpoint_reload_modlists_url,
     endpoint_arma_base_url,
+    endpoint_servers_url,
 )
 from bw.server_ops.arma.mod import MODS, MODLISTS, Mod, Modlist, WorkshopId
 from bw.auth.user import UserStore
@@ -565,3 +568,43 @@ async def test__add_new_modlist__creates_empty_modlist(
     )
 
     assert response.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test__get_all_servers__returns_servers(
+    mocker, state, session, test_app, endpoint_servers_url, server_name_1, server_name_3, server_name_4
+):
+    """Test that GET /servers returns all configured servers"""
+    # Not yet reviewed
+    mock_server_1 = mocker.Mock()
+    mock_server_2 = mocker.Mock()
+    mock_server_3 = mocker.Mock()
+    mock_server_map = {
+        server_name_1: mock_server_1,
+        server_name_3: mock_server_2,
+        server_name_4: mock_server_3,
+    }
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', mock_server_map)
+
+    response = await test_app.get(endpoint_servers_url)
+
+    assert response.status_code == 200
+    data = await response.get_json()
+    assert 'servers' in data
+    assert len(data['servers']) == 3
+    assert server_name_1 in data['servers']
+    assert server_name_3 in data['servers']
+    assert server_name_4 in data['servers']
+
+
+@pytest.mark.asyncio
+async def test__get_all_servers__returns_empty_list(mocker, state, session, test_app, endpoint_servers_url):
+    """Test that GET /servers returns empty list when no servers configured"""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
+
+    response = await test_app.get(endpoint_servers_url)
+
+    assert response.status_code == 200
+    data = await response.get_json()
+    assert data['servers'] == []

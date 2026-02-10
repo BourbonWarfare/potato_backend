@@ -282,3 +282,28 @@ def endpoint_reload_mods_url(endpoint_arma_base_url):
 @pytest.fixture(scope='session')
 def endpoint_reload_modlists_url(endpoint_arma_base_url):
     return f'{endpoint_arma_base_url}/mods/lists/reload'
+
+
+@pytest.fixture(scope='session')
+def server_name_1():
+    return 'test_server'
+
+
+@pytest.fixture(scope='session')
+def server_name_2():
+    return 'nonexistent_server'
+
+
+@pytest.fixture(scope='session')
+def server_name_3():
+    return 'main_server'
+
+
+@pytest.fixture(scope='session')
+def server_name_4():
+    return 'staging_server'
+
+
+@pytest.fixture(scope='session')
+def endpoint_servers_url(endpoint_arma_base_url):
+    return f'{endpoint_arma_base_url}/servers'
