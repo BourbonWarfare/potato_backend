@@ -46,35 +46,9 @@ def config() -> dict[str, Any]:
         'loggers': {
             'quart.app': {
                 'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['quart.app'],
-                'handlers': ['wsgi', 'file'],
             },
             'bw': {
                 'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw'],
-                'handlers': ['wsgi', 'file'],
-            },
-            'bw.cache': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.cache'],
-                'handlers': ['wsgi', 'file'],
-            },
-            'bw.auth': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.auth'],
-                'handlers': ['wsgi', 'file'],
-            },
-            'bw.missions': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.missions'],
-                'handlers': ['wsgi', 'file'],
-            },
-            'bw.psm': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.psm'],
-                'handlers': ['wsgi', 'file'],
-            },
-            'bw.server_ops': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.server_ops'],
-                'handlers': ['wsgi', 'file'],
-            },
-            'bw.server_ops.arma': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw.server_ops.arma'],
-                'handlers': ['wsgi', 'file'],
             },
         },
     }
