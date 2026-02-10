@@ -60,9 +60,9 @@ def test__user_from_discord_id__doesnt_raise(state, session, db_user_1, db_disco
     assert user.role == db_user_1.role
 
 
-def test__user_from_discord_id__raises(state, session):
+def test__user_from_discord_id__raises(state, session, discord_id_1):
     with pytest.raises(NoUserWithGivenCredentials):
-        UserStore().user_from_discord_id(state, 1)
+        UserStore().user_from_discord_id(state, discord_id_1)
 
 
 def test__user_from_bot_token__doesnt_raise(state, session, db_user_1, db_bot_user_1):

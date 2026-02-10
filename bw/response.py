@@ -73,7 +73,7 @@ class JsonResponse(WebResponse):
         if contained_status is None:
             contained_status = status
         self.contained_json = json_payload
-        super().__init__(status=contained_status, headers=headers, response=json.dumps(json_payload))
+        super().__init__(status=contained_status, headers=headers, response=json.dumps(self.contained_json))
 
 
 class HtmlResponse(WebResponse):

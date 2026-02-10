@@ -642,10 +642,10 @@ async def test__login_discord__creates_new_user_for_new_discord_id(
 
 @pytest.mark.asyncio
 async def test__login_discord__returns_401_for_invalid_token(
-    mocker, state, session, test_app, invalid_discord_token, make_mock_discord_response
+    mocker, state, session, test_app, discord_id_1, invalid_discord_token, make_mock_discord_response
 ):
     """Test that Discord login returns 401 for invalid Discord token"""
-    mock_response = make_mock_discord_response(discord_id=0, should_raise=True, error_status=401)
+    mock_response = make_mock_discord_response(discord_id=discord_id_1, should_raise=True, error_status=401)
 
     mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
     mocker.patch('aiohttp.ClientSession.post', return_value=mock_response)

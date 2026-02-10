@@ -7,6 +7,7 @@ from sqlalchemy import insert
 
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
+from bw.auth.types import DiscordSnowflake
 from bw.models.auth import DiscordUser, BotUser, User, Session, GroupPermission, Group, Role
 from integrations.fixtures import session, state
 
@@ -23,7 +24,7 @@ def token_2():
 
 @pytest.fixture(scope='session')
 def discord_id_1():
-    return 1
+    return DiscordSnowflake('1')
 
 
 @pytest.fixture(scope='session')
@@ -62,6 +63,11 @@ def role_name_2() -> str:
 
 
 @pytest.fixture(scope='session')
+def server_manager_name() -> str:
+    return 'role 2'
+
+
+@pytest.fixture(scope='session')
 def role_1() -> Roles:
     return Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
 
@@ -79,6 +85,11 @@ def role_assigner() -> Roles:
 @pytest.fixture(scope='session')
 def group_assigner() -> Roles:
     return Roles(can_create_group=True, can_create_role=False, can_manage_server=True)
+
+
+@pytest.fixture(scope='session')
+def server_manager() -> Roles:
+    return Roles(can_create_group=False, can_create_role=False, can_manage_server=True)
 
 
 @pytest.fixture(scope='session')
@@ -271,6 +282,15 @@ def db_group_assigner(state, session, group_assigner):
 
 
 @pytest.fixture(scope='function')
+def db_server_manager(state, session, server_manager, server_manager_name):
+    with state.Session.begin() as session:
+        query = insert(Role).values(id=1, name=server_manager_name, **server_manager.as_dict()).returning(Role)
+        role = session.execute(query).first()[0]
+        session.expunge(role)
+    yield role
+
+
+@pytest.fixture(scope='function')
 def endpoint_api_url():
     return '/api'
 
@@ -436,7 +456,7 @@ def invalid_discord_token():
 # Discord ID fixtures for endpoint tests
 @pytest.fixture(scope='session')
 def new_discord_id():
-    return 999999999
+    return DiscordSnowflake('999999999')
 
 
 # Mock Discord API response helpers

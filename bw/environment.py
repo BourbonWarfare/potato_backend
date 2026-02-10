@@ -30,6 +30,12 @@ class Environment:
     def discord_api_url(self) -> str:
         return GC.require('discord_api_url').get().strip('/')  # ty: ignore[possibly-missing-attribute]
 
+    def arma_mod_config_path(self) -> Path:
+        return Path(GC.require('arma_mod_configs').get())  # ty: ignore[invalid-argument-type]
+
+    def arma_modlist_config_path(self) -> Path:
+        return Path(GC.require('arma_modlist_configs').get())  # ty: ignore[invalid-argument-type]
+
 
 class Local(Environment):
     def port(self) -> int:

@@ -2,46 +2,48 @@ from bw.error.base import BwServerError, ClientError
 
 
 class ArmaModError(BwServerError):
-    def __init__(self, reason: str):
-        super().__init__(f'An error occured with a mod: {reason}')
+    def __init__(self, reason: str, status: int = 500):
+        super().__init__(f'An error occured with a mod: {reason}', status=status)
 
 
 class ModNotDefined(ArmaModError):
-    def __init__(self, mod_name: str):
-        super().__init__(f'Mod "{mod_name}" is not defined in the configuration.')
+    def __init__(self, mod_name: str, status: int = 500):
+        super().__init__(f'Mod "{mod_name}" is not defined in the configuration.', status)
 
 
 class ModAlreadyDefined(ArmaModError):
-    def __init__(self, mod_name: str):
-        super().__init__(f'Mod "{mod_name}" is already defined.')
+    def __init__(self, mod_name: str, status: int = 500):
+        super().__init__(f'Mod "{mod_name}" is already defined.', status)
 
 
 class ModMissingField(ArmaModError):
-    def __init__(self, mod_name: str, field_name: str):
-        super().__init__(f'Mod "{mod_name}" is missing required field "{field_name}".')
+    def __init__(self, mod_name: str, field_name: str, status: int = 500):
+        super().__init__(f'Mod "{mod_name}" is missing required field "{field_name}".', status)
 
 
 class ModFieldInvalid(ArmaModError):
-    def __init__(self, mod_name: str, field_name: str, reason: str | None = None):
+    def __init__(self, mod_name: str, field_name: str, reason: str | None = None, status: int = 500):
         if reason:
-            super().__init__(f'Mod "{mod_name}" has invalid field "{field_name}": {reason}.')
+            super().__init__(f'Mod "{mod_name}" has invalid field "{field_name}": {reason}.', status)
         else:
-            super().__init__(f'Mod "{mod_name}" is has invalid field field "{field_name}".')
+            super().__init__(f'Mod "{mod_name}" is has invalid field field "{field_name}".', status)
 
 
 class ModInvalidKind(ArmaModError):
-    def __init__(self, mod_name: str, kind: str, valid_kinds: list[str]):
-        super().__init__(f'Mod "{mod_name}" has invalid kind "{kind}". Must be one of {", ".join(valid_kinds)}.')
+    def __init__(self, mod_name: str, kind: str, valid_kinds: list[str], status: int = 500):
+        super().__init__(f'Mod "{mod_name}" has invalid kind "{kind}". Must be one of {", ".join(valid_kinds)}.', status)
 
 
 class DuplicateModWorkshopID(ArmaModError):
-    def __init__(self, workshop_id: str, this_mod_name: str, original_mod_name: str):
-        super().__init__(f'Mod "{this_mod_name}" has a workshop ID already defined by "{original_mod_name}" ({workshop_id}).')
+    def __init__(self, workshop_id: str, this_mod_name: str, original_mod_name: str, status: int = 500):
+        super().__init__(
+            f'Mod "{this_mod_name}" has a workshop ID already defined by "{original_mod_name}" ({workshop_id}).', status
+        )
 
 
 class DuplicateModPath(ArmaModError):
-    def __init__(self, mod_name: str, existing_mod: str, mod_path: str):
-        super().__init__(f'"{mod_name}" has a path already defined by "{existing_mod}": {mod_path}.')
+    def __init__(self, mod_name: str, existing_mod: str, mod_path: str, status: int = 500):
+        super().__init__(f'"{mod_name}" has a path already defined by "{existing_mod}": {mod_path}.', status)
 
 
 class ModStoreError(ClientError):
