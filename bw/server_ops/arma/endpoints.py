@@ -49,6 +49,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        logger.info(f'User {session_user.id} is trying to start {server}')
         return await ArmaApi.start_server(server)
 
     @api.post('/<string:server>/stop')
@@ -86,6 +87,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        logger.info(f'User {session_user.id} is trying to stop {server}')
         return await ArmaApi.stop_server(server)
 
     @api.post('/<string:server>/restart')
@@ -124,6 +126,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        logger.info(f'User {session_user.id} is trying to restart {server}')
         return await ArmaApi.restart_server(server)
 
     @api.post('/<string:server>/update')
@@ -162,6 +165,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        logger.info(f'User {session_user.id} is trying to update {server}')
         return await ArmaApi.update_server(server)
 
     @api.post('/<string:server>/update_mods')
@@ -204,11 +208,12 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        logger.info(f'User {session_user.id} is trying to update the mods of {server}')
         return await ArmaApi.update_server_mods(server)
 
     @api.get('/<string:server>/healthcheck')
     @url_endpoint
-    async def healthcheck_server(session_user: User, server: str) -> JsonResponse:
+    async def healthcheck_server(server: str) -> JsonResponse:
         """
         ### Check server health status
 
@@ -239,4 +244,5 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        logger.info(f'Getting the status of {server}')
         return await ArmaApi.server_pid_status(server)
