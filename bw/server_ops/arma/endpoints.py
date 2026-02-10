@@ -1,4 +1,5 @@
 import logging
+import urllib
 from quart import Blueprint
 
 from bw.web_utils import url_endpoint
@@ -49,6 +50,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to start {server}')
         return await ArmaApi().start_server(server)
 
@@ -87,6 +89,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to stop {server}')
         return await ArmaApi().stop_server(server)
 
@@ -126,6 +129,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to restart {server}')
         return await ArmaApi().restart_server(server)
 
@@ -165,6 +169,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to update {server}')
         return await ArmaApi().update_server(server)
 
@@ -208,6 +213,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to update the mods of {server}')
         return await ArmaApi().update_server_mods(server)
 
@@ -244,5 +250,6 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         }
         ```
         """
+        server = urllib.parse.unquote_plus(server)
         logger.info(f'Getting the status of {server}')
         return await ArmaApi().server_pid_status(server)
