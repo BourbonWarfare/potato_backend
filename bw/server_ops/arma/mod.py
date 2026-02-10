@@ -645,7 +645,7 @@ class Modlist:
     _name: str
     _mods: list[Mod]
 
-    def __init__(self, name: str, file: Path | None = None, mods: list[str] | None = None):
+    def __init__(self, name: str, file: Path | None = None, mods: list[Mod] | None = None):
         """
         ### Initialize a modlist from a file
 

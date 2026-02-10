@@ -1,7 +1,6 @@
 import logging
-import urllib
+import urllib.parse
 from quart import Blueprint
-from pathlib import Path
 
 from bw.web_utils import url_endpoint, json_endpoint
 from bw.response import JsonResponse, WebResponse
@@ -446,7 +445,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         ```
         """
         logger.info(f'User {session_user.id} is reloading mod configuration')
-        mod_config_path = Path(ENVIRONMENT.arma_mod_config_path)
+        mod_config_path = ENVIRONMENT.arma_mod_config_path()
         return ArmaApi().reload_mod_configuration(mod_config_path)
 
     @api.post('mods/lists/reload')
@@ -482,7 +481,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         ```
         """
         logger.info(f'User {session_user.id} is reloading modlist configuration')
-        modlist_config_path = Path(ENVIRONMENT.arma_modlist_config_path)
+        modlist_config_path = ENVIRONMENT.arma_modlist_config_path()
         return ArmaApi().reload_modlist_configuration(modlist_config_path)
 
     @api.post('mods/flush')
@@ -517,7 +516,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         ```
         """
         logger.info(f'User {session_user.id} is flushing mod configuration to disk')
-        mod_config_path = Path(ENVIRONMENT.arma_mod_config_path)
+        mod_config_path = ENVIRONMENT.arma_mod_config_path()
         return ArmaApi().flush_mods_to_disk(mod_config_path)
 
     @api.post('mods/lists/flush')
@@ -552,7 +551,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         ```
         """
         logger.info(f'User {session_user.id} is flushing modlist configuration to disk')
-        modlist_config_path = Path(ENVIRONMENT.arma_modlist_config_path)
+        modlist_config_path = ENVIRONMENT.arma_modlist_config_path()
         return ArmaApi().flush_modlists_to_disk(modlist_config_path)
 
     @api.post('mods')

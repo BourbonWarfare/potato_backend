@@ -1022,7 +1022,7 @@ class ArmaApi:
             workshop_id=WorkshopId(workshop_id) if workshop_id is not None else None,
             kind=Kind(kind),
             manual_install=manual_install,
-            directory=directory,
+            directory=Path(directory),
         )
 
         MODS[mod_name] = mod

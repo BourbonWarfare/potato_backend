@@ -195,7 +195,7 @@ async def test__reload_mods__reloads_successfully(
     """Test that POST /mods/reload reloads mod configuration"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     mock_load_mods = mocker.patch('bw.server_ops.arma.api.load_mods')
-    mocker.patch('bw.server_ops.arma.endpoints.ENVIRONMENT.arma_mod_config_path', '/test/path')
+    mocker.patch('bw.server_ops.arma.endpoints.ENVIRONMENT.arma_mod_config_path', return_value='/test/path')
 
     response = await test_app.post(endpoint_reload_mods_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
 
@@ -241,7 +241,7 @@ async def test__reload_modlists__reloads_successfully(
     """Test that POST /mods/lists/reload reloads modlist configuration"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     mock_load_modlists = mocker.patch('bw.server_ops.arma.api.load_modlists')
-    mocker.patch('bw.server_ops.arma.endpoints.ENVIRONMENT.arma_modlist_config_path', '/test/path')
+    mocker.patch('bw.server_ops.arma.endpoints.ENVIRONMENT.arma_modlist_config_path', return_value='/test/path')
 
     response = await test_app.post(endpoint_reload_modlists_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
 
