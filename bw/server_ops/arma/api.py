@@ -539,7 +539,7 @@ class ArmaApi:
                 GLOBAL_CONFIGURATION.require('steam_username').get(),
                 GLOBAL_CONFIGURATION.require('steam_password').get(),
             ),
-            steam.force_install_dir(server.server_path()),
+            steam.force_install_dir(str(server.server_path())),
             steam.app_update(233780, beta='creatordlc', validate=True),
             steam.quit(),
         ).acall()
@@ -683,7 +683,7 @@ class ArmaApi:
                     ],
                 )
                 for install_path, mods in mod_install_directories.items()
-            ],  # ty: ignore[invalid-argument-type]
+            ],  # ty: ignore[invalidFalseargument-type]
             steam.quit(),
         ).acall()
 
