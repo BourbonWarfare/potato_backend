@@ -737,7 +737,7 @@ class ArmaApi:
             raise ServerConfigNotFound(server_name)
         server = SERVER_MAP[server_name]
 
-        return self.update_mods(state, server.modlist().mods)
+        return await self.update_mods(state, server.modlist().mods)
 
     @define_api
     def get_all_configured_mods(self) -> JsonResponse:
