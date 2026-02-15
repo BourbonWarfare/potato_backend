@@ -13,4 +13,4 @@ class SubprocessNotFound(SubprocessError):
 
 class SubprocessFailed(SubprocessError):
     def __init__(self, subprocess: str, reason: str):
-        super().__init__(f"process '{subprocess}' didn't exist successfully\n\t{reason}")
+        super().__init__(f"process '{subprocess}' didn't exit successfully\n\t{reason}")

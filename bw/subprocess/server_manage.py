@@ -39,7 +39,7 @@ class ServerResult:
     startup_status: StartupStatus = StartupStatus.NOT_STARTED
 
 
-def sanitize_at_symbol(arg: str) -> str:
+def sanitize_for_powershell(arg: str) -> str:
     return arg.replace('@', '`@').replace(';', '`;')
 
 
@@ -57,7 +57,7 @@ class ServerManage(Command):
         'mods': str,
         'servermods': str,
     }
-    ARGUMENT_MAPPING = sanitize_at_symbol
+    ARGUMENT_MAPPING = sanitize_for_powershell
 
 
 class Start(ServerManage):
