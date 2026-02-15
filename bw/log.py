@@ -7,7 +7,13 @@ from typing import Any
 PRODUCTION_LOG_CONFIG = {
     'root': 'INFO',
     'quart.app': 'INFO',
-    'bw': 'DEBUG',
+    'bw': 'INFO',
+    'bw.cache': 'INFO',
+    'bw.auth': 'INFO',
+    'bw.missions': 'INFO',
+    'bw.psm': 'INFO',
+    'bw.server_ops': 'DEBUG',
+    'bw.server_ops.arma': 'DEBUG',
 }
 
 
@@ -38,11 +44,9 @@ def config() -> dict[str, Any]:
             'handlers': ['wsgi', 'file'],
         },
         'loggers': {
-            'quart.app': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['quart.app'],
-            },
-            'bw': {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['bw'],
-            },
+            logger: {
+                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG[logger],
+            }
+            for logger in PRODUCTION_LOG_CONFIG.keys()
         },
     }
