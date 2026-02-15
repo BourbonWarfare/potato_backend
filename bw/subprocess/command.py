@@ -273,10 +273,7 @@ class Runner:
 
 class Chain(Runner):
     def __init__(self, *commands: str):
-        command = []
-        for sub_command in commands:
-            command.extend(sub_command)
-        super().__init__(command)
+        super().__init__([*commands])
 
 
 def define_process(process: Command, *, command: list | None = None, return_instance: bool = True):
