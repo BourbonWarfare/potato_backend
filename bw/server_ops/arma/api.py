@@ -206,6 +206,15 @@ class ArmaApi:
         mods = ';'.join([mod.as_launch_parameter() for mod in mods]) + ';' if len(mods) > 0 else ''
         server_mods = ';'.join([mod.as_launch_parameter() for mod in server_mods]) + ';' if len(server_mods) > 0 else ''
 
+        logger.info(
+            f"""Attempting command with
+    name={server.server_name()}
+    path={server.arma_base_path()}
+    port={server.server_port()}
+    hc_count={server.headless_client_count()}
+    mods={mods}
+    servermods={server_mods}"""
+        )
         return await command(
             name=server.server_name(),
             path=server.arma_base_path(),
