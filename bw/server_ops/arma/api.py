@@ -179,6 +179,7 @@ class ArmaApi:
             return JsonResponse({'result': 'failure', 'reason': e.reason})
         except ArmaServerUnresponsive as e:
             return JsonResponse({'result': 'unresponsive', 'reason': str(e)})
+
         status = ServerStatus(
             name=query['name'],
             mission=query['game'],
@@ -228,7 +229,7 @@ class ArmaApi:
     mods={mods}
     servermods={server_mods}"""
         )
-        response = await command(
+        response, _ = await command(
             name=server.server_name(),
             path=str(server.arma_base_path()),
             port=server.server_port(),
