@@ -58,7 +58,6 @@ class ServerManage(Command):
         'mods': str,
         'servermods': str,
     }
-    FLATTEN_KEYWORD_ARGUMENTS = True
     ARGUMENT_MAPPING = sanitize_at_symbol
 
 
