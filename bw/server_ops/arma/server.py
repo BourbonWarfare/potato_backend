@@ -12,7 +12,7 @@ class Server:
         self._name = name
         self._config_path = config_directory
         self._config = Configuration.load_toml(self._config_path / f'{self._name}.toml')
-        self._server, self._session, self._crons = self._config.require('server', 'session', 'config').get()
+        self._server, self._session, self._crons = self._config.require('server', 'session', 'crons').get()
 
     def server_name(self) -> str:
         return self._name
