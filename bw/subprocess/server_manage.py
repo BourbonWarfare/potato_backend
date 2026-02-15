@@ -61,7 +61,7 @@ class ServerManage(Command):
 
 
 class Start(ServerManage):
-    COMMAND = 'start'
+    DEFAULT_KEYWORD_ARGUMENTS = {'command': 'start'}
 
     @staticmethod
     def _map_stdout(result: str) -> ServerResult:
@@ -85,7 +85,7 @@ class Start(ServerManage):
 
 
 class Stop(ServerManage):
-    COMMAND = 'stop'
+    DEFAULT_KEYWORD_ARGUMENTS = {'command': 'stop'}
 
     @staticmethod
     def _map_stdout(result: str) -> ServerResult:
@@ -107,7 +107,7 @@ class Stop(ServerManage):
 
 
 class Restart(ServerManage):
-    COMMAND = 'restart'
+    DEFAULT_KEYWORD_ARGUMENTS = {'command': 'restart'}
 
     @staticmethod
     def _map_stdout(result: str) -> ServerResult:
@@ -135,7 +135,7 @@ class Restart(ServerManage):
 
 
 class Status(ServerManage):
-    COMMAND = 'status'
+    DEFAULT_KEYWORD_ARGUMENTS = {'command': 'status'}
 
     @staticmethod
     def _map_stdout(result: str) -> ServerResult:

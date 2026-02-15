@@ -33,6 +33,8 @@ class Command:
     POSITIONAL_ARGUMENTS_FIRST: bool = False
     ARGUMENT_MAPPING: callable = null_map
 
+    DEFAULT_KEYWORD_ARGUMENTS: dict[str, Any] = {}
+
     @classmethod
     def locate(cls) -> str:
         if cls.GUARANTEE_CAN_RUN or cls.RUNNER != '':
@@ -127,6 +129,10 @@ class Command:
 
     @classmethod
     def _get_command(cls, *args, entire_chain: bool = True, **kwargs) -> list[str]:
+        for k, v in cls.DEFAULT_KEYWORD_ARGUMENTS.items():
+            if k not in kwargs:
+                kwargs[k] = v
+
         kwargs_to_adjust = cls._validate_arguments(*args, **kwargs)
         args = [arg if isinstance(arg, str) else str(arg) for arg in args]
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
