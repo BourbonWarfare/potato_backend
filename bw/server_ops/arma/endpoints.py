@@ -361,7 +361,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         server = urllib.parse.unquote_plus(server)
         logger.info(f'Getting the status of {server}')
         server_object = ArmaApi().get_server_from_string(server)
-        return await ArmaApi().server_steam_status('localhost', server_object.server_port())
+        return await ArmaApi().server_steam_status('localhost', server_object.server_port() + 1)
 
     @api.get('mods')
     @url_endpoint

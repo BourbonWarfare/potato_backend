@@ -138,11 +138,15 @@ class Command:
                 kwargs[k] = v
 
         kwargs_to_adjust = cls._validate_arguments(*args, **kwargs)
-        sorted_kwargs = {key: kwargs[key] for key in cls.KEYWORD_ARGUMENTS.keys()}
+
+        def modified_key(key: str) -> str:
+            return key.replace('_', '-') if key in kwargs_to_adjust else key
+
+        sorted_kwargs = {key: kwargs[modified_key(key)] for key in cls.KEYWORD_ARGUMENTS.keys()}
 
         args = [arg if isinstance(arg, str) else str(arg) for arg in args]
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in sorted_kwargs.items()}
-        string_options = {k.replace('_', '-') if k in kwargs_to_adjust else k: v for k, v in string_options.items()}
+        string_options = {modified_key(k): v for k, v in string_options.items()}
 
         commands = []
         for k, v in string_options.items():
