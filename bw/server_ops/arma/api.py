@@ -217,7 +217,7 @@ class ArmaApi:
         )
         return await command(
             name=server.server_name(),
-            path=server.arma_base_path(),
+            path=str(server.arma_base_path()),
             port=server.server_port(),
             hc_count=server.headless_client_count(),
             mods=mods,
