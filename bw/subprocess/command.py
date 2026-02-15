@@ -27,6 +27,7 @@ class Command:
     KEYWORD_PREFIX: str = '--'
     KEYWORD_PREFIXES: dict[str, str] = {}
     POSITIONAL_ARGUMENTS_FIRST: bool = False
+    ARGUMENT_MAPPING: callable = lambda x: x
 
     @classmethod
     def locate(cls) -> str:
@@ -133,16 +134,17 @@ class Command:
             else:
                 commands.append(f'{cls.KEYWORD_PREFIX}{k}' if len(k) > 1 else f'-{k}')
                 if cls.KEYWORD_ARGUMENTS.get(k, None) is not None:
-                    commands.append(v)
+                    commands.append(cls.ARGUMENT_MAPPING(v))
 
         command_prefix = [cls.COMMAND_PREFIX + cls.COMMAND]
         if entire_chain:
             command_prefix = cls.RUNNER.split() + cls._COMMAND  # ty: ignore[unresolved-attribute]
 
+        mapped_args = [cls.ARGUMENT_MAPPING(arg) for arg in args]
         if cls.POSITIONAL_ARGUMENTS_FIRST:
-            final_command = command_prefix + list(args) + commands
+            final_command = command_prefix + mapped_args + commands
         else:
-            final_command = command_prefix + commands + list(args)
+            final_command = command_prefix + commands + mapped_args
         return [c if isinstance(c, str) else str(c) for c in final_command]
 
     @classmethod
