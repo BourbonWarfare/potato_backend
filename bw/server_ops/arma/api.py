@@ -203,8 +203,8 @@ class ArmaApi:
         mods = [mod for mod in all_mods if mod.kind == Kind.MOD]
         server_mods = [mod for mod in all_mods if mod.kind == Kind.SERVER_MOD]
 
-        mods = ';'.join([mod.as_launch_parameter() for mod in mods]) + ';' if len(mods) > 0 else ''
-        server_mods = ';'.join([mod.as_launch_parameter() for mod in server_mods]) + ';' if len(server_mods) > 0 else ''
+        mods = ';'.join([mod.as_launch_parameter() for mod in mods]) + ';' if len(mods) > 0 else ';'
+        server_mods = ';'.join([mod.as_launch_parameter() for mod in server_mods]) + ';' if len(server_mods) > 0 else ';'
 
         logger.info(
             f"""Attempting command with
