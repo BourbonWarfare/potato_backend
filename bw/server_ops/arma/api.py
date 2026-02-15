@@ -2,6 +2,7 @@ import os
 import logging
 import shutil
 import dataclasses
+import json
 from pathlib import Path
 from collections.abc import Collection
 from collections.abc import Callable, Awaitable
@@ -180,6 +181,7 @@ class ArmaApi:
         except ArmaServerUnresponsive as e:
             return JsonResponse({'result': 'unresponsive', 'reason': str(e)})
 
+        query = json.loads(query)
         status = ServerStatus(
             name=query['name'],
             mission=query['game'],
