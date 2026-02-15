@@ -535,7 +535,7 @@ class ArmaApi:
         # update server via SteamCMD
         logger.info(f'Updating Arma server {server_name} via SteamCMD')
         await Chain(
-            steam.COMMAND,
+            steam.locate(),
             steam.login(
                 GLOBAL_CONFIGURATION.require('steam_username').get(),
                 GLOBAL_CONFIGURATION.require('steam_password').get(),
