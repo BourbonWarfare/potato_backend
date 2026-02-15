@@ -50,8 +50,33 @@ HTML Endpoints:
 
 
 def define_auth(api: Blueprint, local: Blueprint, html: Blueprint):
+    @html.get('/login')
+    @html_endpoint(template_path='auth/login.html', title='Log into Bourbon Warfare')
+    async def login_page(html: str) -> str:
+        """
+        ### Login endpoint
+
+        The endpoint for the user to login to the Bourbon Warfare system.
+        Used as a home page for the various types of log-ins (BW Backend, OAuths)
+
+        **Args:**
+        - `html` (`str`): The HTML template content (automatically injected by `@html_endpoint`).
+        - `code` (`str`): The access code from Discord OAuth (query parameter).
+        - `state` (`str`): The state parameter from Discord OAuth (query parameter).
+
+        **Returns:**
+        - `HtmlResponse`: HTML response with content-type 'text/html'
+          - **Success (200)**: Rendered HTML page indicating successful authentication
+
+        **Example:**
+        ```
+        GET /login
+        ```
+        """
+        return html
+
     @html.get('/auth/login/discord')
-    @html_endpoint(template_path='auth/discord.html', title='Logged in with Discord')
+    @html_endpoint(template_path='auth/oauth/discord.html', title='Logged in with Discord')
     async def login_discord_redirect(html: str) -> str:
         """
         ### Discord OAuth2 redirect endpoint
