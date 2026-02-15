@@ -7,13 +7,7 @@ from typing import Any
 PRODUCTION_LOG_CONFIG = {
     'root': 'INFO',
     'quart.app': 'INFO',
-    'bw': 'INFO',
-    'bw.cache': 'INFO',
-    'bw.auth': 'INFO',
-    'bw.missions': 'INFO',
-    'bw.psm': 'INFO',
-    'bw.server_ops': 'DEBUG',
-    'bw.server_ops.arma': 'DEBUG',
+    'bw': 'DEBUG',
 }
 
 

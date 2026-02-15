@@ -107,7 +107,7 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
     # {WorkshopId(463939057): SteamWorkshopDetails(...), WorkshopId(450814997): SteamWorkshopDetails(...)}
     ```
     """
-    logger.info(f"Fetching {len(mods)} mod(s) detail' from the workshop")
+    logger.info(f"Fetching {len(mods)} mod(s) detail's from the workshop")
     mod_workshop_ids: dict[WorkshopId, str] = {
         mod.workshop_id: mod.name for mod in mods if not mod.manual_install and mod.workshop_id is not None
     }
