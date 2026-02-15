@@ -169,14 +169,14 @@ class Command:
     def call(cls, *args, **kwargs) -> Any:
         runner = Runner(cls._get_command(*args, **kwargs))
         logger.info(f'Calling `{" ".join(runner.command)}` (synchronous) with args={args}, kwargs={kwargs}')
-        stdout, stderr = runner.call(*args, **kwargs)
+        stdout, stderr = runner.call()
         return cls._interpret_results(stdout, stderr)
 
     @classmethod
     async def acall(cls, *args, **kwargs) -> Any:
         runner = Runner(cls._get_command(*args, **kwargs))
         logger.info(f'Calling `{" ".join(runner.command)}` (asynchronous) with args={args}, kwargs={kwargs}')
-        stdout, stderr = await runner.acall(*args, **kwargs)
+        stdout, stderr = await runner.acall()
         return cls._interpret_results(stdout, stderr)
 
     def __call__(self, *args, **kwargs) -> Any:
