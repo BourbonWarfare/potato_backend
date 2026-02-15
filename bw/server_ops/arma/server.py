@@ -38,6 +38,7 @@ class Server:
         return int(self._config.require('hc_count').get())
 
     def modlist(self) -> Modlist:
+        print(self._config)
         list_name = self._config.require('modlist').get()
         if list_name not in MODLISTS:
             raise ModlistNotFound(list_name)
