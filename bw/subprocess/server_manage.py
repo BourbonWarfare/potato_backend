@@ -46,7 +46,7 @@ def sanitize_at_symbol(arg: str) -> str:
 class ServerManage(Command):
     RUNNER: str = 'powershell'
     COMMAND = GLOBAL_CONFIGURATION.require('server_manage_ps1_path').get()
-    COMMAND_POSTFIX = '--%'
+    COMMAND_POSTFIXES = ['--%', '-ExecutionPolicy', 'unrestricted', '-nologo']
     KEYWORD_ARGUMENTS = {
         'name': str,
         'command': str,
