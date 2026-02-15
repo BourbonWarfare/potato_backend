@@ -40,12 +40,13 @@ class ServerResult:
 
 
 def sanitize_at_symbol(arg: str) -> str:
-    return arg.replace('@', r'\@').replace(';', r'\;')
+    return arg.replace('@', r'\@').replace(';', '`;')
 
 
 class ServerManage(Command):
     RUNNER: str = 'powershell'
     COMMAND = GLOBAL_CONFIGURATION.require('server_manage_ps1_path').get()
+    COMMAND_POSTFIX = '--%'
     KEYWORD_ARGUMENTS = {
         'name': str,
         'command': str,

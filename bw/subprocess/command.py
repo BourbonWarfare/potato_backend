@@ -23,6 +23,7 @@ class Command:
     RUNNER: str = ''
     COMMAND_PATHS: list[Path] = []
     COMMAND: str = ''
+    COMMAND_POSTFIX: str = ''
     DONT_USE_COMMAND_AS_ARGUMENT: bool = False
     GUARANTEE_CAN_RUN: bool = False
     POSITIONAL_ARGUMENTS: tuple[type, ...] = ()
@@ -259,9 +260,11 @@ class Chain(Runner):
         super().__init__(command)
 
 
-def define_process(process, *, command: list | None = None, return_instance: bool = True):
+def define_process(process: Command, *, command: list | None = None, return_instance: bool = True):
     if command is None:
         command = [process.locate()]
+        if process.COMMAND_POSTFIX != '':
+            command.append(process.COMMAND_POSTFIX)
     else:
         if not process.DONT_USE_COMMAND_AS_ARGUMENT:
             command = command + [process.COMMAND_PREFIX + process.COMMAND]
