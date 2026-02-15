@@ -39,6 +39,10 @@ class ServerResult:
     startup_status: StartupStatus = StartupStatus.NOT_STARTED
 
 
+def sanitize_at_symbol(arg: str) -> str:
+    return arg.replace('@', r'\@')
+
+
 class ServerManage(Command):
     RUNNER: str = 'powershell'
     COMMAND = GLOBAL_CONFIGURATION.require('server_manage_ps1_path').get()
@@ -53,6 +57,7 @@ class ServerManage(Command):
         'mods': str,
         'servermods': str,
     }
+    ARGUMENT_MAPPING = sanitize_at_symbol
 
 
 class Start(ServerManage):

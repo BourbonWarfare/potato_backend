@@ -15,6 +15,10 @@ from bw.error import SubprocessNotFound, SubprocessFailed
 logger = logging.getLogger('bw.subprocess')
 
 
+def null_map(arg: str) -> str:
+    return arg
+
+
 class Command:
     RUNNER: str = ''
     COMMAND_PATHS: list[Path] = []
@@ -27,7 +31,7 @@ class Command:
     KEYWORD_PREFIX: str = '--'
     KEYWORD_PREFIXES: dict[str, str] = {}
     POSITIONAL_ARGUMENTS_FIRST: bool = False
-    ARGUMENT_MAPPING: callable = lambda x: x
+    ARGUMENT_MAPPING: callable = null_map
 
     @classmethod
     def locate(cls) -> str:
@@ -124,6 +128,7 @@ class Command:
     @classmethod
     def _get_command(cls, *args, entire_chain: bool = True, **kwargs) -> list[str]:
         kwargs_to_adjust = cls._validate_arguments(*args, **kwargs)
+        args = [arg if isinstance(arg, str) else str(arg) for arg in args]
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in kwargs.items()}
         string_options = {k.replace('_', '-') if k in kwargs_to_adjust else k: v for k, v in string_options.items()}
 
