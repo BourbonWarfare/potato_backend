@@ -45,6 +45,12 @@ logger = logging.getLogger('bw.server_ops.arma')
 
 class ArmaApi:
     @define_api
+    def get_server_from_string(self, server: str) -> Server:
+        if server not in SERVER_MAP:
+            raise ServerConfigNotFound(server)
+        return SERVER_MAP.get(server)
+
+    @define_api
     def get_all_servers(self) -> JsonResponse:
         """
         ### Retrieve all configured servers
