@@ -21,9 +21,10 @@ def null_map(arg: str) -> str:
 
 class Command:
     RUNNER: str = ''
+    RUNNER_ARGUMENTS: list[str] = []
     COMMAND_PATHS: list[Path] = []
     COMMAND: str = ''
-    COMMAND_POSTFIXES: list[str] = []
+    COMMAND_BASE_ARGUMENTS: list[str] = []
     DONT_USE_COMMAND_AS_ARGUMENT: bool = False
     GUARANTEE_CAN_RUN: bool = False
     POSITIONAL_ARGUMENTS: tuple[type, ...] = ()
@@ -155,7 +156,7 @@ class Command:
 
         command_prefix = [cls.COMMAND_PREFIX + cls.COMMAND]
         if entire_chain:
-            command_prefix = cls.RUNNER.split() + cls._COMMAND  # ty: ignore[unresolved-attribute]
+            command_prefix = cls.RUNNER.split() + cls.COMMAND_BASE_ARGUMENTS + cls._COMMAND  # ty: ignore[unresolved-attribute]
 
         mapped_args = [cls.ARGUMENT_MAPPING(arg) for arg in args]
         if cls.POSITIONAL_ARGUMENTS_FIRST:
@@ -262,7 +263,7 @@ class Chain(Runner):
 
 def define_process(process: Command, *, command: list | None = None, return_instance: bool = True):
     if command is None:
-        command = [process.locate()] + process.COMMAND_POSTFIXES
+        command = [process.locate()] + process.COMMAND_BASE_ARGUMENTS
     else:
         if not process.DONT_USE_COMMAND_AS_ARGUMENT:
             command = command + [process.COMMAND_PREFIX + process.COMMAND]
