@@ -220,9 +220,9 @@ class ArmaApi:
             path=str(server.arma_base_path()),
             port=server.server_port(),
             hc_count=server.headless_client_count(),
+            **{'pass': server.server_password()},  # "pass" is a keyword, so we expand a keyword dict to allow it
             mods=mods,
             servermods=server_mods,
-            **{'pass': server.server_password()},  # "pass" is a keyword, so we expand a keyword dict to allow it
         )
 
     @define_async_api
