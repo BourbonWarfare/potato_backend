@@ -234,29 +234,29 @@ class Runner:
 
     def call(self) -> Any:
         logger.info(f'Calling `{" ".join(self.command)}` (synchronous)')
-        result = subprocess.run(args=self.command, capture_output=True, encoding='utf-8')
+        result = subprocess.run(args=self.command, capture_output=True)
+        stdout, stderr = tuple(r.decode() for r in (result.stdout, result.stderr))
         try:
             result.check_returncode()
         except subprocess.CalledProcessError as e:
             raise SubprocessFailed(
                 ' '.join(self.command),
                 f'\
-{e.output.decode().strip().replace("\n", " ").replace("\r", "")}:\
-\n\tstdout={e.stdout.strip().replace("\n", " ").replace("\r", "")}\
-\n\tstderr={e.stderr.strip().replace("\n", " ").replace("\r", "")}\
+\n\tstdout={stdout.strip().replace("\n", " ").replace("\r", "")}\
+\n\tstderr={stderr.strip().replace("\n", " ").replace("\r", "")}\
 ',
-                e.stdout,
-                e.stderr,
+                stdout,
+                stderr,
             ) from e
-        return result.stdout, result.stderr
+        return stdout, stderr
 
     async def acall(self) -> Any:
         logger.info(f'Calling `{" ".join(self.command)}` (asynchronous)')
         process = await asyncio.create_subprocess_exec(
-            *self.command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, encoding='utf-8'
+            *self.command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
 
-        stdout, stderr = await process.communicate()
+        stdout, stderr = [out.decode() for out in await process.communicate()]
         if process.returncode != 0:
             raise SubprocessFailed(
                 ' '.join(self.command),
