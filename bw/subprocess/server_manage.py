@@ -80,6 +80,7 @@ class Start(ServerManage):
             elif 'Server Startup completed' in line:
                 output.startup_status = StartupStatus.COMPLETED
             elif 'Server is already running. Exiting' in line:
+                output.server_status = ServerStatus.RUNNING
                 output.startup_status = StartupStatus.FAILED
 
         return output
@@ -107,6 +108,8 @@ class Stop(ServerManage):
                 output.hc_status = HcStatus.STOPPED
             elif 'No server running. Exiting' in line:
                 output.startup_status = StartupStatus.FAILED
+                output.server_status = ServerStatus.STOPPED
+                break
 
         return output
 
