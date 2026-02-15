@@ -130,6 +130,7 @@ class Command:
         if cls.ALWAYS_REPORT_BOTH_STDOUT_STDERR:
             return stdout_result, stderr_result
 
+        logger.warning('This code path is deprecated. Please update command to use tuple return')
         if stderr_result is not None and stdout_result is not None:
             return stdout_result, stderr_result
         if stderr_result is None:

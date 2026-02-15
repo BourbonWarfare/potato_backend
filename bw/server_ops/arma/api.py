@@ -229,15 +229,18 @@ class ArmaApi:
     mods={mods}
     servermods={server_mods}"""
         )
-        response, _ = await command(
-            name=server.server_name(),
-            path=str(server.arma_base_path()),
-            port=server.server_port(),
-            hc_count=server.headless_client_count(),
-            **{'pass': server.server_password()},  # "pass" is a keyword, so we expand a keyword dict to allow it
-            mods=mods,
-            servermods=server_mods,
-        )
+        try:
+            response, _ = await command(
+                name=server.server_name(),
+                path=str(server.arma_base_path()),
+                port=server.server_port(),
+                hc_count=server.headless_client_count(),
+                **{'pass': server.server_password()},  # "pass" is a keyword, so we expand a keyword dict to allow it
+                mods=mods,
+                servermods=server_mods,
+            )
+        except SubprocessFailed as e:
+            response = e.stdout
         logger.info(f'Command result: {response}')
         return response
 

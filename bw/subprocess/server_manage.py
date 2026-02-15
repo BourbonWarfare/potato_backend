@@ -79,6 +79,8 @@ class Start(ServerManage):
                 output.hc_status = HcStatus.RUNNING
             elif 'Server Startup completed' in line:
                 output.startup_status = StartupStatus.COMPLETED
+            elif 'Server is already running. Exiting' in line:
+                output.startup_status = StartupStatus.FAILED
 
         return output
 
@@ -103,6 +105,8 @@ class Stop(ServerManage):
                 output.server_status = ServerStatus.STOPPED
             elif 'Headless client(s) successfully stopped' in line:
                 output.hc_status = HcStatus.STOPPED
+            elif 'No server running. Exiting' in line:
+                output.startup_status = StartupStatus.FAILED
 
         return output
 
@@ -149,7 +153,13 @@ class Status(ServerManage):
     @staticmethod
     def _map_stdout(result: str) -> ServerResult:
         # Server is running if script exits with code 0
-        return ServerResult(message=result.strip(), server_status=ServerStatus.RUNNING)
+        status = ServerStatus.RUNNING
+        lines = result.strip().split('\n')
+        for line in lines:
+            if 'server is not running' in line:
+                status = ServerStatus.STOPPED
+                break
+        return ServerResult(message=result.strip(), server_status=status)
 
     @staticmethod
     def _map_stderr(result: str) -> ServerResult:
