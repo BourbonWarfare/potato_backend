@@ -176,7 +176,7 @@ class ArmaApi:
         )
         return JsonResponse(dataclasses.asdict(status))
 
-    async def _manage_server(self, command: Callable[..., Awaitable[ServerResult]], server: Server) -> ServerResult:
+    async def _manage_server(self, command: Callable[..., Awaitable[tuple[ServerResult, None]]], server: Server) -> ServerResult:
         """
         ### Execute server management operations
 
@@ -215,7 +215,7 @@ class ArmaApi:
     mods={mods}
     servermods={server_mods}"""
         )
-        return await command(
+        response = await command(
             name=server.server_name(),
             path=str(server.arma_base_path()),
             port=server.server_port(),
@@ -224,6 +224,8 @@ class ArmaApi:
             mods=mods,
             servermods=server_mods,
         )
+        logger.info(f'Command result: {response[0]}, errors: {response[1]}')
+        return response[0]
 
     @define_async_api
     async def start_server(self, server_name: str) -> JsonResponse:
