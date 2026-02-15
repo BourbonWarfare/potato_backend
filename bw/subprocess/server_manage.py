@@ -48,6 +48,7 @@ class ServerManage(Command):
     RUNNER_ARGUMENTS = ['-ExecutionPolicy', 'unrestricted', '-nologo']
     COMMAND = GLOBAL_CONFIGURATION.require('server_manage_ps1_path').get()
     COMMAND_BASE_ARGUMENTS = ['--%']
+    KEYWORD_PREFIX = '-'
     KEYWORD_ARGUMENTS = {
         'name': str,
         'command': str,
