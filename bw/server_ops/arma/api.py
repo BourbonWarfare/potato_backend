@@ -473,13 +473,13 @@ class ArmaApi:
         # Error: WebResponse(status=404, reason='ServerConfigNotFound')
         ```
         """
+        logger.info(f'Deploying keys to server {server_name}')
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         server = SERVER_MAP[server_name]
         key_path = server.key_install_path()
 
-        if not os.path.exists(key_path):
-            os.makedirs(key_path)
+        key_path.mkdir(exist_ok=True)
 
         keys = []
         for mod in server.modlist().mods:
@@ -586,6 +586,7 @@ class ArmaApi:
         # Error: JsonResponse({'mods_to_update': []})
         ```
         """
+        logger.info(f'Getting {len(mods)} out of date mod(s) on the Workshop')
         mods_to_update = []
         steam_details = await fetch_mod_details_from_workshop([mod for mod in mods if not mod.manual_install])
         steam_mods = list(steam_details.values())
@@ -629,6 +630,7 @@ class ArmaApi:
         # Error: WebResponse(status=500, reason='Server operation failed')
         ```
         """
+        logger.info(f'Updating {len(mod_list)} mod(s)')
         mod_workshop_id_map: dict[WorkshopId, Mod] = {
             mod.workshop_id: mod for mod in mod_list if not mod.manual_install and mod.workshop_id is not None
         }
@@ -641,6 +643,7 @@ class ArmaApi:
         ]
 
         mods_to_update = [mod_workshop_id_map[workshop_detail.workshop_id] for workshop_detail in out_of_date_steam_mods]
+        logger.info(f'Found {len(mods_to_update)} mod(s) out of date with the Steam Workshop')
 
         affected_servers = [s for s in SERVER_MAP.values() if s.modlist().has_mods_from(mods_to_update)]
         try:
@@ -731,7 +734,6 @@ class ArmaApi:
         # Error: WebResponse(status=404, reason='ServerConfigNotFound')
         ```
         """
-
         logger.info(f'Updating Arma mods for: {server_name}')
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
