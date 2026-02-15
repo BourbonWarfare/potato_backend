@@ -40,7 +40,7 @@ class ServerResult:
 
 
 def sanitize_at_symbol(arg: str) -> str:
-    return arg.replace('@', r'\@').replace(';', '`;')
+    return arg.replace('@', '`@').replace(';', '`;')
 
 
 class ServerManage(Command):

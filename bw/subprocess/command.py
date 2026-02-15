@@ -263,7 +263,7 @@ class Chain(Runner):
 
 def define_process(process: Command, *, command: list | None = None, return_instance: bool = True):
     if command is None:
-        command = [process.locate()] + process.COMMAND_BASE_ARGUMENTS
+        command = [process.locate(), *process.COMMAND_BASE_ARGUMENTS]
     else:
         if not process.DONT_USE_COMMAND_AS_ARGUMENT:
             command = command + [process.COMMAND_PREFIX + process.COMMAND]
