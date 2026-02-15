@@ -6,7 +6,7 @@ from pathlib import Path
 from collections.abc import Collection
 from collections.abc import Callable, Awaitable
 from collections.abc import Iterable
-from bw.server_ops.arma.server import Server, SERVER_MAP
+from bw.server_ops.arma.server import Server, SERVER_MAP, load_server_config_directory
 from bw.server_ops.arma.server_status import ServerStatus, ServerState
 from bw.server_ops.arma.mod import (
     Kind,
@@ -75,6 +75,32 @@ class ArmaApi:
         logger.info('Retrieving all configured servers')
         server_names = list(SERVER_MAP.keys())
         return JsonResponse({'servers': server_names})
+
+    @define_api
+    def reload_server_configs(self, config_path: Path) -> WebResponse:
+        """
+        ### Reload server configs
+
+        Iterates on configured server configuration directory and loads all configured
+        servers.
+
+        **Async:** No
+
+        **Args:**
+        - `config_path` (`Path`): The path to the server configuration directory.
+
+        **Returns:**
+        - `WebResponse`: An OK response indicating successful reload.
+
+        **Example:**
+        ```python
+        response = arma_api.reload_server_configs(Path('/config/servers'))
+        # Ok()
+        ```
+        """
+        logger.info('Retrieving all configured servers')
+        load_server_config_directory(config_path)
+        return Ok()
 
     @define_async_api
     async def server_ping(self, address: str, steam_port: int) -> WebResponse:
