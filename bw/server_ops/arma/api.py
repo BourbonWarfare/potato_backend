@@ -224,6 +224,7 @@ class ArmaApi:
             mods=mods,
             servermods=server_mods,
         )
+        logger.debug(f'response: {response}')
         logger.info(f'Command result: {response[0]}, errors: {response[1]}')
         return response[0]
 
