@@ -668,6 +668,7 @@ class ArmaApi:
         # update mods via SteamCMD
         logger.info(f'Updating Arma mods for {", ".join([server.server_name() for server in affected_servers])} via SteamCMD')
         await Chain(
+            steam.locate(),
             steam.login(
                 GLOBAL_CONFIGURATION.require('steam_username').get(),
                 GLOBAL_CONFIGURATION.require('steam_password').get(),

@@ -9,6 +9,7 @@ from bw.auth.roles import Roles
 from bw.server_ops.arma.api import ArmaApi
 from bw.models.auth import User
 from bw.environment import ENVIRONMENT
+from bw.state import State
 
 
 logger = logging.getLogger('bw.server_ops.arma')
@@ -283,7 +284,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to update the mods of {server}')
-        return await ArmaApi().update_server_mods(server)
+        return await ArmaApi().update_server_mods(State.state, server)
 
     @api.get('/<string:server>/healthcheck')
     @url_endpoint
