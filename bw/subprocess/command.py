@@ -39,6 +39,8 @@ class Command:
     DEFAULT_KEYWORD_ARGUMENTS: dict[str, Any] = {}
     FLATTEN_KEYWORD_ARGUMENTS: bool = False
 
+    ALWAYS_REPORT_BOTH_STDOUT_STDERR = False
+
     @classmethod
     def locate(cls) -> str:
         if cls.GUARANTEE_CAN_RUN or cls.RUNNER != '':
@@ -125,6 +127,9 @@ class Command:
         except NotImplementedError:
             stderr_result = None
 
+        if cls.ALWAYS_REPORT_BOTH_STDOUT_STDERR:
+            return stdout_result, stderr_result
+
         if stderr_result is not None and stdout_result is not None:
             return stdout_result, stderr_result
         if stderr_result is None:
@@ -177,14 +182,22 @@ class Command:
     def call(cls, *args, **kwargs) -> Any:
         runner = Runner(cls._get_command(*args, **kwargs))
         logger.info(f'Calling `{" ".join(runner.command)}` (synchronous) with args={args}, kwargs={kwargs}')
-        stdout, stderr = runner.call()
+        try:
+            stdout, stderr = runner.call()
+        except SubprocessFailed as e:
+            processed_stdout, processed_stderr = cls._interpret_results(e.stdout, e.stderr)
+            raise SubprocessFailed(e.subprocess, e.reason, processed_stdout, processed_stderr) from e
         return cls._interpret_results(stdout, stderr)
 
     @classmethod
     async def acall(cls, *args, **kwargs) -> Any:
         runner = Runner(cls._get_command(*args, **kwargs))
         logger.info(f'Calling `{" ".join(runner.command)}` (asynchronous) with args={args}, kwargs={kwargs}')
-        stdout, stderr = await runner.acall()
+        try:
+            stdout, stderr = await runner.acall()
+        except SubprocessFailed as e:
+            processed_stdout, processed_stderr = cls._interpret_results(e.stdout, e.stderr)
+            raise SubprocessFailed(e.subprocess, e.reason, processed_stdout, processed_stderr) from e
         return cls._interpret_results(stdout, stderr)
 
     def __call__(self, *args, **kwargs) -> Any:
@@ -221,7 +234,7 @@ class Runner:
 
     def call(self) -> Any:
         logger.info(f'Calling `{" ".join(self.command)}` (synchronous)')
-        result = subprocess.run(args=self.command, capture_output=True)
+        result = subprocess.run(args=self.command, capture_output=True, encoding='utf-8')
         try:
             result.check_returncode()
         except subprocess.CalledProcessError as e:
@@ -229,18 +242,18 @@ class Runner:
                 ' '.join(self.command),
                 f'\
 {e.output.decode().strip().replace("\n", " ").replace("\r", "")}:\
-\n\tstdout={e.stdout.decode().strip().replace("\n", " ").replace("\r", "")}\
-\n\tstderr={e.stderr.decode().strip().replace("\n", " ").replace("\r", "")}\
+\n\tstdout={e.stdout.strip().replace("\n", " ").replace("\r", "")}\
+\n\tstderr={e.stderr.strip().replace("\n", " ").replace("\r", "")}\
 ',
+                e.stdout,
+                e.stderr,
             ) from e
-        return result.stdout.decode(), result.stderr.decode()
+        return result.stdout, result.stderr
 
     async def acall(self) -> Any:
         logger.info(f'Calling `{" ".join(self.command)}` (asynchronous)')
         process = await asyncio.create_subprocess_exec(
-            *self.command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            *self.command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, encoding='utf-8'
         )
 
         stdout, stderr = await process.communicate()
@@ -248,11 +261,13 @@ class Runner:
             raise SubprocessFailed(
                 ' '.join(self.command),
                 f'\
-\n\tstdout={stdout.decode().strip().replace("\n", " ").replace("\r", "")}\
-\n\tstderr={stderr.decode().strip().replace("\n", " ").replace("\r", "")}\
+\n\tstdout={stdout.strip().replace("\n", " ").replace("\r", "")}\
+\n\tstderr={stderr.strip().replace("\n", " ").replace("\r", "")}\
 ',
+                stdout,
+                stderr,
             )
-        return stdout.decode(), stderr.decode()
+        return stdout, stderr
 
 
 class Chain(Runner):

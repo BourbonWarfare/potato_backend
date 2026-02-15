@@ -33,6 +33,8 @@ from bw.error import (
     ModInvalidKind,
     ModAlreadyDefined,
     ModNotDefined,
+    SubprocessFailed,
+    ArmaServerUnresponsive,
 )
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.response import WebResponse, Ok, JsonResponse, Created
@@ -171,7 +173,12 @@ class ArmaApi:
         ```
         """
         logger.info(f'Checking Arma server status at {address}:{steam_port}')
-        query = await a3sb.info.acall(address, steam_port, json=True, deadline_timeout=1)
+        try:
+            query, _ = await a3sb.info.acall(address, steam_port, json=True, deadline_timeout=1)
+        except SubprocessFailed as e:
+            return JsonResponse({'result': 'failure', 'reason': e.reason})
+        except ArmaServerUnresponsive as e:
+            return JsonResponse({'result': 'unresponsive', 'reason': str(e)})
         status = ServerStatus(
             name=query['name'],
             mission=query['game'],
@@ -180,7 +187,7 @@ class ArmaApi:
             players=query['players'],
             max_players=query['max_players'],
         )
-        return JsonResponse(dataclasses.asdict(status))
+        return JsonResponse({'result': 'success'} | dataclasses.asdict(status))
 
     async def _manage_server(self, command: Callable[..., Awaitable[tuple[ServerResult, None]]], server: Server) -> ServerResult:
         """

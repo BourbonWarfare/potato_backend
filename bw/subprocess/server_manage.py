@@ -58,6 +58,7 @@ class ServerManage(Command):
         'servermods': str,
     }
     ARGUMENT_MAPPING = sanitize_for_powershell
+    ALWAYS_REPORT_BOTH_STDOUT_STDERR = True
 
 
 class Start(ServerManage):

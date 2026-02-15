@@ -7,6 +7,9 @@ class ArmaServerError(BwServerError):
 
 
 class ArmaServerUnresponsive(ArmaServerError):
+    def status(self) -> int:
+        return 504
+
     def __init__(self):
         super().__init__('The Arma server is unresponsive.')
 
