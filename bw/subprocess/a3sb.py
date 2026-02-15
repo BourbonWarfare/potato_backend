@@ -9,6 +9,7 @@ class A3sb(Command):
     KEYWORD_ARGUMENTS = {
         'deadline-timeout': int,
     }
+    ALWAYS_REPORT_BOTH_STDOUT_STDERR = True
 
 
 class Version(A3sb):

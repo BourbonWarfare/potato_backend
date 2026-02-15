@@ -136,7 +136,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Pinging Arma server at {address}:{steam_port}')
-        ping = await a3sb.ping.acall(address, steam_port, ping_count=1, ping_period=0, deadline_timeout=1)
+        ping, _ = await a3sb.ping.acall(address, steam_port, ping_count=1, ping_period=0, deadline_timeout=1)
         return Ok(str(ping))
 
     @define_async_api
