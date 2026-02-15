@@ -225,7 +225,7 @@ class ArmaApi:
             servermods=server_mods,
         )
         logger.info(f'Command result: {response}')
-        return response[0]
+        return response
 
     @define_async_api
     async def start_server(self, server_name: str) -> JsonResponse:
