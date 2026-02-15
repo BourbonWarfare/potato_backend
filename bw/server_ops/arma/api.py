@@ -635,9 +635,9 @@ class ArmaApi:
 
         out_of_date_steam_mods = [
             SteamWorkshopDetails(**detail)
-            for detail in (await self.get_out_of_date_workshop_mods(state, mod_list).raise_if_unsuccessful()).contained_json.get(
-                'mods_to_update', []
-            )
+            for detail in (await self.get_out_of_date_workshop_mods(state, mod_list))
+            .raise_if_unsuccessful()
+            .contained_json.get('mods_to_update', [])
         ]
 
         mods_to_update = [mod_workshop_id_map[workshop_detail.workshop_id] for workshop_detail in out_of_date_steam_mods]
