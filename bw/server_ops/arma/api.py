@@ -224,8 +224,7 @@ class ArmaApi:
             mods=mods,
             servermods=server_mods,
         )
-        logger.debug(f'response: {response}')
-        logger.info(f'Command result: {response[0]}, errors: {response[1]}')
+        logger.info(f'Command result: {response}')
         return response[0]
 
     @define_async_api
