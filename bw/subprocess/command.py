@@ -35,6 +35,7 @@ class Command:
     ARGUMENT_MAPPING: callable = null_map
 
     DEFAULT_KEYWORD_ARGUMENTS: dict[str, Any] = {}
+    FLATTEN_KEYWORD_ARGUMENTS: bool = False
 
     @classmethod
     def locate(cls) -> str:
@@ -144,7 +145,8 @@ class Command:
             if k in cls.KEYWORD_PREFIXES:
                 commands.append(f'{cls.KEYWORD_PREFIXES[k]}{k}')
             else:
-                commands.append(f'{cls.KEYWORD_PREFIX}{k}' if len(k) > 1 else f'-{k}')
+                if not cls.FLATTEN_KEYWORD_ARGUMENTS:
+                    commands.append(f'{cls.KEYWORD_PREFIX}{k}' if len(k) > 1 else f'-{k}')
                 if cls.KEYWORD_ARGUMENTS.get(k, None) is not None:
                     commands.append(cls.ARGUMENT_MAPPING(v))
 

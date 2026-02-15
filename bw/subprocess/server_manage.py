@@ -46,7 +46,6 @@ def sanitize_at_symbol(arg: str) -> str:
 class ServerManage(Command):
     RUNNER: str = 'powershell'
     COMMAND = GLOBAL_CONFIGURATION.require('server_manage_ps1_path').get()
-    KEYWORD_PREFIX = '-'  # PowerShell uses single dash for parameters
     KEYWORD_ARGUMENTS = {
         'name': str,
         'command': str,
@@ -57,6 +56,7 @@ class ServerManage(Command):
         'mods': str,
         'servermods': str,
     }
+    FLATTEN_KEYWORD_ARGUMENTS = True
     ARGUMENT_MAPPING = sanitize_at_symbol
 
 
