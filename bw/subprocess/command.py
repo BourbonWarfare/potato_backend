@@ -156,7 +156,7 @@ class Command:
 
         command_prefix = [cls.COMMAND_PREFIX + cls.COMMAND]
         if entire_chain:
-            command_prefix = cls.RUNNER.split() + cls.COMMAND_BASE_ARGUMENTS + cls._COMMAND  # ty: ignore[unresolved-attribute]
+            command_prefix = cls.RUNNER.split() + cls.RUNNER_ARGUMENTS + cls._COMMAND  # ty: ignore[unresolved-attribute]
 
         mapped_args = [cls.ARGUMENT_MAPPING(arg) for arg in args]
         if cls.POSITIONAL_ARGUMENTS_FIRST:
