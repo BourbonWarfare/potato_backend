@@ -62,6 +62,7 @@ class ServerManage(Command):
 
 class Start(ServerManage):
     COMMAND = 'start'
+    DONT_USE_COMMAND_AS_ARGUMENT = True
     DEFAULT_KEYWORD_ARGUMENTS = {'command': 'start'}
 
     @staticmethod
@@ -87,6 +88,7 @@ class Start(ServerManage):
 
 class Stop(ServerManage):
     COMMAND = 'stop'
+    DONT_USE_COMMAND_AS_ARGUMENT = True
     DEFAULT_KEYWORD_ARGUMENTS = {'command': 'stop'}
 
     @staticmethod
@@ -110,6 +112,7 @@ class Stop(ServerManage):
 
 class Restart(ServerManage):
     COMMAND = 'restart'
+    DONT_USE_COMMAND_AS_ARGUMENT = True
     DEFAULT_KEYWORD_ARGUMENTS = {'command': 'restart'}
 
     @staticmethod
@@ -139,6 +142,7 @@ class Restart(ServerManage):
 
 class Status(ServerManage):
     COMMAND = 'status'
+    DONT_USE_COMMAND_AS_ARGUMENT = True
     DEFAULT_KEYWORD_ARGUMENTS = {'command': 'status'}
 
     @staticmethod

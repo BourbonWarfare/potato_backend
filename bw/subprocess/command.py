@@ -23,6 +23,7 @@ class Command:
     RUNNER: str = ''
     COMMAND_PATHS: list[Path] = []
     COMMAND: str = ''
+    DONT_USE_COMMAND_AS_ARGUMENT: bool = False
     GUARANTEE_CAN_RUN: bool = False
     POSITIONAL_ARGUMENTS: tuple[type, ...] = ()
     KEYWORD_ARGUMENTS: dict[str, type] = {}
@@ -258,7 +259,8 @@ def define_process(process, *, command: list | None = None, return_instance: boo
     if command is None:
         command = [process.locate()]
     else:
-        command = command + [process.COMMAND_PREFIX + process.COMMAND]
+        if not process.DONT_USE_COMMAND_AS_ARGUMENT:
+            command = command + [process.COMMAND_PREFIX + process.COMMAND]
     process._COMMAND = copy.deepcopy(command)
 
     for subprocess in process.__subclasses__():  # noqa: F402
