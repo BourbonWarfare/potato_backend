@@ -418,8 +418,7 @@ class ArmaApi:
         server = SERVER_MAP[server_name]
         mod_path = server.mod_install_path()
 
-        if not os.path.exists(mod_path):
-            os.makedirs(mod_path)
+        mod_path.mkdir(exist_ok=True)
 
         logger.info(f'Removing existing mod links in {mod_path}')
         for existing_file in mod_path.iterdir():

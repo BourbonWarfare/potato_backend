@@ -34,7 +34,7 @@ class Server:
         return self.arma_base_path() / self.server_name()
 
     def mod_install_path(self) -> Path:
-        return self._server.require('mod_install_path').get()
+        return Path(self._server.require('mod_install_path').get())
 
     def key_install_path(self) -> Path:
         return self.server_path() / 'keys'
