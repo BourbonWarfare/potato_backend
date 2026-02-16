@@ -1,16 +1,16 @@
-from sqlalchemy import BigInteger
+from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 from typing import Self
 
 from bw.models import Base
-from bw.server_ops.arma.mod import SteamWorkshopDetails
+from bw.server_ops.arma.mod import SteamWorkshopDetails, WorkshopId
 
 
 class Mod(Base):
     __tablename__ = 'mods'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    workshop_id: Mapped[int] = mapped_column(BigInteger(), nullable=False, index=True, unique=True)
+    workshop_id: Mapped[WorkshopId] = mapped_column(String(), nullable=False, index=True, unique=True)
     last_update_date: Mapped[int] = mapped_column(BigInteger(), nullable=False)
 
     @classmethod
