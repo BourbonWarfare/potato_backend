@@ -1,4 +1,5 @@
 from bw.error.base import BwServerError, ClientError
+from bw.server_ops.arma.types import WorkshopId
 
 
 class ArmaModError(BwServerError):
@@ -35,7 +36,7 @@ class ModInvalidKind(ArmaModError):
 
 
 class DuplicateModWorkshopID(ArmaModError):
-    def __init__(self, workshop_id: str, this_mod_name: str, original_mod_name: str, status: int = 500):
+    def __init__(self, workshop_id: WorkshopId, this_mod_name: str, original_mod_name: str, status: int = 500):
         super().__init__(
             f'Mod "{this_mod_name}" has a workshop ID already defined by "{original_mod_name}" ({workshop_id}).', status
         )
@@ -55,12 +56,12 @@ class ModAlreadyExists(ModStoreError):
     def status(self):
         return 409
 
-    def __init__(self, workshop_id: int):
+    def __init__(self, workshop_id: WorkshopId):
         super().__init__(f'Mod with workshop ID {workshop_id} already exists in the database.')
 
 
 class ModCreationFailed(ModStoreError):
-    def __init__(self, workshop_id: int):
+    def __init__(self, workshop_id: WorkshopId):
         super().__init__(f'Failed to create mod record for workshop ID {workshop_id}.')
 
 
@@ -68,5 +69,5 @@ class ModNotFound(ModStoreError):
     def status(self):
         return 404
 
-    def __init__(self, workshop_id: int):
+    def __init__(self, workshop_id: WorkshopId):
         super().__init__(f'Mod with workshop ID {workshop_id} not found in the database.')

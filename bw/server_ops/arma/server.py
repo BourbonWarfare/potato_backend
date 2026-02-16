@@ -22,28 +22,28 @@ class Server:
         return self._name
 
     def server_password(self) -> str:
-        return self._server.require('password').get()
+        return self._server.require('password').get()  # ty: ignore[invalid-return-type]
 
     def server_port(self) -> int:
-        return self._server.require('port').get()
+        return self._server.require('port').get()  # ty: ignore[invalid-return-type]
 
     def arma_base_path(self) -> Path:
-        return Path(self._server.require('path').get())
+        return Path(self._server.require('path').get())  # ty: ignore[invalid-argument-type]
 
     def server_path(self) -> Path:
         return self.arma_base_path() / self.server_name()
 
     def mod_install_path(self) -> Path:
-        return Path(self._server.require('mod_install_path').get())
+        return Path(self._server.require('mod_install_path').get())  # ty: ignore[invalid-argument-type]
 
     def key_install_path(self) -> Path:
         return self.server_path() / 'keys'
 
     def headless_client_count(self) -> int:
-        return int(self._server.require('hc_count').get())
+        return int(self._server.require('hc_count').get())  # ty: ignore[invalid-argument-type]
 
     def modlist(self) -> Modlist:
-        list_name = self._server.require('modlist').get()
+        list_name = str(self._server.require('modlist').get())
         if list_name not in MODLISTS:
             raise ModlistNotFound(list_name)
         return MODLISTS[list_name]

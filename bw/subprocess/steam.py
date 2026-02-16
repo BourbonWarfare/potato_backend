@@ -47,4 +47,4 @@ class Quit(Steam):
     COMMAND = 'quit'
 
 
-steam = define_process(Steam)
+steam = define_process(Steam)  # ty: ignore[invalid-argument-type]

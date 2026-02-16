@@ -56,4 +56,4 @@ class Derapify(Config):
     KEYWORD_ARGUMENTS = {'format': str}
 
 
-hemtt = define_process(Hemtt)
+hemtt = define_process(Hemtt)  # ty: ignore[invalid-argument-type]

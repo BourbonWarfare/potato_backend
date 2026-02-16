@@ -40,4 +40,4 @@ jobs:
       - name: install project
         run: uv sync --locked --extra development --dev
       - name: run type checker
-        run: uv run ty check
+        run: uv tool run ty check

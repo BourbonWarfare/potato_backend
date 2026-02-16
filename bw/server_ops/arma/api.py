@@ -47,11 +47,10 @@ logger = logging.getLogger('bw.server_ops.arma')
 
 
 class ArmaApi:
-    @define_api
     def get_server_from_string(self, server: str) -> Server:
         if server not in SERVER_MAP:
             raise ServerConfigNotFound(server)
-        return SERVER_MAP.get(server)
+        return SERVER_MAP[server]
 
     @define_api
     def get_all_servers(self) -> JsonResponse:
@@ -244,7 +243,7 @@ class ArmaApi:
         except SubprocessFailed as e:
             response = e.stdout
         logger.info(f'Command result: {response}')
-        return response
+        return response  # ty: ignore [invalid-return-type]
 
     @define_async_api
     async def start_server(self, server_name: str) -> JsonResponse:
@@ -630,7 +629,7 @@ class ArmaApi:
         # Error: WebResponse(status=500, reason='Server operation failed')
         ```
         """
-        logger.info(f'Updating {len(mod_list)} mod(s)')
+        logger.info(f'Updating {len(mod_list)} mod(s)')  # ty: ignore [invalid-argument-type]
         mod_workshop_id_map: dict[WorkshopId, Mod] = {
             mod.workshop_id: mod for mod in mod_list if not mod.manual_install and mod.workshop_id is not None
         }
@@ -687,7 +686,7 @@ class ArmaApi:
                     ],
                 )
                 for install_path, mods in mod_install_directories.items()
-            ],  # ty: ignore[invalidFalseargument-type]
+            ],  # ty: ignore[invalid-argument-type]
             steam.quit(),
         ).acall()
 
@@ -1035,7 +1034,7 @@ class ArmaApi:
     def add_mod(
         self,
         mod_name: str,
-        workshop_id: int | None,
+        workshop_id: WorkshopId | None,
         kind: str | None,
         manual_install: bool | None,
         directory: str | None,
@@ -1105,7 +1104,7 @@ class ArmaApi:
         if workshop_id is not None:
             for existing_name, existing_mod in MODS.items():
                 if existing_mod.workshop_id == workshop_id:
-                    raise DuplicateModWorkshopID(str(workshop_id), mod_name, existing_name, status=400)
+                    raise DuplicateModWorkshopID(workshop_id, mod_name, existing_name, status=400)
 
         # Create the mod object
         mod = Mod(

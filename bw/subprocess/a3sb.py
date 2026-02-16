@@ -67,4 +67,4 @@ class Ping(A3sb):
         raise ArmaServerUnresponsive()
 
 
-a3sb = define_process(A3sb)
+a3sb = define_process(A3sb)  # ty: ignore[invalid-argument-type]

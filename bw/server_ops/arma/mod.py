@@ -3,7 +3,7 @@ from pathlib import Path
 from enum import StrEnum
 from dataclasses import dataclass
 import datetime
-from typing import Any, Self, NewType
+from typing import Any, Self
 from collections.abc import Iterable
 from collections.abc import Collection
 import asyncio
@@ -22,6 +22,7 @@ from bw.error.arma_mod import (
     ModAlreadyExists,
 )
 from bw.state import State
+from bw.server_ops.arma.types import WorkshopId
 
 logger = logging.getLogger('bw.server_ops.arma')
 
@@ -32,8 +33,6 @@ MODS: dict[str, 'Mod'] = {}
 # A mapping of all modlists by their name.
 # An entry is created when a modlist is initialised
 MODLISTS: dict[str, 'Modlist'] = {}
-
-WorkshopId = NewType('WorkshopId', str)
 
 
 @dataclass

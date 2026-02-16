@@ -4,7 +4,7 @@ import subprocess
 import asyncio
 import asyncio.subprocess
 from typing import Any
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
 from pathlib import Path
 
 from bw.environment import ENVIRONMENT
@@ -24,6 +24,7 @@ class Command:
     RUNNER_ARGUMENTS: list[str] = []
     COMMAND_PATHS: list[Path] = []
     COMMAND: str = ''
+    _COMMAND: list[str] = []
     COMMAND_BASE_ARGUMENTS: list[str] = []
     DONT_USE_COMMAND_AS_ARGUMENT: bool = False
     GUARANTEE_CAN_RUN: bool = False
@@ -34,7 +35,7 @@ class Command:
     KEYWORD_PREFIX: str = '--'
     KEYWORD_PREFIXES: dict[str, str] = {}
     POSITIONAL_ARGUMENTS_FIRST: bool = False
-    ARGUMENT_MAPPING: callable = null_map
+    ARGUMENT_MAPPING: Callable[..., str] = null_map
 
     DEFAULT_KEYWORD_ARGUMENTS: dict[str, Any] = {}
     FLATTEN_KEYWORD_ARGUMENTS: bool = False
@@ -71,7 +72,7 @@ class Command:
 
     @classmethod
     def _validate_arguments(cls, *args, **kwargs) -> list[str]:
-        full_command = f'"{" ".join(cls._COMMAND)}"'  # ty: ignore[unresolved-attribute]
+        full_command = f'"{" ".join(cls._COMMAND)}"'
         required_arguments = len([t for t in cls.POSITIONAL_ARGUMENTS if not isinstance(None, t)])
         if len(args) < required_arguments:
             raise TypeError(f'{full_command} takes at least {required_arguments} positional arguments ({len(args)} given)')
@@ -164,7 +165,7 @@ class Command:
 
         command_prefix = [cls.COMMAND_PREFIX + cls.COMMAND]
         if entire_chain:
-            command_prefix = cls.RUNNER.split() + cls.RUNNER_ARGUMENTS + cls._COMMAND  # ty: ignore[unresolved-attribute]
+            command_prefix = cls.RUNNER.split() + cls.RUNNER_ARGUMENTS + cls._COMMAND
 
         mapped_args = [cls.ARGUMENT_MAPPING(arg) for arg in args]
         if cls.POSITIONAL_ARGUMENTS_FIRST:
@@ -284,7 +285,7 @@ def define_process(process: Command, *, command: list | None = None, return_inst
             command = command + [process.COMMAND_PREFIX + process.COMMAND]
     process._COMMAND = copy.deepcopy(command)
 
-    for subprocess in process.__subclasses__():  # noqa: F402
+    for subprocess in process.__subclasses__():  # ty: ignore [unresolved-attribute] # noqa: F402
         subprocess.POSITIONAL_ARGUMENTS = tuple(process.POSITIONAL_ARGUMENTS) + tuple(subprocess.POSITIONAL_ARGUMENTS)
         subprocess.KEYWORD_ARGUMENTS.update(process.KEYWORD_ARGUMENTS)
 

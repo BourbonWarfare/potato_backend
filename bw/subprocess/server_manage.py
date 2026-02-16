@@ -170,4 +170,4 @@ class Status(ServerManage):
         return ServerResult(message=result.strip(), server_status=ServerStatus.STOPPED)
 
 
-server_manage = define_process(ServerManage)
+server_manage = define_process(ServerManage)  # ty: ignore[invalid-argument-type]

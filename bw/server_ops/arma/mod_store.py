@@ -123,7 +123,7 @@ class ModStore:
             result = session.execute(query).first()
 
             if result is None:
-                raise ModNotFound(int(mod_data.workshop_id))
+                raise ModNotFound(mod_data.workshop_id)
 
             db_mod = result[0]
             db_mod.last_update_date = int(mod_data.last_update.timestamp())
