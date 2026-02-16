@@ -33,7 +33,7 @@ MODS: dict[str, 'Mod'] = {}
 # An entry is created when a modlist is initialised
 MODLISTS: dict[str, 'Modlist'] = {}
 
-WorkshopId = NewType('WorkshopId', int)
+WorkshopId = NewType('WorkshopId', str)
 
 
 @dataclass
