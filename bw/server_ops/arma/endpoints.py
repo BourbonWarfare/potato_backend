@@ -7,6 +7,7 @@ from bw.response import JsonResponse, WebResponse
 from bw.auth.decorators import require_user_role, require_session
 from bw.auth.roles import Roles
 from bw.server_ops.arma.api import ArmaApi
+from bw.server_ops.arma.types import WorkshopId
 from bw.models.auth import User
 from bw.environment import ENVIRONMENT
 from bw.state import State
@@ -670,7 +671,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
     async def add_new_mod(
         session_user: User,
         mod_name: str,
-        workshop_id: int | None,
+        workshop_id: WorkshopId | None,
         kind: str | None,
         manual_install: bool | None,
         directory: str | None,
