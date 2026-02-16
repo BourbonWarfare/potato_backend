@@ -146,7 +146,7 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
                     continue
                 if workshop_id not in mod_workshop_ids:
                     logger.warning(f'Workshop ID {workshop_id} not found in loaded mods')
-                    logger.debug(f'{workshop_id}, {type(workshop_id)}, {mod_workshop_ids}, {mod_workshop_ids.get(workshop_id)}')
+                    logger.debug(f'{workshop_id}, {type(workshop_id)}, {[(type(wid), wid) for wid in mod_workshop_ids.keys()]}')
                     continue
                 details[workshop_id] = SteamWorkshopDetails.from_json(file)
 
