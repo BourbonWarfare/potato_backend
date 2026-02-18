@@ -593,7 +593,7 @@ class ArmaApi:
         mods_to_update: list[SteamWorkshopDetails] = [
             steam_details[mod.workshop_id] for mod in ModStore().get_out_of_date_mods(state, steam_mods)
         ]
-        return JsonResponse({'mods_to_update': [dataclasses.asdict(mod) for mod in mods_to_update]})
+        return JsonResponse({'mods_to_update': [mod.to_json() for mod in mods_to_update]})
 
     @define_async_api
     async def update_mods(self, state: State, mod_list: Iterable[Mod]) -> JsonResponse:
@@ -701,12 +701,12 @@ class ArmaApi:
 
         ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
-        json_safe_updated_mods = [dataclasses.asdict(mod) for mod in out_of_date_steam_mods]
-        for mod in json_safe_updated_mods.values():
-            mod['workshop_id'] = str(mod['workshop_id'])
         response = [(server.server_name(), await self.server_pid_status(server.server_name())) for server in affected_servers]
         return JsonResponse(
-            {'affected_servers': {n: dataclasses.asdict(r) for n, r in response}, 'updated_mods': json_safe_updated_mods}
+            {
+                'affected_servers': {n: dataclasses.asdict(r) for n, r in response},
+                'updated_mods': [mod.to_json() for mod in out_of_date_steam_mods],
+            }
         )
 
     @define_async_api
@@ -789,11 +789,7 @@ class ArmaApi:
         ```
         """
         logger.info('Retrieving all configured mods')
-        mods = [dataclasses.asdict(mod) for mod in MODS.values()]
-        for mod in mods:
-            for key, value in mod.items():
-                if isinstance(value, Path) or isinstance(value, Kind) or isinstance(value, WorkshopId):
-                    mod[key] = str(value)
+        mods = [mod.to_json() for mod in MODS.values()]
         return JsonResponse({'mods': mods})
 
     @define_api
@@ -837,11 +833,7 @@ class ArmaApi:
             raise ServerConfigNotFound(server_name)
 
         server = SERVER_MAP[server_name]
-        mods = [dataclasses.asdict(mod) for mod in server.modlist().mods]
-        for mod in mods:
-            for key, value in mod.items():
-                if isinstance(value, Path) or isinstance(value, Kind) or isinstance(value, WorkshopId):
-                    mod[key] = str(value)
+        mods = [mod.to_json() for mod in server.modlist().mods]
         return JsonResponse({'mods': mods})
 
     @define_api

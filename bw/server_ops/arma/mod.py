@@ -42,6 +42,14 @@ class SteamWorkshopDetails:
     file_size_bytes: int
     last_update: datetime.datetime
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            'workshop_id': str(self.workshop_id),
+            'title': self.title,
+            'file_size_bytes': self.file_size_bytes,
+            'last_update': self.last_update.isoformat(),
+        }
+
     @classmethod
     def from_json(cls, json: dict[str, Any]) -> Self:
         """
@@ -567,6 +575,15 @@ class Mod:
     workshop_id: WorkshopId | None = None
     manual_install: bool = False
     kind: Kind = Kind.MOD
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            'name': self.name,
+            'filename': self.filename,
+            'workshop_id': str(self.workshop_id),
+            'manual_install': self.manual_install,
+            'kind': self.kind,
+        }
 
     def as_launch_parameter(self) -> str:
         """
