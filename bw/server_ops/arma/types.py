@@ -18,3 +18,11 @@ class WorkshopId:
         if isinstance(other, WorkshopId):
             return other.id == self.id
         return str(other) == self.id
+
+    def __ne__(self, other: Any) -> bool:
+        if isinstance(other, WorkshopId):
+            return other.id != self.id
+        return str(other) != self.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
