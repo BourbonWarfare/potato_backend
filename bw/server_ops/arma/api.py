@@ -696,6 +696,8 @@ class ArmaApi:
             (self.deploy_keys(server.server_name())).raise_if_unsuccessful()
             (await self.start_server(server.server_name())).raise_if_unsuccessful()
 
+        ModStore().bulk_update_mods(state, mods_to_update)
+
         response = [(server.server_name(), await self.server_pid_status(server.server_name())) for server in affected_servers]
         return JsonResponse({n: dataclasses.asdict(r) for n, r in response})
 
