@@ -136,7 +136,7 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
 
             json = await response.json()
             for file in json['response']['publishedfiledetails']:
-                workshop_id = WorkshopId(str(file['publishedfileid']))
+                workshop_id = WorkshopId(file['publishedfileid'])
                 if 'result' not in file or file['result'] != 1:
                     error_reason = file.get('reason', 'unknown')
                     logger.warning(
