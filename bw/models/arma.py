@@ -10,8 +10,10 @@ class Mod(Base):
     __tablename__ = 'mods'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(), nullable=False, index=True)
     workshop_id: Mapped[WorkshopId] = mapped_column(String(), nullable=False, index=True, unique=True)
     last_update_date: Mapped[int] = mapped_column(BigInteger(), nullable=False)
+    server_update_date: Mapped[int] = mapped_column(BigInteger(), nullable=True, default=None)
 
     @classmethod
     def from_workshop_details(cls, workshop_details: 'SteamWorkshopDetails') -> Self:
