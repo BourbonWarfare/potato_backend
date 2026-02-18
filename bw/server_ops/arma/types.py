@@ -14,6 +14,9 @@ class WorkshopId:
     def __str__(self) -> str:
         return self.id
 
+    def __repr__(self) -> str:
+        return f'wid({self.id})'
+
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, WorkshopId):
             return other.id == self.id
