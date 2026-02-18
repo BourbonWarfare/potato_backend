@@ -152,7 +152,7 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
     return details
 
 
-def load_mods(mods_file: Path):
+def load_mod_configs(mods_file: Path):
     """
     ### Load mod definitions from a TOML configuration file
 
@@ -330,7 +330,7 @@ def load_mods(mods_file: Path):
     asyncio.run(update_mod_details())
 
 
-def save_mods(config_path: Path):
+def save_mod_configs(config_path: Path):
     """
     ### Save mod definitions to a TOML configuration file
 

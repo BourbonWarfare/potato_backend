@@ -2,6 +2,7 @@
 
 import pytest
 import datetime
+from unittest import mock
 from sqlalchemy import insert, select
 
 from bw.server_ops.arma.mod_store import ModStore
@@ -33,7 +34,7 @@ def test__create_mod__success(session, state, workshop_details_1):
     result = ModStore().create_mod(state, workshop_details_1)
 
     assert result.workshop_id == workshop_details_1.workshop_id
-    assert result.last_update_date == int(workshop_details_1.last_update.timestamp())
+    assert result.last_update_date is None
 
 
 def test__create_mod__duplicate_raises(session, state, workshop_details_1, db_mod_1):

@@ -31,11 +31,11 @@ class State:
         if isinstance(ENVIRONMENT, Test):
             return
         from bw.server_ops.arma.server import load_server_config_directory
-        from bw.server_ops.arma.mod import load_modlists, load_mods
+        from bw.server_ops.arma.mod import load_modlists, load_mod_configs
 
         logger.info('Loading ARMA server configurations')
         logger.info(f'Loading mods from {ENVIRONMENT.arma_mod_config_path()}')
-        load_mods(ENVIRONMENT.arma_mod_config_path())
+        load_mod_configs(ENVIRONMENT.arma_mod_config_path())
 
         logger.info(f'Loading modlists from {ENVIRONMENT.arma_modlist_config_path()}')
         load_modlists(ENVIRONMENT.arma_modlist_config_path())

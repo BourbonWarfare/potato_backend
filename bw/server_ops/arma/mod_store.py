@@ -47,6 +47,7 @@ class ModStore:
         """
         with state.Session.begin() as session:
             db_mod = DbMod.from_workshop_details(workshop_details)
+            db_mod.last_update_date = None
             try:
                 session.add(db_mod)
                 session.flush()
@@ -166,7 +167,7 @@ class ModStore:
                 query = (
                     select(DbMod)
                     .where(DbMod.workshop_id == mod.workshop_id)
-                    .where(DbMod.last_update_date < int(mod.last_update.timestamp()))
+                    .where(DbMod.last_update_date is None or DbMod.last_update_date < int(mod.last_update.timestamp()))
                 )
                 out_of_date_mods.extend(session.scalars(query).all())
             session.expunge_all()

@@ -18,7 +18,8 @@ from bw.server_ops.arma.mod import (
     WorkshopId,
     SteamWorkshopDetails,
     load_modlists,
-    load_mods,
+    save_mod_configs,
+    load_mod_configs,
     Modlist,
 )
 from bw.server_ops.arma.mod_store import ModStore
@@ -933,7 +934,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Reloading mod configuration from: {config_path}')
-        load_mods(config_path)
+        load_mod_configs(config_path)
         return Ok()
 
     @define_api
@@ -993,9 +994,8 @@ class ArmaApi:
         ```
         """
         logger.info(f'Flushing mod configuration to disk: {config_path}')
-        from bw.server_ops.arma.mod import save_mods
 
-        save_mods(config_path)
+        save_mod_configs(config_path)
         return Ok()
 
     @define_api

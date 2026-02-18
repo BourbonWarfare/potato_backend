@@ -12,9 +12,12 @@ class Mod(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(), nullable=False, index=True)
     workshop_id: Mapped[WorkshopId] = mapped_column(String(), nullable=False, index=True, unique=True)
-    last_update_date: Mapped[int] = mapped_column(BigInteger(), nullable=False)
-    server_update_date: Mapped[int] = mapped_column(BigInteger(), nullable=True, default=None)
+    last_update_date: Mapped[int | None] = mapped_column(BigInteger(), nullable=True, default=None)
 
     @classmethod
     def from_workshop_details(cls, workshop_details: 'SteamWorkshopDetails') -> Self:
-        return cls(workshop_id=workshop_details.workshop_id, last_update_date=int(workshop_details.last_update.timestamp()))
+        return cls(
+            name=workshop_details.title,
+            workshop_id=workshop_details.workshop_id,
+            last_update_date=int(workshop_details.last_update.timestamp()),
+        )
