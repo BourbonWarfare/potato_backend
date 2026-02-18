@@ -215,8 +215,8 @@ def load_mods(mods_file: Path):
     ```
     """
     mods_added: dict[str, Mod] = {}
-    mod_workshop_ids = {mod.workshop_id: mod.name for mod in MODS.values()}
-    mod_filenames = {mod.filename: mod.name for mod in MODS.values()}
+    mod_workshop_ids: dict[WorkshopId, str] = {mod.workshop_id: mod.name for mod in MODS.values() if mod.workshop_id is not None}
+    mod_filenames: dict[str, str] = {mod.filename: mod.name for mod in MODS.values()}
 
     with open(mods_file, 'rb') as f:
         config = tomllib.load(f)
@@ -259,7 +259,7 @@ def load_mods(mods_file: Path):
         if not isinstance(mod_data['workshop_id'], int):
             raise ModFieldInvalid(mod_name, 'workshop_id', 'must be an integer')
 
-        workshop_id_str = str(mod_data['workshop_id'])
+        workshop_id_str = WorkshopId(mod_data['workshop_id'])
         if workshop_id_str in mod_workshop_ids:
             raise DuplicateModWorkshopID(mod_data['workshop_id'], mod_name, mod_workshop_ids[workshop_id_str])
         mod_workshop_ids[workshop_id_str] = mod_name
