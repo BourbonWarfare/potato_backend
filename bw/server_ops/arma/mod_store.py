@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, or_
 from sqlalchemy.exc import IntegrityError
 
 from bw.server_ops.arma.mod import SteamWorkshopDetails, WorkshopId, Mod
@@ -167,7 +167,7 @@ class ModStore:
                 query = (
                     select(DbMod)
                     .where(DbMod.workshop_id == mod.workshop_id)
-                    .where(DbMod.last_update_date == None or DbMod.last_update_date < int(mod.last_update.timestamp()))  # noqa: E711
+                    .where(or_(DbMod.last_update_date.is_(None), DbMod.last_update_date < int(mod.last_update.timestamp())))
                 )
                 out_of_date_mods.extend(session.scalars(query).all())
             session.expunge_all()

@@ -41,6 +41,16 @@ def workshop_details_3():
 
 
 @pytest.fixture(scope='session')
+def workshop_details_4():
+    return SteamWorkshopDetails(
+        workshop_id=WorkshopId(122399),
+        title='TCVMs Theatre Threats',
+        file_size_bytes=1024,
+        last_update=datetime.datetime(1999, 12, 23, 3, 0, 0),
+    )
+
+
+@pytest.fixture(scope='session')
 def updated_workshop_details_1(workshop_details_1):
     return SteamWorkshopDetails(
         workshop_id=workshop_details_1.workshop_id,
@@ -56,6 +66,16 @@ def updated_workshop_details_2(workshop_details_2):
         workshop_id=workshop_details_2.workshop_id,
         title=workshop_details_2.title,
         file_size_bytes=workshop_details_2.file_size_bytes + 1244,
+        last_update=datetime.datetime(2024, 6, 1, 12, 0, 0),
+    )
+
+
+@pytest.fixture(scope='session')
+def updated_workshop_details_4(workshop_details_4):
+    return SteamWorkshopDetails(
+        workshop_id=workshop_details_4.workshop_id,
+        title=workshop_details_4.title,
+        file_size_bytes=workshop_details_4.file_size_bytes + 1244,
         last_update=datetime.datetime(2024, 6, 1, 12, 0, 0),
     )
 
@@ -113,6 +133,17 @@ def db_mod_2(state, session, workshop_details_2):
 def db_mod_3(state, session, workshop_details_3):
     with state.Session.begin() as session:
         db_mod = DbMod.from_workshop_details(workshop_details_3)
+        session.add(db_mod)
+        session.flush()
+        session.expunge(db_mod)
+    yield db_mod
+
+
+@pytest.fixture(scope='function')
+def db_mod_4(state, session, workshop_details_4):
+    with state.Session.begin() as session:
+        db_mod = DbMod.from_workshop_details(workshop_details_4)
+        db_mod.last_update_date = None
         session.add(db_mod)
         session.flush()
         session.expunge(db_mod)

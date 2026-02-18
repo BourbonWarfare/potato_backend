@@ -19,14 +19,17 @@ from integrations.server_ops.arma.fixtures import (
     workshop_details_1,
     workshop_details_2,
     workshop_details_3,
+    workshop_details_4,
     updated_workshop_details_1,
     updated_workshop_details_2,
+    updated_workshop_details_4,
     mod_1,
     mod_2,
     null_mod,
     db_mod_1,
     db_mod_2,
     db_mod_3,
+    db_mod_4,
 )
 
 
@@ -74,6 +77,13 @@ def test__get_out_of_date_mods__success(session, state, db_mod_1, db_mod_2, work
 
     assert len(result) == 1
     assert result[0].workshop_id == db_mod_1.workshop_id
+
+
+def test__get_out_of_date_mods__null_date_is_success(session, state, db_mod_4, updated_workshop_details_4):
+    result = ModStore().get_out_of_date_mods(state, [updated_workshop_details_4])
+
+    assert len(result) == 1
+    assert result[0].workshop_id == db_mod_4.workshop_id
 
 
 def test__get_out_of_date_mods__no_out_of_date_mods(session, state, db_mod_1, db_mod_2, workshop_details_2, workshop_details_1):
