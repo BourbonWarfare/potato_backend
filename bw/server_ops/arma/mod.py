@@ -259,10 +259,10 @@ def load_mods(mods_file: Path):
         if not isinstance(mod_data['workshop_id'], int):
             raise ModFieldInvalid(mod_name, 'workshop_id', 'must be an integer')
 
-        workshop_id_str = WorkshopId(mod_data['workshop_id'])
-        if workshop_id_str in mod_workshop_ids:
-            raise DuplicateModWorkshopID(mod_data['workshop_id'], mod_name, mod_workshop_ids[workshop_id_str])
-        mod_workshop_ids[workshop_id_str] = mod_name
+        workshop_id = WorkshopId(mod_data['workshop_id'])
+        if workshop_id in mod_workshop_ids:
+            raise DuplicateModWorkshopID(mod_data['workshop_id'], mod_name, mod_workshop_ids[workshop_id])
+        mod_workshop_ids[workshop_id] = mod_name
 
         filename = mod_data['filename']
         if filename in mod_filenames:
@@ -296,7 +296,7 @@ def load_mods(mods_file: Path):
 
         mod = Mod(
             filename=mod_data['filename'],
-            workshop_id=mod_data['workshop_id'],
+            workshop_id=WorkshopId(mod_data['workshop_id']),
             kind=kind,
             directory=directory,
             manual_install=mod_data.get('manual_install', False),
