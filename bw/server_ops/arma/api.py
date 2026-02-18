@@ -690,7 +690,7 @@ class ArmaApi:
                 GLOBAL_CONFIGURATION.require('steam_password').get(),
             ),
             # Some mods may have different install paths, so we need to handle them separately
-            *(steam.ForceInstallDirectory(command) for command in download_command),
+            *(steam.force_install_directory(command) for command in download_command),
             steam.quit(),
         ).acall()
 
