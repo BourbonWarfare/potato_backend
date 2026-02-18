@@ -680,7 +680,7 @@ class ArmaApi:
                 (
                     steam.force_install_dir(install_path),
                     *[
-                        steam.workshop_download_item(107410, int(mod.workshop_id), validate=True)
+                        steam.workshop_download_item('107410', str(mod.workshop_id), validate=True)
                         for mod in mods
                         if mod.workshop_id is not None
                     ],
@@ -767,7 +767,7 @@ class ArmaApi:
         #     'mods': [
         #         {
         #             'name': 'ACE3',
-        #             'workshop_id': 463939057,
+        #             'workshop_id': '463939057',
         #             'kind': 'mod',
         #             'manual_install': False,
         #             'directory': '@ace',
@@ -781,7 +781,7 @@ class ArmaApi:
         mods = [dataclasses.asdict(mod) for mod in MODS.values()]
         for mod in mods:
             for key, value in mod.items():
-                if isinstance(value, Path) or isinstance(value, Kind):
+                if isinstance(value, Path) or isinstance(value, Kind) or isinstance(value, WorkshopId):
                     mod[key] = str(value)
         return JsonResponse({'mods': mods})
 
@@ -811,7 +811,7 @@ class ArmaApi:
         #     'mods': [
         #         {
         #             'name': 'ACE3',
-        #             'workshop_id': 463939057,
+        #             'workshop_id': '463939057',
         #             'kind': 'mod',
         #             'manual_install': False
         #         },
@@ -829,7 +829,7 @@ class ArmaApi:
         mods = [dataclasses.asdict(mod) for mod in server.modlist().mods]
         for mod in mods:
             for key, value in mod.items():
-                if isinstance(value, Path) or isinstance(value, Kind):
+                if isinstance(value, Path) or isinstance(value, Kind) or isinstance(value, WorkshopId):
                     mod[key] = str(value)
         return JsonResponse({'mods': mods})
 
@@ -1053,7 +1053,7 @@ class ArmaApi:
 
         **Args:**
         - `mod_name` (`str`): The unique name for the mod.
-        - `workshop_id` (`int | None`): The Steam Workshop ID for the mod, required if not manual install.
+        - `workshop_id` (`WorkshopId` | None`): The Steam Workshop ID for the mod, required if not manual install.
         - `kind` (`str | None`): The mod kind ('mod' or 'server_mod'), defaults to 'mod'.
         - `manual_install` (`bool | None`): Whether the mod is manually installed, defaults to False.
         - `directory` (`str | None`): The directory name for the mod
@@ -1071,7 +1071,7 @@ class ArmaApi:
         ```python
         response = arma_api.add_mod(
             mod_name='NewMod',
-            workshop_id=123456789,
+            workshop_id=WorkshopId('123456789'),
             kind='mod',
             manual_install=False,
             directory=None
@@ -1109,7 +1109,7 @@ class ArmaApi:
         # Create the mod object
         mod = Mod(
             name=mod_name,
-            workshop_id=WorkshopId(workshop_id) if workshop_id is not None else None,
+            workshop_id=workshop_id if workshop_id is not None else None,
             kind=Kind(kind),
             manual_install=manual_install,
             directory=Path(directory),

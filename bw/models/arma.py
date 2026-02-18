@@ -15,4 +15,4 @@ class Mod(Base):
 
     @classmethod
     def from_workshop_details(cls, workshop_details: 'SteamWorkshopDetails') -> Self:
-        return cls(workshop_id=int(workshop_details.workshop_id), last_update_date=int(workshop_details.last_update.timestamp()))
+        return cls(workshop_id=workshop_details.workshop_id, last_update_date=int(workshop_details.last_update.timestamp()))

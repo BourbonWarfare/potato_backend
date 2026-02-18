@@ -27,10 +27,11 @@ development = [
     "pre-commit"
 ]
 tests = [
-    "pytest",
+    "pytest>=9.0",
     "pytest-mock",
     "pytest-cov",
-    "pytest-asyncio"
+    "pytest-asyncio",
+    "pytest-env>=1.2.0",
 ]
 prod = [
     "uvicorn"
@@ -47,6 +48,9 @@ testpaths = [
     "integrations"
 ]
 log_level = "DEBUG"
+
+[tool.pytest_env]
+ENVIRONMENT="test"
 
 [tool.alembic]
 
@@ -149,6 +153,3 @@ python = "./.venv"
 include = [
     "bw",
 ]
-
-[tool.uv.sources]
-potatolib = { git = "https://github.com/BourbonWarfare/potato_lib.git", branch = "release" }

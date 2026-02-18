@@ -87,15 +87,15 @@ class Configuration(dict):
 
     @classmethod
     @enforce_lowercase_keys
-    def load_env(cls, configuration_file: Path) -> Self:
-        if ConfigType.ENV not in configuration_file.suffixes:
+    def load_env(cls, configuration_file: Path | None) -> Self:
+        if configuration_file is not None and ConfigType.ENV not in configuration_file.suffixes:
             raise ConfigIsNotEnv(actual='.'.join(configuration_file.suffixes))
         config = cls(
             {
                 **dotenv_values('.env'),
                 **dotenv_values('.env.secret'),
                 **dotenv_values('.env.shared'),
-                **dotenv_values(configuration_file),
+                **(dotenv_values(configuration_file) if configuration_file is not None else {}),
                 **os.environ,
             }
         )

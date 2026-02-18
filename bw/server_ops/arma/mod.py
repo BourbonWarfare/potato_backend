@@ -73,7 +73,7 @@ class SteamWorkshopDetails:
         ```
         """
         return cls(
-            workshop_id=WorkshopId(json.get('publishedfileid', -1)),
+            workshop_id=WorkshopId(str(json.get('publishedfileid', 'No Workshop ID'))),
             title=json.get('title', 'Unknown Title'),
             file_size_bytes=json.get('file_size', 0),
             last_update=datetime.datetime.fromtimestamp(json.get('time_updated', 0)),
@@ -136,7 +136,7 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
 
             json = await response.json()
             for file in json['response']['publishedfiledetails']:
-                workshop_id = WorkshopId(file['publishedfileid'])
+                workshop_id = WorkshopId(str(file['publishedfileid']))
                 if 'result' not in file or file['result'] != 1:
                     error_reason = file.get('reason', 'unknown')
                     logger.warning(
@@ -403,7 +403,7 @@ def save_mods(config_path: Path):
 
         mod_config = {
             'filename': mod.filename,
-            'workshop_id': int(mod.workshop_id) if mod.workshop_id else 0,
+            'workshop_id': mod.workshop_id if mod.workshop_id else 'No Workshop ID',
             'kind': mod.kind.value,
         }
 

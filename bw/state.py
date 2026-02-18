@@ -2,7 +2,7 @@ import logging
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from bw.environment import ENVIRONMENT
+from bw.environment import ENVIRONMENT, Test
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.cache import Cache
 from bw.events import Broker
@@ -28,6 +28,8 @@ class State:
         return create_engine(f'{self._connection()}/{db_name}', echo=echo)
 
     def _load_arma_configs(self):
+        if isinstance(ENVIRONMENT, Test):
+            return
         from bw.server_ops.arma.server import load_server_config_directory
         from bw.server_ops.arma.mod import load_modlists, load_mods
 

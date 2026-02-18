@@ -34,7 +34,7 @@ class AppUpdate(Steam):
 
 class WorkshopDownloadItem(Steam):
     COMMAND = 'workshop_download_item'
-    POSITIONAL_ARGUMENTS = (int, int)
+    POSITIONAL_ARGUMENTS = (str, str)
     KEYWORD_ARGUMENTS = {
         'validate': None,
     }

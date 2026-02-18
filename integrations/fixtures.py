@@ -10,7 +10,7 @@ from bw.server import app
 
 @pytest.fixture(scope='function')
 def state():
-    return State()
+    yield State()
 
 
 @pytest.fixture(scope='function')
