@@ -619,13 +619,16 @@ class ArmaApi:
         ```python
         response = await arma_api.update_mods(state, [mod1, mod2, mod3])
         # Success: JsonResponse({
-        #     'server_status': [
-        #         {
-        #             'message': 'Server updated',
-        #             'server_status': 'Running',
-        #             'hc_status': 'Running'
-        #         }
-        #     ]
+        #    'affected_servers': {
+        #        'main': {
+        #            'message': 'Server updated',
+        #            'server_status': 'Running',
+        #            'hc_status': 'Running'
+        #        }
+        #    },
+        #    'updated_mods': [
+        #        { ... }
+        #    ]
         # })
         # Error: WebResponse(status=500, reason='Server operation failed')
         ```
@@ -698,8 +701,13 @@ class ArmaApi:
 
         ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
+        json_safe_updated_mods = [dataclasses.asdict(mod) for mod in out_of_date_steam_mods]
+        for mod in json_safe_updated_mods.values():
+            mod['workshop_id'] = str(mod['workshop_id'])
         response = [(server.server_name(), await self.server_pid_status(server.server_name())) for server in affected_servers]
-        return JsonResponse({n: dataclasses.asdict(r) for n, r in response})
+        return JsonResponse(
+            {'affected_servers': {n: dataclasses.asdict(r) for n, r in response}, 'updated_mods': json_safe_updated_mods}
+        )
 
     @define_async_api
     async def update_server_mods(self, state: State, server_name: str) -> JsonResponse:
