@@ -590,8 +590,8 @@ class ArmaApi:
         mods_to_update = []
         steam_details = await fetch_mod_details_from_workshop([mod for mod in mods if not mod.manual_install])
         steam_mods = list(steam_details.values())
-        mods_to_update = [
-            steam_details[WorkshopId(mod.workshop_id)] for mod in ModStore().get_out_of_date_mods(state, steam_mods)
+        mods_to_update: list[SteamWorkshopDetails] = [
+            steam_details[mod.workshop_id] for mod in ModStore().get_out_of_date_mods(state, steam_mods)
         ]
         return JsonResponse({'mods_to_update': [dataclasses.asdict(mod) for mod in mods_to_update]})
 
@@ -696,7 +696,7 @@ class ArmaApi:
             (self.deploy_keys(server.server_name())).raise_if_unsuccessful()
             (await self.start_server(server.server_name())).raise_if_unsuccessful()
 
-        ModStore().bulk_update_mods(state, mods_to_update)
+        ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
         response = [(server.server_name(), await self.server_pid_status(server.server_name())) for server in affected_servers]
         return JsonResponse({n: dataclasses.asdict(r) for n, r in response})
