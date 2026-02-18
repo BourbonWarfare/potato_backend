@@ -116,7 +116,7 @@ async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[Works
     request_url = 'http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
     params: dict[str, Any] = {
         'itemcount': len(mods),
-        **{f'publishedfileids[{idx}]': mod.workshop_id for idx, mod in enumerate(mods)},
+        **{f'publishedfileids[{idx}]': str(mod.workshop_id) for idx, mod in enumerate(mods)},
     }
 
     # Get mods name form Steam Workshop
