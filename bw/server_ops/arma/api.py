@@ -682,7 +682,7 @@ class ArmaApi:
             # Some mods may have different install paths, so we need to handle them separately
             *[
                 (
-                    steam.force_install_dir(install_path),
+                    steam.force_install_dir(str(install_path)),
                     *[
                         steam.workshop_download_item('107410', str(mod.workshop_id), validate=True)
                         for mod in mods
