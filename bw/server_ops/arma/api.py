@@ -438,13 +438,13 @@ class ArmaApi:
 
         logger.info(f'Creating mod links in {mod_path} for {server.server_name()}')
         for mod in server.modlist().mods:
-            mod_source = mod.directory / mod.as_launch_parameter()
+            mod_source = mod.download_path()
+            mod_destination = mod_path / mod.as_launch_parameter()
             try:
-                os.symlink(mod_source, mod_path / mod.as_launch_parameter(), target_is_directory=True)
-                logger.info(f'Linked mod {mod.name} from {mod_source} to {mod_path / mod.as_launch_parameter()}')
+                os.symlink(mod_source, mod_destination, target_is_directory=True)
+                logger.info(f'Linked mod {mod.name} from {mod_source} to {mod_destination}')
             except OSError as e:
-                to_path = mod_path / mod.as_launch_parameter()
-                logger.warning(f'Failed to link mod {mod.name} from {mod_source} to {to_path}: {e}')
+                logger.warning(f'Failed to link mod {mod.name} from {mod_source} to {mod_destination}: {e}')
 
         return Ok()
 
@@ -483,7 +483,7 @@ class ArmaApi:
 
         keys = []
         for mod in server.modlist().mods:
-            path = mod.path()
+            path = mod.download_path()
             for key_file in path.rglob('*.bikey'):
                 keys.append(key_file)
 
@@ -666,7 +666,7 @@ class ArmaApi:
         for mod in mods_to_update:
             if mod.manual_install:
                 continue
-            install_path = mod.path()
+            install_path = mod.directory
             if install_path not in mod_install_directories:
                 mod_install_directories[install_path] = []
             mod_install_directories[install_path].append(mod)
