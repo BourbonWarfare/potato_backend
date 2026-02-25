@@ -704,7 +704,7 @@ class ArmaApi:
         ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
         response: list[tuple[str, dict[str, Any]]] = [
-            (server.server_name(), await self.server_pid_status(server.server_name()).contained_json)
+            (server.server_name(), (await self.server_pid_status(server.server_name())).contained_json)
             for server in affected_servers
         ]
         return JsonResponse(
