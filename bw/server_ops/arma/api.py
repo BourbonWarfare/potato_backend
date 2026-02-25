@@ -675,11 +675,14 @@ class ArmaApi:
         logger.info(f'Updating Arma mods for {", ".join([server.server_name() for server in affected_servers])} via SteamCMD')
         download_command = []
         for install_path, mods in mod_install_directories.items():
-            command = steam.force_install_dir(str(install_path)) * [
-                steam.workshop_download_item('107410', str(mod.workshop_id), validate=True)
-                for mod in mods
-                if mod.workshop_id is not None
-            ]
+            command = (
+                steam.force_install_dir(str(install_path)),
+                *[
+                    steam.workshop_download_item('107410', str(mod.workshop_id), validate=True)
+                    for mod in mods
+                    if mod.workshop_id is not None
+                ],
+            )
             download_command.extend(command)
         await Chain(
             steam.locate(),
