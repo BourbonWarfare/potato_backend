@@ -702,10 +702,13 @@ class ArmaApi:
 
         ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
-        response = [(server.server_name(), await self.server_pid_status(server.server_name())) for server in affected_servers]
+        response = [
+            (server.server_name(), await self.server_pid_status(server.server_name()).contained_json)
+            for server in affected_servers
+        ]
         return JsonResponse(
             {
-                'affected_servers': {n: dataclasses.asdict(r) for n, r in response},
+                'affected_servers': response,
                 'updated_mods': [mod.to_json() for mod in out_of_date_steam_mods],
             }
         )
