@@ -639,7 +639,7 @@ class ArmaApi:
         }
 
         out_of_date_steam_mods = [
-            SteamWorkshopDetails(**detail)
+            SteamWorkshopDetails.from_json(detail)
             for detail in (await self.get_out_of_date_workshop_mods(state, mod_list))
             .raise_if_unsuccessful()
             .contained_json.get('mods_to_update', [])
