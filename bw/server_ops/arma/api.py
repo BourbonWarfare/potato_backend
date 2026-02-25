@@ -4,6 +4,7 @@ import shutil
 import dataclasses
 import json
 from pathlib import Path
+from typing import Any
 from collections.abc import Collection
 from collections.abc import Callable, Awaitable
 from collections.abc import Iterable
@@ -702,13 +703,13 @@ class ArmaApi:
 
         ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
-        response = [
+        response: list[tuple[str, dict[str, Any]]] = [
             (server.server_name(), await self.server_pid_status(server.server_name()).contained_json)
             for server in affected_servers
         ]
         return JsonResponse(
             {
-                'affected_servers': response,
+                'affected_servers': {server_name: server_status for server_name, server_status in response},
                 'updated_mods': [mod.to_json() for mod in out_of_date_steam_mods],
             }
         )
