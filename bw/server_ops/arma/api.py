@@ -225,7 +225,7 @@ class ArmaApi:
         logger.info(
             f"""Attempting command with
     name={server.server_name()}
-    path={server.arma_base_path()}
+    path={server.server_path()}
     port={server.server_port()}
     hc_count={server.headless_client_count()}
     mods={mods}
@@ -234,7 +234,7 @@ class ArmaApi:
         try:
             response, _ = await command(
                 name=server.server_name(),
-                path=str(server.arma_base_path()),
+                path=str(server.server_path()),
                 port=server.server_port(),
                 hc_count=server.headless_client_count(),
                 **{'pass': server.server_password()},  # "pass" is a keyword, so we expand a keyword dict to allow it
