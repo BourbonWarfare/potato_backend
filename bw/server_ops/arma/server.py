@@ -33,6 +33,9 @@ class Server:
     def server_path(self) -> Path:
         return self.arma_base_path() / self.server_name()
 
+    def mission_path(self) -> Path:
+        return self.server_path() / 'mpmissions'
+
     def mod_install_path(self) -> Path:
         return Path(self._server.require('mod_install_path').get())  # ty: ignore[invalid-argument-type]
 

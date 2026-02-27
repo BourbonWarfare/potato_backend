@@ -4,12 +4,15 @@ import pytest
 import uuid
 import tempfile
 import csv
+from pathlib import Path
 
 from sqlalchemy import insert
 
 from bw.models.auth import User
 from bw.models.missions import Mission, MissionType, Iteration, Review, TestResult, TestCosign
 from bw.missions.test_status import TestStatus
+from bw.server_ops.arma.server import Server
+from bw.configuration import Configuration
 from integrations.fixtures import session, state
 
 
@@ -97,6 +100,7 @@ def db_mission_1(state, session, db_user_1, db_mission_type_1):
     with state.Session.begin() as session:
         mission = Mission(
             id=1,
+            server='main',
             uuid=uuid.UUID('b3d7e343-d244-45fd-a614-a40e3da5de90'),
             author=db_user_1.id,
             author_name='me',
@@ -115,6 +119,7 @@ def db_mission_1_1(state, session, db_user_1, db_mission_type_2):
     with state.Session.begin() as session:
         mission = Mission(
             id=2,
+            server='main',
             uuid=uuid.UUID('c3d7e343-d244-45fd-a614-a40e3da5de91'),
             author=db_user_1.id,
             author_name='me',
@@ -133,6 +138,7 @@ def db_mission_1_2(state, session, db_user_1, db_mission_type_1):
     with state.Session.begin() as session:
         mission = Mission(
             id=3,
+            server='main',
             uuid=uuid.UUID('d3d7e343-d244-45fd-a614-a40e3da5de92'),
             author=db_user_1.id,
             author_name='me',
@@ -339,3 +345,21 @@ def disk_metadata_1(metadata_1):
         tmp_file.flush()
         tmp_file.close()
         yield tmp_file.name
+
+
+@pytest.fixture
+def arma_server(mocker):
+    mocker.patch.object(
+        Configuration,
+        'load_toml',
+        return_value=Configuration(
+            {
+                'server': {
+                    'path': '/home/',
+                },
+                'session': {},
+                'crons': {},
+            }
+        ),
+    )
+    return Server(Path(''), 'main')

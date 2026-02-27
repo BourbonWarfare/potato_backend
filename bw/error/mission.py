@@ -87,3 +87,8 @@ class CouldNotReviewMission(MissionError):
 class AlreadyReviewedMission(MissionError):
     def __init__(self):
         super().__init__('mission has already been reviewed by this user')
+
+
+class MissionAlreadyExists(MissionError):
+    def __init__(self):
+        super().__init__('mission cannot be copied since it already exists')

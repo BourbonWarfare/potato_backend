@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses
 import shutil
 import tempfile
@@ -105,7 +104,7 @@ class MissionLoader:
         mission_name = pbo_name.split('.')[0]
         mission_path = temp_path / mission_name
         await hemtt.utils.pbo.unpack.acall(str(temp_path / pbo_name), str(mission_path))
-        await asyncio.create_task(hemtt.utils.config.derapify.acall(str(mission_path / 'mission.sqm'), format='json'))
+        await hemtt.utils.config.derapify.acall(str(mission_path / 'mission.sqm'), format='json')
 
         bwmf_version = '2016/01/19'
         with open(mission_path / 'description.ext') as file:

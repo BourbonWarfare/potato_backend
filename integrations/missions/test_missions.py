@@ -92,8 +92,15 @@ def test__mission_type_store__mission_type_from_name__retrieve_none_raises(state
 
 def test__mission_store__create_mission__can_create(state, session, db_user_1, db_mission_type_1):
     mission = MissionStore().create_mission(
-        state, creator=db_user_1, author='AuthorName', title='Test Mission', type=db_mission_type_1, flags={'foo': 'bar'}
+        state,
+        server='main',
+        creator=db_user_1,
+        author='AuthorName',
+        title='Test Mission',
+        type=db_mission_type_1,
+        flags={'foo': 'bar'},
     )
+    assert mission.server == 'main'
     assert mission.author == db_user_1.id
     assert mission.author_name == 'AuthorName'
     assert mission.title == 'Test Mission'

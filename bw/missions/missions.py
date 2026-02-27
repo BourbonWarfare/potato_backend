@@ -137,13 +137,22 @@ class MissionTypeStore:
 
 class MissionStore:
     def create_mission(
-        self, state: State, creator: User, author: str, title: str, type: MissionType, flags: dict, uuid: UUID | None = None
+        self,
+        state: State,
+        server: str,
+        creator: User,
+        author: str,
+        title: str,
+        type: MissionType,
+        flags: dict,
+        uuid: UUID | None = None,
     ) -> Mission:
         """
-        ### Create a new mission
+        ### Create a new mission stored in the given server
 
         **Args:**
         - `state` (`State`): The application state containing the database connection.
+        - `server` ('str`): The server which the mission is uploaded to
         - `creator` (`User`): The user creating the mission.
         - `author` (`str`): The name of the author.
         - `title` (`str`): The title of the mission.
@@ -157,10 +166,18 @@ class MissionStore:
         with state.Session.begin() as session:
             if uuid is not None:
                 mission = Mission(
-                    author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags, uuid=uuid
+                    server=server,
+                    author=creator.id,
+                    author_name=author,
+                    title=title,
+                    mission_type=type.id,
+                    special_flags=flags,
+                    uuid=uuid,
                 )
             else:
-                mission = Mission(author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags)
+                mission = Mission(
+                    server=server, author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags
+                )
             session.add(mission)
             session.flush()
             session.expunge(mission)
