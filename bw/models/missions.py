@@ -34,6 +34,8 @@ class Mission(Base):
     mission_type: Mapped[int] = mapped_column(ForeignKey('mission_types.id'), nullable=False)
     special_flags: Mapped[dict] = mapped_column(JSON, nullable=False)
 
+    __table_args__ = (UniqueConstraint('uuid', 'server', name='mission_upload_only_once_to_server'),)
+
 
 class PlayedMission(Base):
     __tablename__ = 'played_missions'

@@ -4,6 +4,7 @@ import pytest
 import unittest
 import re
 import csv
+import shutil
 from bw.response import JsonResponse, Created, WebResponse
 from bw.missions.api import MissionsApi, TestApi
 from bw.error import CouldNotCreateIteration
@@ -54,6 +55,18 @@ class TestMissionsApi:
         assert isinstance(resp, JsonResponse)
         assert resp.contained_json['iteration_number'] == 1
         assert resp.status_code == 201
+
+    @pytest.mark.asyncio
+    async def test__missions_api__upload_mission__copy_file_already_exists_at_destination(
+        self, mocker, state, session, db_user_1, db_mission_type_1, fake_changelog, fake_iteration_1, fake_mission, arma_server
+    ):
+        mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
+        mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
+        mocker.patch('bw.missions.api.shutil.copyfile', return_value=None, side_effect=shutil.SameFileError)
+
+        resp = await MissionsApi().upload_mission(state, arma_server, db_user_1, 'fake_path', fake_changelog)
+        assert not isinstance(resp, JsonResponse)
+        assert resp.status_code == 409
 
     @pytest.mark.asyncio
     async def test__missions_api__upload_mission__missing_metadata(

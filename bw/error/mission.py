@@ -90,5 +90,8 @@ class AlreadyReviewedMission(MissionError):
 
 
 class MissionAlreadyExists(MissionError):
+    def status(self) -> int:
+        return 409
+
     def __init__(self):
         super().__init__('mission cannot be copied since it already exists')
