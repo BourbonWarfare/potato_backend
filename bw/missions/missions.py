@@ -222,7 +222,7 @@ class MissionStore:
                 session.expunge(mission[0])
         return [mission[0] for mission in missions]
 
-    def mission_with_uuid(self, state: State, uuid: UUID) -> Mission:
+    def mission_with_uuid(self, state: State, uuid: UUID, server: str) -> Mission:
         """
         ### Retrieve existing mission via it's UUID
 
@@ -234,7 +234,7 @@ class MissionStore:
         - `Mission`: The mission, if the UUID is in the database.
         """
         with state.Session.begin() as session:
-            query = select(Mission).where(Mission.uuid == uuid)
+            query = select(Mission).where(Mission.uuid == uuid).where(Mission.server == server)
             try:
                 mission = session.execute(query).one()[0]
             except NoResultFound as e:
