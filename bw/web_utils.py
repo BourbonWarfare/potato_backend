@@ -12,7 +12,7 @@ from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResp
 from bw.web_event import BaseEvent
 
 
-logger = logging.getLogger('bw')
+logger = logging.getLogger('bw.web_utils')
 
 
 def define_async_api(func: Callable[..., Awaitable[WebResponse]]):
@@ -49,7 +49,9 @@ def define_async_api(func: Callable[..., Awaitable[WebResponse]]):
         except BwServerError as e:
             logger.warning(f'API error: {e}')
             logger.debug(f'Exception traceback:\n{traceback.format_exc()}')
-            return e.as_response_code()
+            response = e.as_response_code()
+            logger.debug(f'status: {response.status}, response: {response.response}')
+            return response
 
     return wrapper
 
