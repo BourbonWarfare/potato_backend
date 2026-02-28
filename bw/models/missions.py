@@ -27,7 +27,7 @@ class Mission(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     server: Mapped[str] = mapped_column(String(length=NAME_LENGTH), nullable=False)
-    creation_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_time())
+    creation_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())
     author: Mapped[int | None] = mapped_column(ForeignKey('users.id'))
     author_name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
     title: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
@@ -43,7 +43,7 @@ class PlayedMission(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
-    play_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_time())
+    play_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())
     player_count: Mapped[int] = mapped_column(nullable=False)
 
 
@@ -53,7 +53,7 @@ class PassedMission(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False, unique=True)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
-    date_passed: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_time())
+    date_passed: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())
 
 
 class Iteration(Base):
@@ -68,7 +68,7 @@ class Iteration(Base):
     desired_player_count: Mapped[int] = mapped_column(nullable=False)
     safe_start_length: Mapped[int] = mapped_column(nullable=False, default=10)
     mission_length: Mapped[int] = mapped_column(nullable=False)
-    upload_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_time())
+    upload_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())
     bwmf_version: Mapped[str] = mapped_column(nullable=False)
     iteration: Mapped[int] = mapped_column(nullable=False)
     changelog: Mapped[str] = mapped_column(Text, nullable=False)
@@ -83,7 +83,7 @@ class TestResult(Base):
     uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'), nullable=False, unique=True)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
-    date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_time())
+    date_tested: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())
 
     __table_args__ = (UniqueConstraint('review_id', 'iteration_id', name='review_maps_to_single_iteration'),)
 
