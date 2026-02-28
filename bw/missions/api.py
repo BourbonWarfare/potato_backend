@@ -254,6 +254,12 @@ class MissionsApi:
             safe_start_length = int(info['potato_missiontesting_missionTimeLength']['data']['value'])
 
         working_pbo_path = server.mission_path() / stored_pbo_path.name
+        logger.info(f'moving mission {stored_pbo_path} to server mission folder')
+        if working_pbo_path.exists():
+            logger.warning('Cannot upload mission due to file already been uploaded')
+            raise MissionAlreadyExists()
+        shutil.copyfile(stored_pbo_path, working_pbo_path)
+
         iteration = MissionStore().add_iteration(
             state,
             existing_mission,
@@ -266,12 +272,6 @@ class MissionsApi:
             bwmf_version=mission.bwmf,
             changelog=changelog,
         )
-
-        logger.info(f'moving mission {stored_pbo_path} to server mission folder')
-        if working_pbo_path.exists():
-            logger.warning('Cannot upload mission due to file already been uploaded')
-            raise MissionAlreadyExists()
-        shutil.copyfile(stored_pbo_path, working_pbo_path)
 
         return JsonResponse(
             {
