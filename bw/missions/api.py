@@ -268,11 +268,10 @@ class MissionsApi:
         )
 
         logger.info(f'moving mission {stored_pbo_path} to server mission folder')
-        try:
-            shutil.copyfile(stored_pbo_path, working_pbo_path)
-        except shutil.SameFileError as e:
-            logger.warning(f'Cannot upload mission: {e}')
+        if working_pbo_path.exists():
+            logger.warning('Cannot upload mission due to file already been uploaded')
             raise MissionAlreadyExists()
+        shutil.copyfile(stored_pbo_path, working_pbo_path)
 
         return JsonResponse(
             {

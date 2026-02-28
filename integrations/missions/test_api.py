@@ -62,7 +62,7 @@ class TestMissionsApi:
     ):
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
-        mocker.patch('bw.missions.api.shutil.copyfile', return_value=None, side_effect=shutil.SameFileError)
+        mocker.patch('bw.missions.api.pathlib.Path.exists', return_value=True)
 
         resp = await MissionsApi().upload_mission(state, arma_server, db_user_1, 'fake_path', fake_changelog)
         assert not isinstance(resp, JsonResponse)
