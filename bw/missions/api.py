@@ -207,14 +207,11 @@ class MissionsApi:
             uuid = info['potato_missionMaking_uuid']['data']['value']
             uuid = UUID(hex=uuid)
         else:
-            uuid = None
+            raise MissionDoesNotHaveMetadata()
 
-        if uuid is not None:
-            try:
-                existing_mission = MissionStore().mission_with_uuid(state, uuid, server.server_name())
-            except MissionDoesNotExist:
-                existing_mission = None
-        else:
+        try:
+            existing_mission = MissionStore().mission_with_uuid(state, uuid, server.server_name())
+        except MissionDoesNotExist:
             existing_mission = None
 
         if existing_mission is None:
