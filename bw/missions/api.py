@@ -190,7 +190,6 @@ class MissionsApi:
         """
         if isinstance(stored_pbo_path, str):
             stored_pbo_path = Path(stored_pbo_path)
-        logger.info(f'moving mission {stored_pbo_path} to server mission folder')
 
         logger.info(f'uploading mission: {stored_pbo_path} to database')
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
@@ -271,6 +270,7 @@ class MissionsApi:
             changelog=changelog,
         )
 
+        logger.info(f'moving mission {stored_pbo_path} to server mission folder')
         try:
             shutil.copyfile(stored_pbo_path, working_pbo_path)
         except shutil.SameFileError as e:

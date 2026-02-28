@@ -17,7 +17,7 @@ class NoMissionTypeWithName(MissionError):
         return 404
 
     def __init__(self, name: str):
-        super().__init__('no mission type called "{name}" exists')
+        super().__init__(f'no mission type called "{name}" exists')
 
 
 class NoMissionTypeWithTag(MissionError):
@@ -25,7 +25,7 @@ class NoMissionTypeWithTag(MissionError):
         return 404
 
     def __init__(self, tag: int):
-        super().__init__('no mission type with tag "{tag}" exists')
+        super().__init__(f'no mission type with tag "{tag}" exists')
 
 
 class CouldNotCreateTestResult(MissionError):
