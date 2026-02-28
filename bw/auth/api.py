@@ -9,7 +9,7 @@ from bw.auth.roles import Roles
 from bw.auth.permissions import Permissions
 from bw.models.auth import User
 from bw.error import BwServerError, SessionExpired
-from bw.web_utils import define_api, define_async_api
+from bw.web_utils import define_api
 from bw.environment import ENVIRONMENT
 from bw.error import ReauthNeededError, AuthError, NoUserWithGivenCredentials
 import uuid
@@ -52,7 +52,7 @@ class AuthApi:
                     raise e
         return JsonResponse({'bot_token': bot.bot_token}, status=201)
 
-    @define_async_api
+    @define_api
     async def login_with_discord(self, state: State, token: str) -> JsonResponse:
         """
         ### Log in with Discord access token

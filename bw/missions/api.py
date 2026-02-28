@@ -24,7 +24,7 @@ from bw.missions.test_status import TestStatus
 from bw.models.auth import User
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.events import ServerEvent
-from bw.web_utils import define_async_api
+from bw.web_utils import define_api
 from bw.server_ops.arma.server import Server
 
 
@@ -35,7 +35,7 @@ class MissionsApi:
     def __init__(self):
         self.metadata_path = Path('metadata/log.csv')
 
-    @define_async_api
+    @define_api
     async def upload_mission_metadata(self, stored_pbo_path: Path) -> WebResponse:
         """
         ### Logs a mission's metadata
@@ -156,7 +156,7 @@ class MissionsApi:
         State.broker.publish(ServerEvent.MISSION_UPLOADED)
         return Created()
 
-    @define_async_api
+    @define_api
     async def upload_mission(
         self, state: State, server: Server, user: User, stored_pbo_path: Path, changelog: dict
     ) -> JsonResponse:
@@ -289,7 +289,7 @@ class MissionsApi:
             status=201,
         )
 
-    @define_async_api
+    @define_api
     async def get_stored_metadata(self) -> JsonResponse:
         """
         ### Get stored mission metadata
@@ -325,7 +325,7 @@ class MissionsApi:
 
 
 class TestApi:
-    @define_async_api
+    @define_api
     async def review_mission(
         self, state: State, tester: User, iteration_uuid: UUID, status: TestStatus, notes: dict[str, str]
     ) -> JsonResponse:
@@ -372,7 +372,7 @@ class TestApi:
         State.broker.publish(ServerEvent.REVIEW_CREATED, result.uuid)
         return JsonResponse({'result_uuid': str(result.uuid)})
 
-    @define_async_api
+    @define_api
     async def cosign_result(self, state: State, tester: User, result_uuid: UUID) -> WebResponse:
         """
         ### Cosign a test result
@@ -401,7 +401,7 @@ class TestApi:
         State.broker.publish(ServerEvent.REVIEW_COSIGNED, result_uuid)
         return Created()
 
-    @define_async_api
+    @define_api
     async def reviews(self, state: State, iteration_uuid: UUID, viewer: User | None) -> JsonResponse:
         """
         ### Get reviews for a mission iteration

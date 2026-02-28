@@ -3,6 +3,7 @@ from unittest.mock import Mock, AsyncMock, patch
 from pathlib import Path
 import shutil
 import dataclasses
+import json
 
 from bw.server_ops.arma.api import ArmaApi
 from bw.server_ops.arma.server import Server
@@ -54,7 +55,7 @@ def test_mods():
     mod1.kind = Kind.MOD
     mod1.directory = Path('/mods')
     mod1.as_launch_parameter.return_value = '@mod1'
-    mod1.path.return_value = Path('/mods/@mod1')
+    mod1.download_path.return_value = Path('/mods/@mod1')
 
     mod2 = Mock(spec=Mod)
     mod2.name = 'Test Mod 2'
@@ -62,7 +63,7 @@ def test_mods():
     mod2.kind = Kind.MOD
     mod2.directory = Path('/mods')
     mod2.as_launch_parameter.return_value = '@mod2'
-    mod2.path.return_value = Path('/mods/@mod2')
+    mod2.download_path.return_value = Path('/mods/@mod2')
 
     return [mod1, mod2]
 
@@ -75,7 +76,7 @@ def test_mods_with_keys(test_mods):
             Path(f'/mods/{mod.filename}/keys/test1.bikey'),
             Path(f'/mods/{mod.filename}/keys/test2.bikey'),
         ]
-        mod.path.return_value = mock_path
+        mod.download_path.return_value = mock_path
     return test_mods
 
 
@@ -86,21 +87,21 @@ def test_mods_for_update():
     mod1.filename = 'update_mod1'
     mod1.workshop_id = '123456'
     mod1.manual_install = False
-    mod1.path.return_value = Path('/workshop/mods')
+    mod1.download_path.return_value = Path('/workshop/mods')
 
     mod2 = Mock(spec=Mod)
     mod2.name = 'Update Mod 2'
     mod2.filename = 'update_mod2'
     mod2.workshop_id = '789012'
     mod2.manual_install = False
-    mod2.path.return_value = Path('/workshop/mods')
+    mod2.download_path.return_value = Path('/workshop/mods')
 
     manual_mod = Mock(spec=Mod)
     manual_mod.name = 'Manual Mod'
     manual_mod.filename = 'manual_mod'
     manual_mod.workshop_id = '345678'
     manual_mod.manual_install = True
-    manual_mod.path.return_value = Path('/manual/mods')
+    manual_mod.download_path.return_value = Path('/manual/mods')
 
     return [mod1, mod2, manual_mod]
 
@@ -310,7 +311,7 @@ def mock_global_config():
 
 @pytest.mark.asyncio
 async def test__arma_api__server_ping__success(arma_api, mock_a3sb_ping):
-    mock_a3sb_ping.acall.return_value = 15.5
+    mock_a3sb_ping.acall.return_value = 15.5, None
 
     result = await arma_api.server_ping('example.com', 2304)
 
@@ -325,20 +326,22 @@ async def test__arma_api__server_ping__failure(arma_api, mock_a3sb_ping):
 
     response = await arma_api.server_ping('example.com', 2304)
     assert isinstance(response, WebResponse)
-    assert response.status_code == 500
+    assert response.status_code == 504
 
 
 @pytest.mark.asyncio
 async def test__arma_api__server_steam_status__success(arma_api, mock_a3sb_info):
-    query_response = {
-        'name': 'Test Server',
-        'game': 'Test Mission',
-        'keywords': {'server_state': 'PLAYING'},
-        'map': 'Altis',
-        'players': 10,
-        'max_players': 50,
-    }
-    mock_a3sb_info.acall.return_value = query_response
+    query_response = json.dumps(
+        {
+            'name': 'Test Server',
+            'game': 'Test Mission',
+            'keywords': {'server_state': 'PLAYING'},
+            'map': 'Altis',
+            'players': 10,
+            'max_players': 50,
+        }
+    )
+    mock_a3sb_info.acall.return_value = query_response, None
 
     result = await arma_api.server_steam_status('example.com', 2304)
 
@@ -364,7 +367,7 @@ async def test__arma_api__start_server__success(arma_api, mock_server_manage, mo
     server_result = ServerResult(
         message='Server started', server_status='Running', hc_status='Running', startup_status='Completed'
     )
-    mock_server_manage.start.acall.return_value = server_result
+    mock_server_manage.start.acall.return_value = server_result, None
 
     result = await arma_api.start_server('test_server')
 
@@ -383,7 +386,7 @@ async def test__arma_api__start_server__server_not_found(arma_api):
 @pytest.mark.asyncio
 async def test__arma_api__stop_server__success(arma_api, mock_server_manage, mock_server_map):
     server_result = ServerResult(message='Server stopped', server_status='Stopped', hc_status='Stopped')
-    mock_server_manage.stop.acall.return_value = server_result
+    mock_server_manage.stop.acall.return_value = server_result, None
 
     result = await arma_api.stop_server('test_server')
 
@@ -404,7 +407,7 @@ async def test__arma_api__restart_server__success(arma_api, mock_server_manage, 
     server_result = ServerResult(
         message='Server restarted', server_status='Running', hc_status='Running', startup_status='Completed'
     )
-    mock_server_manage.restart.acall.return_value = server_result
+    mock_server_manage.restart.acall.return_value = server_result, None
 
     result = await arma_api.restart_server('test_server')
 
@@ -423,7 +426,7 @@ async def test__arma_api__restart_server__server_not_found(arma_api):
 @pytest.mark.asyncio
 async def test__arma_api__server_pid_status__success(arma_api, mock_server_manage, mock_server_map):
     server_result = ServerResult(message='Server status checked', server_status='Running', hc_status='Running')
-    mock_server_manage.status.acall.return_value = server_result
+    mock_server_manage.status.acall.return_value = server_result, None
 
     result = await arma_api.server_pid_status('test_server')
 

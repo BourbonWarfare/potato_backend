@@ -1,5 +1,5 @@
 import logging
-import urllib
+import urllib.parse
 from quart import render_template_string, Blueprint
 from pathlib import Path
 
@@ -61,14 +61,13 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         logger.info(f'User {session_user.id} is uploading mission from {pbo_path} to {server_name} with changelog: {changelog}')
-        await MissionsApi().upload_mission(
+        return await MissionsApi().upload_mission(
             state=State.state,
             server=SERVER_MAP[server_name],
             user=session_user,
             stored_pbo_path=Path(pbo_path),
             changelog=changelog,
         )
-        return JsonResponse({})
 
     @html.get('/')
     @html_endpoint(template_path='home.html', title='Bourbon Warfare')

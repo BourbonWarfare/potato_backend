@@ -51,7 +51,7 @@ class SteamWorkshopDetails:
         }
 
     @classmethod
-    def from_json(cls, json: dict[str, Any]) -> Self:
+    def from_json(cls, json: dict[str, Any]) -> 'SteamWorkshopDetails':
         return SteamWorkshopDetails(
             workshop_id=json.get('workshop_id', WorkshopId(-1)),
             title=json.get('title', 'Unknown'),

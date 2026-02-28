@@ -41,7 +41,7 @@ from bw.error import (
 )
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.response import WebResponse, Ok, JsonResponse, Created
-from bw.web_utils import define_async_api, define_api
+from bw.web_utils import define_api
 from bw.state import State
 
 
@@ -112,7 +112,7 @@ class ArmaApi:
         load_server_config_directory(config_path)
         return Ok()
 
-    @define_async_api
+    @define_api
     async def server_ping(self, address: str, steam_port: int) -> WebResponse:
         """
         ### Ping an Arma server to check connectivity
@@ -141,7 +141,7 @@ class ArmaApi:
         ping, _ = await a3sb.ping.acall(address, steam_port, ping_count=1, ping_period=0, deadline_timeout=1)
         return Ok(str(ping))
 
-    @define_async_api
+    @define_api
     async def server_steam_status(self, address: str, steam_port: int) -> JsonResponse:
         """
         ### Get detailed server status via Steam query
@@ -247,7 +247,7 @@ class ArmaApi:
         logger.info(f'Command result: {response}')
         return response  # ty: ignore [invalid-return-type]
 
-    @define_async_api
+    @define_api
     async def start_server(self, server_name: str) -> JsonResponse:
         """
         ### Start an Arma server
@@ -283,7 +283,7 @@ class ArmaApi:
         response = await self._manage_server(server_manage.start.acall, SERVER_MAP[server_name])
         return JsonResponse(dataclasses.asdict(response))
 
-    @define_async_api
+    @define_api
     async def stop_server(self, server_name: str) -> JsonResponse:
         """
         ### Stop an Arma server
@@ -317,7 +317,7 @@ class ArmaApi:
         response = await self._manage_server(server_manage.stop.acall, SERVER_MAP[server_name])
         return JsonResponse(dataclasses.asdict(response))
 
-    @define_async_api
+    @define_api
     async def restart_server(self, server_name: str) -> JsonResponse:
         """
         ### Restart an Arma server
@@ -354,7 +354,7 @@ class ArmaApi:
         response = await self._manage_server(server_manage.restart.acall, SERVER_MAP[server_name])
         return JsonResponse(dataclasses.asdict(response))
 
-    @define_async_api
+    @define_api
     async def server_pid_status(self, server_name: str) -> JsonResponse:
         """
         ### Check server process status
@@ -497,7 +497,7 @@ class ArmaApi:
 
         return Ok()
 
-    @define_async_api
+    @define_api
     async def update_server(self, server_name: str) -> JsonResponse:
         """
         ### Update an Arma server
@@ -551,7 +551,7 @@ class ArmaApi:
 
         return await self.server_pid_status(server_name)
 
-    @define_async_api
+    @define_api
     async def get_out_of_date_workshop_mods(self, state: State, mods: Collection[Mod]) -> JsonResponse:
         """
         ### Identify workshop mods that need updates
@@ -596,7 +596,7 @@ class ArmaApi:
         ]
         return JsonResponse({'mods_to_update': [mod.to_json() for mod in mods_to_update]})
 
-    @define_async_api
+    @define_api
     async def update_mods(self, state: State, mod_list: Iterable[Mod]) -> JsonResponse:
         """
         ### Update multiple mods and affected servers
@@ -714,7 +714,7 @@ class ArmaApi:
             }
         )
 
-    @define_async_api
+    @define_api
     async def update_server_mods(self, state: State, server_name: str) -> JsonResponse:
         """
         ### Update mods for a specific Arma server
