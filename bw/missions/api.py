@@ -192,17 +192,10 @@ class MissionsApi:
             stored_pbo_path = Path(stored_pbo_path)
         logger.info(f'moving mission {stored_pbo_path} to server mission folder')
 
-        working_pbo_path = server.mission_path() / stored_pbo_path.name
-        try:
-            shutil.copyfile(stored_pbo_path, working_pbo_path)
-        except shutil.SameFileError as e:
-            logger.warning(f'Cannot upload mission: {e}')
-            raise MissionAlreadyExists()
-
-        logger.info(f'uploading mission: {working_pbo_path} to database')
+        logger.info(f'uploading mission: {stored_pbo_path} to database')
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
         State.broker.publish(ServerEvent.MISSION_UPLOADED)
-        mission = await MissionLoader().load_pbo_from_directory(working_pbo_path)
+        mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
             raise MissionDoesNotHaveMetadata()
@@ -264,6 +257,7 @@ class MissionsApi:
         if 'potato_missiontesting_missionTimeLength' in info:
             safe_start_length = int(info['potato_missiontesting_missionTimeLength']['data']['value'])
 
+        working_pbo_path = server.mission_path() / stored_pbo_path.name
         iteration = MissionStore().add_iteration(
             state,
             existing_mission,
@@ -277,7 +271,23 @@ class MissionsApi:
             changelog=changelog,
         )
 
-        return JsonResponse({'iteration_number': iteration.iteration}, status=201)
+        try:
+            shutil.copyfile(stored_pbo_path, working_pbo_path)
+        except shutil.SameFileError as e:
+            logger.warning(f'Cannot upload mission: {e}')
+            raise MissionAlreadyExists()
+
+        return JsonResponse(
+            {
+                'iteration_number': iteration.iteration,
+                'min_players': min_players,
+                'max_players': max_players,
+                'desired_players': desired_players,
+                'safe_start_length': safe_start_length,
+                'mission_length': mission_length,
+            },
+            status=201,
+        )
 
     @define_async_api
     async def get_stored_metadata(self) -> JsonResponse:
