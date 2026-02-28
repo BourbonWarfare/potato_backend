@@ -2,8 +2,7 @@ from quart import Response
 from werkzeug.datastructures.headers import Headers
 from dataclasses import dataclass
 from typing import Self
-from collections.abc import Callable
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterable, Callable
 import json
 
 
@@ -30,6 +29,11 @@ class WebResponse(Response):
         lower_headers = {key.lower(): value for key, value in headers.items()}
         if 'content-type' not in lower_headers:
             lower_headers['content-type'] = self.content_type()
+
+        if isinstance(response, str):
+            response = (response,)
+        elif not isinstance(response, Iterable):
+            response = (str(response),)
 
         super().__init__(
             response=response,
