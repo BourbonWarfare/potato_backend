@@ -11,7 +11,7 @@ class BwServerError(Exception):
         return {}
 
     def as_response_code(self) -> WebResponse:
-        return WebResponse(status=self.status(), from_exception=self, message=str(self))
+        return WebResponse(status=self.status(), from_exception=self, response=str(self))
 
     def __init__(self, message: str, status: int = 500):
         super().__init__(message)
