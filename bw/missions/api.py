@@ -251,7 +251,7 @@ class MissionsApi:
         if 'potato_missiontesting_SSTimeGiven' in info:
             safe_start_length = int(info['potato_missiontesting_SSTimeGiven']['data']['value'])
         if 'potato_missiontesting_missionTimeLength' in info:
-            safe_start_length = int(info['potato_missiontesting_missionTimeLength']['data']['value'])
+            mission_length = int(info['potato_missiontesting_missionTimeLength']['data']['value'])
 
         working_pbo_path = server.mission_path() / stored_pbo_path.name
         logger.info(f'moving mission {stored_pbo_path} to server mission folder')
