@@ -8,3 +8,4 @@ class Roles(SlotCombiner):
     can_create_role: bool
     can_create_group: bool
     can_manage_server: bool
+    can_publish_realtime_events: bool

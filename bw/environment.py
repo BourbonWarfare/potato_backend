@@ -28,7 +28,9 @@ class Environment:
         return Path('./server_configs')
 
     def discord_api_url(self) -> str:
-        return GC.require('discord_api_url').get().strip('/')  # ty: ignore[unresolved-attribute]
+        discord_api_url = GC.require('discord_api_url').get()
+        assert isinstance(discord_api_url, str)
+        return discord_api_url.strip('/')
 
     def arma_mod_config_path(self) -> Path:
         return Path(GC.require('arma_mod_configs').get())  # ty: ignore[invalid-argument-type]

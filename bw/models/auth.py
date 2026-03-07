@@ -53,6 +53,7 @@ class Role(Base):
     can_create_role: Mapped[bool]
     can_create_group: Mapped[bool]
     can_manage_server: Mapped[bool]
+    can_publish_realtime_events: Mapped[bool]
 
     def into_roles(self) -> Roles:
         return Roles.from_keys(**{key: getattr(self, key) for key in Roles.__slots__})

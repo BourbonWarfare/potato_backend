@@ -418,7 +418,7 @@ def save_mod_configs(config_path: Path):
         # Convert mod name to TOML key format (replace spaces with dashes)
         mod_key = mod_name.replace(' ', '-')
 
-        mod_config = {
+        mod_config: dict[str, Any] = {
             'filename': mod.filename,
             'workshop_id': mod.workshop_id if mod.workshop_id else 'No Workshop ID',
             'kind': mod.kind.value,

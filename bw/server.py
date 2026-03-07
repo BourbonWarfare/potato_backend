@@ -6,7 +6,9 @@ from bw.settings import GLOBAL_CONFIGURATION
 from bw.environment import ENVIRONMENT
 from bw.state import State
 from bw.endpoints import define as define_endpoints
+from bw.cron import runner
 import bw.response  # noqa: F401
+import multiprocessing
 
 dictConfig(log_config())
 
@@ -27,6 +29,9 @@ def run():
         ssl_ca_certs_path = None
         ssl_certfile_path = None
         ssl_keyfile_path = None
+
+    app.logger.info('starting cron runner')
+    multiprocessing.Process(target=runner.spawn)
 
     app.logger.info('starting BW backend')
     app.logger.info('-' * 50)
@@ -54,6 +59,9 @@ def production():
         ssl_ca_certs_path = None
         ssl_certfile_path = None
         ssl_keyfile_path = None
+
+    print('Starting cron runner')
+    multiprocessing.Process(target=runner.spawn)
 
     uvicorn.run(
         'bw.server:app',

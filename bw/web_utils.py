@@ -1,9 +1,10 @@
+from types import CoroutineType
 import logging
 import traceback
 import functools
 import asyncio
 from typing import Any
-from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable, Coroutine
+from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable
 from pathlib import Path
 from quart import request, render_template_string
 
@@ -55,15 +56,22 @@ def define_api(func: Callable[..., WebResponse | Awaitable[WebResponse]]):
         logger.debug(f'status: {response.status}')
         return response
 
-    async def asyncfunc(*args, **kwargs) -> Coroutine[Any, Any, Awaitable[WebResponse]]:
+    async def async_handle_exception(exception: BwServerError) -> WebResponse:
+        return handle_exception(exception)
+
+    async def asyncfunc(*args, **kwargs) -> WebResponse:
         try:
-            return await func(*args, **kwargs)
+            value = func(*args, **kwargs)
+            assert isinstance(value, Awaitable[WebResponse])
+            return await value  # ty: ignore[invalid-await]
         except BwServerError as e:
-            return handle_exception(e)
+            return await async_handle_exception(e)
 
     def syncfunc(*args, **kwargs) -> WebResponse:
         try:
-            return func(*args, **kwargs)
+            value = func(*args, **kwargs)
+            assert isinstance(value, WebResponse)
+            return value
         except BwServerError as e:
             return handle_exception(e)
 
@@ -236,7 +244,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
     return decorator
 
 
-def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
+def sse_endpoint(func: Callable[..., CoroutineType[Any, Any, AsyncIterator[WebEvent | BaseEvent]]]):
     """
     ### Decorator for Server-Sent Events endpoint functions
 
@@ -267,7 +275,7 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
         async def async_byte_generator() -> AsyncGenerator[bytes]:
-            async for event in func(*args, **kwargs):
+            async for event in await func(*args, **kwargs):
                 yield event.encode()
             StopAsyncIteration
 
