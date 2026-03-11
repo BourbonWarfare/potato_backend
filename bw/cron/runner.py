@@ -107,9 +107,9 @@ class Runner:
         self.gather_crons()
 
     @staticmethod
-    def time_to_next_second() -> float:
-        current_time_seconds: float = time.monotonic_ns() / 1e9
-        return 1.0 - (current_time_seconds % 1.0)
+    def time_to_next_minute() -> float:
+        current_time_minutes: float = time.monotonic_ns() / 6e10
+        return 1.0 - (current_time_minutes % 1.0)
 
     def gather_crons(self):
         root_dir = ENVIRONMENT.cron_path()
@@ -178,7 +178,7 @@ class Runner:
                     find_session = False
                     break
                 except (aiohttp.ClientConnectionError, aiohttp.ClientResponseError):
-                    time.sleep(self.time_to_next_second())
+                    time.sleep(5)
 
             if find_session:
                 exit(1)
@@ -215,7 +215,7 @@ class Runner:
                     refresh_session()
                     async_runner.run(run_requests())
                 finally:
-                    time.sleep(self.time_to_next_second())
+                    time.sleep(self.time_to_next_minute())
 
 
 def spawn(bot_token: str):
