@@ -13,7 +13,9 @@ dependencies = [
     "python-dotenv",
     "aiohttp",
     "aiodns",
-    "tomli-w"
+    "tomli-w",
+    "pytz",
+    "cron-converter"
 ]
 authors = [
     {name="Bailey Danyluk"}

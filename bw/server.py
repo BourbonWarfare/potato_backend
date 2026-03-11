@@ -1,7 +1,6 @@
 from quart import Quart
-from logging.config import dictConfig
 
-from bw.log import config as log_config
+from bw.log import setup_config as setup_log_config, log_config
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.environment import ENVIRONMENT
 from bw.state import State
@@ -10,7 +9,7 @@ from bw.cron import runner
 import bw.response  # noqa: F401
 import multiprocessing
 
-dictConfig(log_config())
+setup_log_config()
 
 app = Quart(__name__)
 app.config.update(TESTING=False, PROPAGATE_EXCEPTIONS=False)
@@ -31,7 +30,8 @@ def run():
         ssl_keyfile_path = None
 
     app.logger.info('starting cron runner')
-    multiprocessing.Process(target=runner.spawn)
+    cron_runner = multiprocessing.Process(target=runner.spawn, args=(ENVIRONMENT.cron_token(),))
+    cron_runner.start()
 
     app.logger.info('starting BW backend')
     app.logger.info('-' * 50)
@@ -42,6 +42,7 @@ def run():
         certfile=ssl_certfile_path,
         keyfile=ssl_keyfile_path,
     )
+    cron_runner.kill()
     app.logger.info("that's all, folks")
 
 
@@ -61,7 +62,8 @@ def production():
         ssl_keyfile_path = None
 
     print('Starting cron runner')
-    multiprocessing.Process(target=runner.spawn)
+    cron_runner = multiprocessing.Process(target=runner.spawn, args=(ENVIRONMENT.cron_token(),))
+    cron_runner.start()
 
     uvicorn.run(
         'bw.server:app',
@@ -73,4 +75,5 @@ def production():
         log_config=log_config(),
         log_level='info',
     )
+    cron_runner.kill()
     print('thats all, folks')

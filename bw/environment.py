@@ -38,6 +38,11 @@ class Environment:
     def arma_modlist_config_path(self) -> Path:
         return Path(GC.require('arma_modlist_configs').get())  # ty: ignore[invalid-argument-type]
 
+    def cron_token(self) -> str:
+        token = GC.require('cron_token').get()
+        assert isinstance(token, str)
+        return token
+
 
 class Local(Environment):
     def port(self) -> int:
