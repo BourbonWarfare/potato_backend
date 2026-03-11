@@ -58,7 +58,6 @@ class Session:
     async def refresh(self):
         adjusted_expire = self.expire_time - datetime.timedelta(seconds=15)
         now = datetime.datetime.now(tz=adjusted_expire.tzinfo)
-        logger.debug(f'Expires: {adjusted_expire}, now: {now}')
         if self.session is not None and now < adjusted_expire:
             return
 
