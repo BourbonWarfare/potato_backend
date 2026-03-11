@@ -175,6 +175,7 @@ class Runner:
                 try:
                     refresh_session()
                     find_session = False
+                    i = 99
                 except (aiohttp.ClientConnectionError, aiohttp.ClientResponseError):
                     time.sleep(self.time_to_next_second())
 
