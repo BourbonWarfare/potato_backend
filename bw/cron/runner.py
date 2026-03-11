@@ -56,13 +56,15 @@ class Session:
 
     @backoff(delay=2, retries=5, max_delay=10)
     async def refresh(self):
-        if self.session is not None and datetime.datetime.now() > self.expire_time - datetime.timedelta(minutes=1.5):
+        adjusted_expire = self.expire_time - datetime.timedelta(minutes=1.5)
+        if self.session is not None and datetime.datetime.now(tz=adjusted_expire.tzinfo) > adjusted_expire:
             return
 
         async with aiohttp.ClientSession() as session:
             payload = {'bot_token': self.token}
             async with session.post(f'http://localhost:{ENVIRONMENT.port()}/api/v1/auth/login/bot', json=payload) as response:
                 response.raise_for_status()
+                logger.info('Successfully refreshed session')
                 json = await response.json()
                 self.session = json['session_token']
                 self.expire_time = datetime.datetime.fromisoformat(json['expire_time'])
