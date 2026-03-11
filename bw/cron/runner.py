@@ -141,7 +141,7 @@ class Runner:
                             logger.info(f'Loaded cron job "{name}"')
                             self.loaded_crons_[cron] = Module(module=module, last_modified=modified_time, cron_class=classtype)
                             break
-            logger.debug(f'Loaded {len(new_crons)} modules in {time.time() - t0:.2f} seconds')
+            logger.debug(f'Loaded {len(new_crons)} modules in {time.time() - t0:.2f} second(s)')
 
         removed_crons = self.crons_.difference(found_crons)
         if removed_crons:
@@ -150,9 +150,8 @@ class Runner:
         self.crons_ = found_crons
         tz = timezone(ENVIRONMENT.timezone())
         for cron in self.crons_:
-            oldest_cron = self.cron_queue_[-1]
             new_cron = ScheduledCron(timezone=tz, cron_class=self.loaded_crons_[cron].cron_class, init_time=now_utc())
-            if cron in new_crons or new_cron > oldest_cron:
+            if cron in new_crons or new_cron > self.cron_queue_[-1]:
                 heappush(self.cron_queue_, new_cron)
 
     def run(self):
