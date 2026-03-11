@@ -1,5 +1,6 @@
 from bw.environment import ENVIRONMENT
 from bw.cron.utils import backoff
+from bw.cron.stdout_capture import OutCapture
 import time
 import asyncio
 import logging
@@ -83,7 +84,6 @@ class Runner:
     @staticmethod
     def time_to_next_minute() -> float:
         next_minute_in = 60 - datetime.datetime.now().second
-        logger.debug(f'next_minute_in={next_minute_in}')
         return next_minute_in
 
     def gather_crons(self):
@@ -171,20 +171,23 @@ class Runner:
                     assert issubclass(front.cron_class, Cron)
 
                     cron = front.cron_class()
-                    cron.run()
+                    with OutCapture():
+                        cron.run()
 
                     async_crons.append(cron.async_run)
                     async_requests.append(cron.request)
 
                 for cron in async_crons:
-                    async_runner.run(cron())
+                    with OutCapture():
+                        async_runner.run(cron())
 
                 async def run_requests():
                     assert isinstance(self.session_token_.session, str)
                     auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
                     async with aiohttp.ClientSession(headers=auth_headers) as session:
                         for cron in async_requests:
-                            async_runner.run(cron(session))
+                            with OutCapture():
+                                async_runner.run(cron(session))
 
                 try:
                     refresh_session()
