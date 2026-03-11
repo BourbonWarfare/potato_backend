@@ -131,7 +131,7 @@ class Runner:
                         importlib.reload(self.loaded_crons_[cron].module)
                         self.loaded_crons_[cron].last_modified = modified_time
                 else:
-                    module = importlib.import_module(f'{cron.stem}', 'crons')
+                    module = importlib.import_module(f'{cron.stem}', ENVIRONMENT.cron_path().stem)
                     classes = {name: cls for name, cls in module.__dict__.items() if isinstance(cls, type)}
 
                     for name, classtype in classes.items():
