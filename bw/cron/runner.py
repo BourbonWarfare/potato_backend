@@ -1,4 +1,5 @@
 from bw.environment import ENVIRONMENT
+from bw.cron.utils import backoff
 import time
 import asyncio
 import logging
@@ -12,35 +13,8 @@ from types import ModuleType
 from pytz import timezone
 import cron_converter
 import datetime
-import functools
-import random
 
 logger = logging.getLogger('bw.cron')
-
-
-def backoff(delay=2, retries=3, max_delay=float('inf')):
-    def decorator(func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            current_retry = 0
-            current_delay = delay
-            while current_retry < retries:
-                try:
-                    if asyncio.iscoroutinefunction(func):
-                        return await func(*args, **kwargs)
-                    else:
-                        return func(*args, **kwargs)
-                except Exception as e:
-                    current_retry += 1
-                    if current_retry >= retries:
-                        raise e
-                    await asyncio.sleep(current_delay + random.random() * delay)
-                    current_delay *= 2
-                    current_delay = min(current_delay, max_delay)
-
-        return wrapper
-
-    return decorator
 
 
 def now_utc() -> datetime.datetime:
@@ -108,8 +82,8 @@ class Runner:
 
     @staticmethod
     def time_to_next_minute() -> float:
-        current_time_minutes: float = time.monotonic_ns() / 6e10
-        return 1.0 - (current_time_minutes % 1.0)
+        current_time_seconds: float = time.monotonic_ns() / 1e9
+        return 60.0 - (current_time_seconds % 60.0)
 
     def gather_crons(self):
         root_dir = ENVIRONMENT.cron_path()
@@ -184,6 +158,7 @@ class Runner:
                 exit(1)
 
             while True:
+                logger.info('Tick')
                 self.gather_crons()
                 for cron in self.cron_queue_:
                     assert issubclass(cron.cron_class, Cron)
