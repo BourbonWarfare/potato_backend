@@ -62,7 +62,7 @@ class Session:
 
         async with aiohttp.ClientSession() as session:
             payload = {'bot_token': self.token}
-            async with session.post(f'https://localhost:{ENVIRONMENT.port()}/api/v1/auth/login/bot', json=payload) as response:
+            async with session.post(f'http://localhost:{ENVIRONMENT.port()}/api/v1/auth/login/bot', json=payload) as response:
                 response.raise_for_status()
                 json = await response.json()
                 self.session = json['session_token']
