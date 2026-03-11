@@ -143,7 +143,7 @@ class Runner:
                             break
             logger.debug(f'Loaded {len(new_crons)} modules in {time.time() - t0:.2f} second(s)')
 
-        removed_crons = self.crons_.difference(found_crons)
+        removed_crons = {cron for cron in self.crons_ if cron not in found_crons}
         if removed_crons:
             logger.info(f'{len(removed_crons)} crons removed: {", ".join([str(cron) for cron in removed_crons])}')
 
