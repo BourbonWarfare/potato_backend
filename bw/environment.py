@@ -43,6 +43,16 @@ class Environment:
         assert isinstance(token, str)
         return token
 
+    def cron_path(self) -> Path:
+        path = GC.require('cron_path').get()
+        assert isinstance(path, str)
+        return Path(path)
+
+    def timezone(self) -> str:
+        tz = GC.require('timezone').get()
+        assert isinstance(tz, str)
+        return tz
+
 
 class Local(Environment):
     def port(self) -> int:

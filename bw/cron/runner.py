@@ -113,7 +113,7 @@ class Runner:
         return 1.0 - (current_time_seconds % 1.0)
 
     def gather_crons(self):
-        root_dir = Path('./crons')
+        root_dir = ENVIRONMENT.cron_path()
 
         found_crons: set[Path] = set()
         for file in root_dir.rglob(pattern='cron_*.py'):
@@ -148,7 +148,7 @@ class Runner:
             logger.info(f'{len(new_crons)} crons removed: {", ".join([str(cron) for cron in removed_crons])}')
 
         self.crons_ = found_crons
-        tz = timezone('America/Chicago')
+        tz = timezone(ENVIRONMENT.timezone())
         for cron in self.crons_:
             oldest_cron = self.cron_queue_[-1]
             new_cron = ScheduledCron(timezone=tz, cron_class=self.loaded_crons_[cron].cron_class, init_time=now_utc())
