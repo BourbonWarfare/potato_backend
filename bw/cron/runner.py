@@ -78,7 +78,7 @@ class ScheduledCron:
 
     def next(self) -> datetime.datetime:
         assert issubclass(self.cron_class, Cron)
-        now = self.init_time.replace(tzinfo=self.timezone.utc)
+        now = self.init_time.replace(tzinfo=self.timezone)
         return cron_converter.Cron(self.cron_class.cron_str()).schedule(start_date=now).next()
 
     def __lt__(self, rhs: 'ScheduledCron') -> bool:
@@ -119,7 +119,7 @@ class Runner:
             if file_path not in self.crons_:
                 found_crons.add(file_path)
 
-        new_crons = found_crons.difference(self.crons_)
+        new_crons = {cron for cron in found_crons if cron not in self.crons_}
         if new_crons:
             logger.info(f'{len(new_crons)} new crons found: {", ".join([str(cron) for cron in new_crons])}')
             t0 = time.time()
