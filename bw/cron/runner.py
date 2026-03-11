@@ -83,6 +83,7 @@ class Runner:
     @staticmethod
     def time_to_next_minute() -> float:
         current_time_seconds: float = float(time.monotonic_ns()) / 1e9
+        logger.debug(f'current_time_secs={current_time_seconds}')
         return 60.0 - (current_time_seconds % 60.0)
 
     def gather_crons(self):
