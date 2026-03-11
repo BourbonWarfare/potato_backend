@@ -18,10 +18,6 @@ import datetime
 logger = logging.getLogger('bw.cron')
 
 
-def now_utc() -> datetime.datetime:
-    return datetime.datetime.now(tz=timezone('UTC'))
-
-
 @dataclass
 class Session:
     token: str
@@ -124,7 +120,9 @@ class Runner:
         self.crons_ = found_crons
         tz = timezone(ENVIRONMENT.timezone())
         for cron in self.crons_:
-            new_cron = ScheduledCron(timezone=tz, cron_class=self.loaded_crons_[cron].cron_class, init_time=now_utc())
+            new_cron = ScheduledCron(
+                timezone=tz, cron_class=self.loaded_crons_[cron].cron_class, init_time=datetime.datetime.now()
+            )
             if cron in new_crons or new_cron > self.cron_queue_[-1]:
                 heappush(self.cron_queue_, new_cron)
 
@@ -163,7 +161,7 @@ class Runner:
                 for cron in self.cron_queue_:
                     assert issubclass(cron.cron_class, Cron)
 
-                now = now_utc()
+                now = datetime.datetime.now()
                 async_crons = []
                 async_requests = []
                 logger.debug(f'{", ".join([str(c.next()) for c in self.cron_queue_])}')
