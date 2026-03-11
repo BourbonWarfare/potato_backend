@@ -49,8 +49,7 @@ class ScheduledCron:
 
     def next(self) -> datetime.datetime:
         assert issubclass(self.cron_class, Cron)
-        now = self.init_time.replace(tzinfo=self.timezone)
-        return cron_converter.Cron(self.cron_class.cron_str()).schedule(start_date=now).next()
+        return cron_converter.Cron(self.cron_class.cron_str()).schedule(start_date=self.init_time).next()
 
     def __lt__(self, rhs: 'ScheduledCron') -> bool:
         return self.next() < rhs.next()
@@ -164,7 +163,7 @@ class Runner:
                 now = datetime.datetime.now()
                 async_crons = []
                 async_requests = []
-                logger.debug(f'{", ".join([str(c.next()) for c in self.cron_queue_])}')
+                logger.debug(f'{", ".join([f"{c.next()}/{c.timezone}" for c in self.cron_queue_])}')
                 while len(self.cron_queue_) > 0 and self.cron_queue_[0].next() <= now:
                     front = heappop(self.cron_queue_)
                     assert issubclass(front.cron_class, Cron)
