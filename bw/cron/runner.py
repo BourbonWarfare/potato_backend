@@ -115,8 +115,7 @@ class Runner:
         root_dir = ENVIRONMENT.cron_path()
 
         found_crons: set[Path] = set()
-        for file in root_dir.rglob(pattern='cron_*.py'):
-            file_path = root_dir / file
+        for file_path in root_dir.rglob(pattern='cron_*.py'):
             if file_path not in self.crons_:
                 found_crons.add(file_path)
 
