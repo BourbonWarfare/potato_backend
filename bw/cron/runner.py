@@ -137,7 +137,7 @@ class Runner:
                     classes = {name: cls for name, cls in module.__dict__.items() if isinstance(cls, type)}
 
                     for name, classtype in classes.items():
-                        if issubclass(classtype, Cron):
+                        if issubclass(classtype, Cron) and classtype != Cron:
                             logger.info(f'Loaded cron job "{name}"')
                             self.loaded_crons_[cron] = Module(module=module, last_modified=modified_time, cron_class=classtype)
                             break
