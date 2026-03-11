@@ -82,7 +82,7 @@ class Runner:
 
     @staticmethod
     def time_to_next_minute() -> float:
-        current_time_seconds: float = time.monotonic_ns() / 1e9
+        current_time_seconds: float = float(time.monotonic_ns()) / 1e9
         return 60.0 - (current_time_seconds % 60.0)
 
     def gather_crons(self):
@@ -90,8 +90,7 @@ class Runner:
 
         found_crons: set[Path] = set()
         for file_path in root_dir.rglob(pattern='cron_*.py'):
-            if file_path not in self.crons_:
-                found_crons.add(file_path)
+            found_crons.add(file_path)
 
         new_crons = {cron for cron in found_crons if cron not in self.crons_}
         if new_crons:

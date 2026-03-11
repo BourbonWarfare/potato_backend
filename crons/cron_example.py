@@ -8,7 +8,7 @@ class MyExampleCron(Cron):
         """
         Returns a cron-encoded string defining when this job will be run next
         """
-        return '0/1 * * * *'
+        return '0/2 * * * *'
 
     def run(self) -> None:
         print('Run!')
