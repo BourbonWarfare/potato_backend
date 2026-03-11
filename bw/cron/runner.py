@@ -166,7 +166,7 @@ class Runner:
                 now = now_utc()
                 async_crons = []
                 async_requests = []
-                logger.debug(f'{self.cron_queue_}')
+                logger.debug(f'{", ".join([str(c.next()) for c in self.cron_queue_])}')
                 while len(self.cron_queue_) > 0 and self.cron_queue_[0].next() <= now:
                     front = heappop(self.cron_queue_)
                     assert issubclass(front.cron_class, Cron)
