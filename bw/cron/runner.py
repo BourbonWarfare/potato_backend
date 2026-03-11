@@ -113,7 +113,7 @@ class Runner:
         return 1.0 - (current_time_seconds % 1.0)
 
     def gather_crons(self):
-        root_dir = Path('./cron')
+        root_dir = Path('./crons')
 
         found_crons: set[Path] = set()
         for file in root_dir.rglob(pattern='cron_*.py'):
