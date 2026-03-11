@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from crons.cron import Cron
 from types import ModuleType
-from pytz import timezone
 import cron_converter
 import datetime
 
@@ -43,7 +42,6 @@ class Session:
 
 @dataclass
 class ScheduledCron:
-    timezone: datetime.timezone
     init_time: datetime.datetime
     cron_class: type
 
@@ -117,11 +115,8 @@ class Runner:
             logger.info(f'{len(removed_crons)} crons removed: {", ".join([str(cron) for cron in removed_crons])}')
 
         self.crons_ = found_crons
-        tz = timezone(ENVIRONMENT.timezone())
         for cron in self.crons_:
-            new_cron = ScheduledCron(
-                timezone=tz, cron_class=self.loaded_crons_[cron].cron_class, init_time=datetime.datetime.now(tz=tz)
-            )
+            new_cron = ScheduledCron(cron_class=self.loaded_crons_[cron].cron_class, init_time=datetime.datetime.now())
             if cron in new_crons or new_cron > self.cron_queue_[-1]:
                 heappush(self.cron_queue_, new_cron)
 
@@ -163,7 +158,7 @@ class Runner:
                 now = datetime.datetime.now()
                 async_crons = []
                 async_requests = []
-                logger.debug(f'{", ".join([f"{c.next()}/{c.timezone}" for c in self.cron_queue_])}')
+                logger.debug(f'{", ".join([f"{c.next()}" for c in self.cron_queue_])}')
                 while len(self.cron_queue_) > 0 and self.cron_queue_[0].next() <= now:
                     front = heappop(self.cron_queue_)
                     assert issubclass(front.cron_class, Cron)
