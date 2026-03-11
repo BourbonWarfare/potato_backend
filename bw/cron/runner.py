@@ -3,7 +3,6 @@ import time
 import asyncio
 import logging
 import importlib
-import os
 import aiohttp
 from heapq import heappush, heappop
 from dataclasses import dataclass
@@ -127,7 +126,7 @@ class Runner:
             t0 = time.time()
             importlib.invalidate_caches()
             for cron in new_crons:
-                modified_time = os.path.getmtime(cron)
+                modified_time = cron.stat().st_mtime
                 if cron in self.loaded_crons_:
                     if modified_time > self.loaded_crons_[cron].last_modified:
                         importlib.reload(self.loaded_crons_[cron].module)
