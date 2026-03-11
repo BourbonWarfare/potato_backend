@@ -1,4 +1,3 @@
-from types import CoroutineType
 import logging
 import traceback
 import functools
@@ -244,7 +243,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
     return decorator
 
 
-def sse_endpoint(func: Callable[..., CoroutineType[Any, Any, AsyncIterator[WebEvent | BaseEvent]]]):
+def sse_endpoint(func: Callable[..., Awaitable[AsyncIterator[WebEvent | BaseEvent]]]):
     """
     ### Decorator for Server-Sent Events endpoint functions
 
