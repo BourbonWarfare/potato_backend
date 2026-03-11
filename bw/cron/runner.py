@@ -145,7 +145,7 @@ class Runner:
 
         removed_crons = self.crons_.difference(found_crons)
         if removed_crons:
-            logger.info(f'{len(new_crons)} crons removed: {", ".join([str(cron) for cron in removed_crons])}')
+            logger.info(f'{len(removed_crons)} crons removed: {", ".join([str(cron) for cron in removed_crons])}')
 
         self.crons_ = found_crons
         tz = timezone(ENVIRONMENT.timezone())
@@ -191,7 +191,7 @@ class Runner:
                 now = now_utc()
                 async_crons = []
                 async_requests = []
-                while len(self.cron_queue_) > 0 and self.cron_queue_[0].cron_class.next() <= now:  # ty:ignore[unresolved-attribute]
+                while len(self.cron_queue_) > 0 and self.cron_queue_[0].next() <= now:
                     front = heappop(self.cron_queue_)
                     assert issubclass(front.cron_class, Cron)
 
