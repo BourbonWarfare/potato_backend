@@ -2,7 +2,6 @@ from bw.environment import ENVIRONMENT
 import time
 import asyncio
 import logging
-import glob
 import importlib
 import os
 import aiohttp
@@ -114,7 +113,7 @@ class Runner:
         root_dir = Path('./cron')
 
         found_crons: set[Path] = set()
-        for file in glob.iglob(pathname='cron_*.py', root_dir=root_dir, recursive=True):
+        for file in root_dir.rglob(pattern='cron_*.py'):
             file_path = root_dir / file
             if file_path not in self.crons_:
                 found_crons.add(file_path)
@@ -175,7 +174,7 @@ class Runner:
                 try:
                     refresh_session()
                     find_session = False
-                    i = 99
+                    break
                 except (aiohttp.ClientConnectionError, aiohttp.ClientResponseError):
                     time.sleep(self.time_to_next_second())
 
