@@ -22,7 +22,7 @@ class Event(Base):
     )
 
     event: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
-    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default={})
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=True)
 
 
 class QueuedEvent(Base):
