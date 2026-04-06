@@ -11,6 +11,9 @@ class ServerEvent(StrEnum):
 
 
 class Broker:
+    subscribers: dict[ServerEvent, list[Callable[[ServerEvent, Any], None]]]
+    global_subscribers: list[Callable[[ServerEvent, Any], None]]
+
     def __init__(self):
         self.subscribers = {}
         self.global_subscribers = []
@@ -23,10 +26,9 @@ class Broker:
             self.subscribers[event] = []
         self.subscribers[event].append(callback)
 
-    def publish(self, event: ServerEvent, data=None):
-        if event in self.subscribers:
-            for callback in self.subscribers[event]:
-                callback(event, data)
+    def publish(self, event: ServerEvent, *data: Any):
+        for callback in self.subscribers.get(event, []):
+            callback(event, *data)
 
         for callback in self.global_subscribers:
-            callback(event, data)
+            callback(event, *data)
