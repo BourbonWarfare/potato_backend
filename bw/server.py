@@ -1,4 +1,5 @@
 from quart import Quart
+import asyncio
 
 from bw.log import setup_config as setup_log_config, log_config
 from bw.settings import GLOBAL_CONFIGURATION
@@ -14,8 +15,18 @@ setup_log_config()
 app = Quart(__name__)
 app.config.update(TESTING=False, PROPAGATE_EXCEPTIONS=False)
 state = State()
-app.add_background_task(state.queue.process_event_queue, state.queue)
 define_endpoints(app)
+
+
+@app.while_serving
+async def run_message_queue():
+    task = asyncio.ensure_future(state.queue.process_event_queue())
+
+    yield
+
+    state.queue.stop()
+    task.cancel()
+    await asyncio.gather(task, return_exceptions=True)
 
 
 def run():

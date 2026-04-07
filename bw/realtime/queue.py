@@ -25,13 +25,18 @@ class Worker:
 
 
 class Queue:
+    dead: bool
     delay: float
     queues: list[Worker]
 
     def __init__(self, broker: Broker, delay: float = 5.0):
+        self.dead = False
         self.delay = delay
         self.queues = []
         broker.subscribe_all(self.on_event)
+
+    def stop(self):
+        self.dead = True
 
     def on_event(self, event: BaseEvent):
         from bw.state import State
@@ -49,7 +54,7 @@ class Queue:
         from bw.realtime.api import RealtimeApi
         from bw.realtime.event import EventStore
 
-        while True:
+        while not self.dead:
             await asyncio.sleep(self.delay)
 
             self.queues = [worker for worker in self.queues if worker.alive]
