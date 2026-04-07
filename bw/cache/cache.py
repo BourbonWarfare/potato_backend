@@ -6,7 +6,7 @@ import logging
 from typing import Any
 from bw.cache.l1 import L1Cache
 from bw.error import L1CacheMiss
-from bw.events import ServerEvent
+from bw.web_event import BaseEvent
 
 logger = logging.getLogger('bw.cache')
 
@@ -19,10 +19,10 @@ class Cache:
         self.l1_cache = L1Cache()
         self.l2_cache = None
 
-    def event(self, event: ServerEvent, data: Any = None):
+    def event(self, event: type[BaseEvent], data: Any = None):
         self.l1_cache.event(event)
 
-    def insert(self, key: str, value: Any, expire_event: ServerEvent | None = None):
+    def insert(self, key: str, value: Any, expire_event: type[BaseEvent] | None = None):
         logging.info(f"Inserting '{key}' into cache")
         logging.debug(f"Inserting '{key}' into L1 cache")
         popped_items = self.l1_cache.insert(key, value, expire_event)  # noqa: F841

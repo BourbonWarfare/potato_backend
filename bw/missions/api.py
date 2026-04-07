@@ -153,7 +153,6 @@ class MissionsApi:
                 writer.writeheader()
             writer.writerow(data.as_dict())
 
-        State.broker.publish(ServerEvent.MISSION_UPLOADED)
         return Created()
 
     @define_api
@@ -193,7 +192,6 @@ class MissionsApi:
 
         logger.info(f'uploading mission: {stored_pbo_path} to database')
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
-        State.broker.publish(ServerEvent.MISSION_UPLOADED)
         mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
@@ -273,6 +271,7 @@ class MissionsApi:
             changelog=changelog,
         )
 
+        State.broker.publish(ServerEvent.MISSION_UPLOADED, mission_uuid=existing_mission.uuid, iteration_uuid=iteration.uuid)
         return JsonResponse(
             {
                 'iteration_number': iteration.iteration,
@@ -365,7 +364,7 @@ class TestApi:
                 session.rollback()
                 raise e
 
-        State.broker.publish(ServerEvent.REVIEW_CREATED, result.uuid)
+        State.broker.publish(ServerEvent.REVIEW_CREATED, iteration_uuid=iteration.uuid, review_uuid=result.uuid)
         return JsonResponse({'result_uuid': str(result.uuid)})
 
     @define_api
@@ -394,7 +393,7 @@ class TestApi:
         test_result = TestStore().result_by_uuid(state, result_uuid)
         TestStore().cosign_result(state, tester, test_result)
 
-        State.broker.publish(ServerEvent.REVIEW_COSIGNED, result_uuid)
+        State.broker.publish(ServerEvent.REVIEW_COSIGNED, result_uuid=result_uuid)
         return Created()
 
     @define_api

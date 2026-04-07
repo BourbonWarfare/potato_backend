@@ -14,6 +14,7 @@ setup_log_config()
 app = Quart(__name__)
 app.config.update(TESTING=False, PROPAGATE_EXCEPTIONS=False)
 state = State()
+app.add_background_task(state.queue.process_event_queue, state.queue)
 define_endpoints(app)
 
 

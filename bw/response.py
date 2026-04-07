@@ -1,3 +1,4 @@
+from bw.converters import make_json_safe
 from quart import Response
 from werkzeug.datastructures.headers import Headers
 from dataclasses import dataclass
@@ -77,7 +78,7 @@ class JsonResponse(WebResponse):
         if contained_status is None:
             contained_status = status
         self.contained_json = json_payload
-        super().__init__(status=contained_status, headers=headers, response=json.dumps(self.contained_json))
+        super().__init__(status=contained_status, headers=headers, response=json.dumps(make_json_safe(self.contained_json)))
 
 
 class HtmlResponse(WebResponse):

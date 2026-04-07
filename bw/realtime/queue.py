@@ -1,0 +1,63 @@
+from bw.realtime.event import EventStore
+import asyncio
+from dataclasses import dataclass
+from contextlib import contextmanager
+from bw.events import Broker
+from bw.web_event.base import BaseEvent
+from bw.realtime.api import RealtimeApi
+
+
+@dataclass
+class Worker:
+    messages: list[BaseEvent]
+    alive: bool
+
+    @contextmanager
+    def process(self):
+        self.alive = True
+        try:
+            yield
+        finally:
+            self.alive = False
+
+    async def pop_event(self) -> BaseEvent:
+        while not self.messages:
+            await asyncio.sleep(0.25)
+        return self.messages.pop(0)
+
+
+class Queue:
+    delay: float
+    queues: list[Worker]
+
+    def __init__(self, broker: Broker, delay: float = 5.0):
+        self.delay = delay
+        broker.subscribe_all(self.on_event)
+
+    def on_event(self, event: BaseEvent):
+        from bw.state import State
+
+        RealtimeApi().push_event(State.state, event)
+
+    def subscribe(self) -> Worker:
+        worker = Worker(messages=[], alive=True)
+        self.queues.append(worker)
+        return worker
+
+    async def process_event_queue(self):
+        from bw.state import State
+
+        while True:
+            await asyncio.sleep(self.delay)
+
+            self.queues = [worker for worker in self.queues if worker.alive]
+
+            queued_events = []
+            for queued_event, event in EventStore().queued_events_from_database(State.state):
+                web_event = EventStore().web_event_from_model(event)
+                for queue in self.queues:
+                    queue.messages.append(web_event)
+
+                queued_events.append(queued_event)
+
+            RealtimeApi().publish_queued_events(State.state, queued_events)

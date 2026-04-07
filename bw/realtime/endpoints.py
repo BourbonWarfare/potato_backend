@@ -6,6 +6,7 @@ from bw.web_utils import json_endpoint, sse_endpoint
 from bw.auth.decorators import require_session, require_user_role
 from bw.auth.roles import Roles
 from bw.web_event.base import BaseEvent
+from bw.state import State
 
 logger = logging.getLogger('bw.realtime')
 
@@ -19,6 +20,9 @@ def define(api: Blueprint, local: Blueprint):
         raise NotImplementedError()
 
     @api.get('/sse')
-    @sse_endpoint
+    @sse_endpoint  # ty: ignore [invalid-argument-type]
     async def subscribe() -> AsyncIterator[BaseEvent]:
-        raise NotImplementedError()
+        worker = State.state.queue.subscribe()
+        with worker.process():
+            while True:
+                yield await worker.pop_event()

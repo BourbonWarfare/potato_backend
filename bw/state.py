@@ -6,6 +6,7 @@ from bw.environment import ENVIRONMENT, Test
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.cache import Cache
 from bw.events import Broker
+from bw.realtime.queue import Queue
 
 logger = logging.getLogger('bw.state')
 
@@ -20,6 +21,7 @@ class State:
     state: 'State' = None  # ty: ignore[invalid-assignment]
     cache: Cache = None  # ty: ignore[invalid-assignment]
     broker: Broker = None  # ty: ignore[invalid-assignment]
+    queue: Queue = None  # ty: ignore[invalid-assignment]
 
     def _connection(self) -> str:
         return ENVIRONMENT.db_connection()
@@ -45,6 +47,7 @@ class State:
 
     def __init__(self):
         State.broker = Broker()
+        State.queue = Queue(State.broker, GLOBAL_CONFIGURATION.get('queue_delay', 5))
         State.cache = Cache()
 
         self.engine_map = {}

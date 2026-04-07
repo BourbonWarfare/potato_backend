@@ -2,18 +2,18 @@ import objsize
 import logging
 from typing import Any, Optional
 from bw.settings import GLOBAL_CONFIGURATION
-from bw.events import ServerEvent
+from bw.web_event import BaseEvent
 
 logger = logging.getLogger('bw.cache')
 
 
 class Entry:
     key: str
-    expire_event: ServerEvent | None
+    expire_event: type[BaseEvent] | None
     next: Optional['Entry']
     prev: Optional['Entry']
 
-    def __init__(self, key: str, expire_event: ServerEvent | None):
+    def __init__(self, key: str, expire_event: type[BaseEvent] | None):
         self.key = key
         self.expire_event = expire_event
         self.prev = None
@@ -61,7 +61,7 @@ class L1Cache:
         entry.prev = None
         entry.next = None
 
-    def event(self, event: ServerEvent):
+    def event(self, event: type[BaseEvent]):
         to_expire = []
         for key, entry in self.entry_map.items():
             if entry.expire_event == event:
@@ -80,7 +80,7 @@ class L1Cache:
             entry = self.entry_map.pop(key)
             self._remove_entry(entry)
 
-    def insert(self, key: str, value: Any, expire_event: ServerEvent | None) -> list[Any]:
+    def insert(self, key: str, value: Any, expire_event: type[BaseEvent] | None) -> list[Any]:
         # we dont want to blow the cache up if we try to cache something too big
         entry_size = self._getsize(value)
         if entry_size > self.max_cache_size_bytes:
