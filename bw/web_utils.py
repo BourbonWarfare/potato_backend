@@ -61,7 +61,6 @@ def define_api(func: Callable[..., WebResponse | Awaitable[WebResponse]]):
     async def asyncfunc(*args, **kwargs) -> WebResponse:
         try:
             value = func(*args, **kwargs)
-            assert isinstance(value, Awaitable[WebResponse])
             return await value  # ty: ignore[invalid-await]
         except BwServerError as e:
             return await async_handle_exception(e)
