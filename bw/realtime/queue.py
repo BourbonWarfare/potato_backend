@@ -1,10 +1,8 @@
-from bw.realtime.event import EventStore
 import asyncio
 from dataclasses import dataclass
 from contextlib import contextmanager
 from bw.events import Broker
 from bw.web_event.base import BaseEvent
-from bw.realtime.api import RealtimeApi
 
 
 @dataclass
@@ -36,6 +34,7 @@ class Queue:
 
     def on_event(self, event: BaseEvent):
         from bw.state import State
+        from bw.realtime.api import RealtimeApi
 
         RealtimeApi().push_event(State.state, event)
 
@@ -46,6 +45,8 @@ class Queue:
 
     async def process_event_queue(self):
         from bw.state import State
+        from bw.realtime.api import RealtimeApi
+        from bw.realtime.event import EventStore
 
         while True:
             await asyncio.sleep(self.delay)

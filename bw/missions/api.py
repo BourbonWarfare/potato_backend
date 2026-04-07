@@ -23,7 +23,7 @@ from bw.missions.metainfo import Metainfo
 from bw.missions.test_status import TestStatus
 from bw.models.auth import User
 from bw.settings import GLOBAL_CONFIGURATION
-from bw.events import ServerEvent
+from bw.web_event.mission import MissionUploadEvent, IterationReviewedEvent, IterationCosignedEvent
 from bw.web_utils import define_api
 from bw.server_ops.arma.server import Server
 
@@ -271,7 +271,7 @@ class MissionsApi:
             changelog=changelog,
         )
 
-        State.broker.publish(ServerEvent.MISSION_UPLOADED, mission_uuid=existing_mission.uuid, iteration_uuid=iteration.uuid)
+        State.broker.publish(MissionUploadEvent(mission=existing_mission.uuid, iteration=iteration.uuid))
         return JsonResponse(
             {
                 'iteration_number': iteration.iteration,
@@ -364,7 +364,7 @@ class TestApi:
                 session.rollback()
                 raise e
 
-        State.broker.publish(ServerEvent.REVIEW_CREATED, iteration_uuid=iteration.uuid, review_uuid=result.uuid)
+        State.broker.publish(IterationReviewedEvent(iteration=iteration.uuid, review=result.uuid))
         return JsonResponse({'result_uuid': str(result.uuid)})
 
     @define_api
@@ -393,7 +393,7 @@ class TestApi:
         test_result = TestStore().result_by_uuid(state, result_uuid)
         TestStore().cosign_result(state, tester, test_result)
 
-        State.broker.publish(ServerEvent.REVIEW_COSIGNED, result_uuid=result_uuid)
+        State.broker.publish(IterationCosignedEvent(review=test_result.uuid))
         return Created()
 
     @define_api
