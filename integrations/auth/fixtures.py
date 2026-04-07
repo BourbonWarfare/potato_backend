@@ -74,7 +74,7 @@ def role_1() -> Roles:
 
 @pytest.fixture(scope='session')
 def role_2() -> Roles:
-    return Roles(can_create_group=True, can_create_role=False, can_manage_server=True)
+    return Roles(can_create_group=True, can_create_role=False, can_manage_server=True, can_publish_realtime_events=True)
 
 
 @pytest.fixture(scope='session')

@@ -7,7 +7,7 @@ from integrations.auth.fixtures import (
     db_user_1,
     db_session_1,
     db_expired_session_1,
-    can_publish_realtime_events_role,
+    role_2,
 )
 from integrations.realtime.fixtures import (
     endpoint_realtime_push_url,
@@ -51,12 +51,12 @@ async def test__push_event__rejects_expired_session(
     test_app,
     db_user_1,
     db_expired_session_1,
-    can_publish_realtime_events_role,
+    role_2,
     endpoint_realtime_push_url,
 ):
     """Test that POST /realtime/ returns 401 when the session token has expired."""
     # Not yet reviewed
-    UserStore().assign_user_role(state, db_user_1, can_publish_realtime_events_role.name)
+    UserStore().assign_user_role(state, db_user_1, role_2.name)
 
     response = await test_app.post(
         endpoint_realtime_push_url,
@@ -74,12 +74,12 @@ async def test__push_event__returns_400_when_no_json_body(
     test_app,
     db_user_1,
     db_session_1,
-    can_publish_realtime_events_role,
+    role_2,
     endpoint_realtime_push_url,
 ):
     """Test that POST /realtime/ returns 400 when the request body is not JSON."""
     # Not yet reviewed
-    UserStore().assign_user_role(state, db_user_1, can_publish_realtime_events_role.name)
+    UserStore().assign_user_role(state, db_user_1, role_2.name)
 
     response = await test_app.post(
         endpoint_realtime_push_url,

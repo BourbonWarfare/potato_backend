@@ -16,7 +16,7 @@ from integrations.auth.fixtures import (
     db_user_1,
     db_session_1,
     db_expired_session_1,
-    can_publish_realtime_events_role,
+    role_2,
 )
 
 
