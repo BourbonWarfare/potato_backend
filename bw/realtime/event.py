@@ -58,25 +58,25 @@ class EventStore:
         state: State,
         *,
         after: datetime.datetime | None = None,
-        event_ids: Iterable[uuid.UUID] = [],
-        encoded_event_names: Iterable[str] = [],
-        event_namespaces: Iterable[str] = [],
+        event_ids: Iterable[uuid.UUID] = (),
+        encoded_event_names: Iterable[str] = (),
+        event_namespaces: Iterable[str] = (),
     ) -> tuple[BaseEvent, ...]:
-        found_events: list[Event] = []
         with state.Session.begin() as session:
-            if not after and event_ids == [] and encoded_event_names == [] and event_namespaces == []:
-                found_events.extend(session.scalars(select(Event)))
-            else:
-                query = select(Event).where(
+            query = select(Event)
+            if event_ids or encoded_event_names or event_namespaces:
+                query = query.where(
                     or_(
                         Event.event_id.in_(event_ids),
                         Event.event.in_(encoded_event_names),
-                        or_(*[Event.event.like(f'{namespace}:%') for namespace in event_namespaces]),
+                        or_(False, *[Event.event.like(f'{namespace}:%') for namespace in event_namespaces]),
                     )
                 )
-                if after:
-                    query = query.where(Event.creation_date >= after)
-                found_events.extend(session.scalars(query))
+            if after:
+                query = query.where(Event.creation_date >= after)
+
+            found_events: tuple[Event, ...] = tuple(session.scalars(query).all())
+            session.expunge_all()
 
         converted_events: list[BaseEvent] = []
         for event in found_events:
@@ -89,29 +89,24 @@ class EventStore:
         state: State,
         *,
         after: datetime.datetime | None = None,
-        event_ids: Iterable[uuid.UUID] = [],
-        encoded_event_names: Iterable[str] = [],
-        event_namespaces: Iterable[str] = [],
+        event_ids: Iterable[uuid.UUID] = (),
+        encoded_event_names: Iterable[str] = (),
+        event_namespaces: Iterable[str] = (),
     ) -> tuple[tuple[QueuedEvent, Event], ...]:
-        found_events: list[tuple[QueuedEvent, Event]] = []
         with state.Session.begin() as session:
-            if not after and event_ids == [] and encoded_event_names == [] and event_namespaces == []:
-                found_events.extend(session.scalars(select(QueuedEvent, Event)))
-            else:
-                query = (
-                    select(QueuedEvent, Event)
-                    .join_from(QueuedEvent, Event, QueuedEvent.event == Event.id)
-                    .where(
-                        or_(
-                            Event.event_id.in_(event_ids),
-                            Event.event.in_(encoded_event_names),
-                            or_(*[Event.event.like(f'{namespace}:%') for namespace in event_namespaces]),
-                        )
+            query = select(QueuedEvent, Event).join_from(QueuedEvent, Event, QueuedEvent.event == Event.id)
+            if event_ids or encoded_event_names or event_namespaces:
+                query = query.where(
+                    or_(
+                        Event.event_id.in_(event_ids),
+                        Event.event.in_(encoded_event_names),
+                        or_(False, *[Event.event.like(f'{namespace}:%') for namespace in event_namespaces]),
                     )
                 )
-                if after:
-                    query = query.where(QueuedEvent.queued_time >= after)
+            if after:
+                query = query.where(QueuedEvent.queued_time >= after)
 
-                found_events.extend(session.scalars(query))
+            found_events: tuple[tuple[QueuedEvent, Event], ...] = tuple(session.execute(query).all())  # ty: ignore [invalid-assignment]
+            session.expunge_all()
 
-        return tuple(found_events)
+        return found_events

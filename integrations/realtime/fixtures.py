@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import uuid
 
 from sqlalchemy import insert
 
@@ -29,7 +30,32 @@ from integrations.auth.fixtures import (
 class MockRealtimeEvent(BaseEvent, event='test_event', namespace='test'):
     """Minimal concrete BaseEvent used across realtime integration tests."""
 
-    def __init__(self, message: str = 'hello'):
+    def __init__(self, id: uuid.UUID = uuid.uuid4(), message: str = 'hello'):
+        self.id = id
+        self.message = message
+        super().__init__()
+
+    def data(self) -> dict:
+        return {'message': self.message}
+
+
+class MockDifferentNamespaceEvent(BaseEvent, event='test_event', namespace='test2'):
+    """Minimal concrete BaseEvent used across realtime integration tests."""
+
+    def __init__(self, id: uuid.UUID, message: str = 'hello'):
+        self.id = id
+        self.message = message
+        super().__init__()
+
+    def data(self) -> dict:
+        return {'message': self.message}
+
+
+class MockDifferentEventEvent(BaseEvent, event='test_event2', namespace='test'):
+    """Minimal concrete BaseEvent used across realtime integration tests."""
+
+    def __init__(self, id: uuid.UUID, message: str = 'hello'):
+        self.id = id
         self.message = message
         super().__init__()
 
@@ -53,13 +79,43 @@ def mock_event_message_2() -> str:
 
 
 @pytest.fixture(scope='session')
-def mock_event_1(mock_event_message_1) -> MockRealtimeEvent:
-    return MockRealtimeEvent(message=mock_event_message_1)
+def uuid1() -> uuid.UUID:
+    yield uuid.uuid4()
 
 
 @pytest.fixture(scope='session')
-def mock_event_2(mock_event_message_2) -> MockRealtimeEvent:
-    return MockRealtimeEvent(message=mock_event_message_2)
+def uuid2() -> uuid.UUID:
+    yield uuid.uuid4()
+
+
+@pytest.fixture(scope='session')
+def uuid3() -> uuid.UUID:
+    yield uuid.uuid4()
+
+
+@pytest.fixture(scope='session')
+def uuid4() -> uuid.UUID:
+    yield uuid.uuid4()
+
+
+@pytest.fixture(scope='session')
+def mock_event_1(mock_event_message_1, uuid1) -> MockRealtimeEvent:
+    return MockRealtimeEvent(id=uuid1, message=mock_event_message_1)
+
+
+@pytest.fixture(scope='session')
+def mock_event_2(mock_event_message_2, uuid2) -> MockRealtimeEvent:
+    return MockRealtimeEvent(id=uuid2, message=mock_event_message_2)
+
+
+@pytest.fixture(scope='session')
+def mock_event_different_namespace(mock_event_message_1, uuid3) -> MockDifferentNamespaceEvent:
+    return MockDifferentNamespaceEvent(id=uuid3, message=mock_event_message_1)
+
+
+@pytest.fixture(scope='session')
+def mock_event_different_event(mock_event_message_1, uuid4) -> MockDifferentEventEvent:
+    return MockDifferentEventEvent(id=uuid4, message=mock_event_message_1)
 
 
 @pytest.fixture(scope='session')
@@ -136,9 +192,63 @@ def db_event_2(state, session, mock_event_2):
 
 
 @pytest.fixture(scope='function')
+def db_event_different_namespace(state, session, mock_event_different_namespace):
+    """Persists mock_event_different_namespace as an Event row and yields the detached model."""
+    event_model = Event(
+        event=mock_event_different_namespace.encoded_string(),
+        event_id=mock_event_different_namespace.id,
+        data=make_json_safe(mock_event_different_namespace.data()),
+        retry=mock_event_different_namespace.retry,
+    )
+    with state.Session.begin() as s:
+        s.add(event_model)
+        s.flush()
+        s.expunge(event_model)
+    yield event_model
+
+
+@pytest.fixture(scope='function')
+def db_event_different_event(state, session, mock_event_different_event):
+    """Persists mock_event_different_event as an Event row and yields the detached model."""
+    event_model = Event(
+        event=mock_event_different_event.encoded_string(),
+        event_id=mock_event_different_event.id,
+        data=make_json_safe(mock_event_different_event.data()),
+        retry=mock_event_different_event.retry,
+    )
+    with state.Session.begin() as s:
+        s.add(event_model)
+        s.flush()
+        s.expunge(event_model)
+    yield event_model
+
+
+@pytest.fixture(scope='function')
 def db_queued_event_1(state, session, db_event_1):
     """Queues db_event_1 and yields the detached QueuedEvent row."""
     queued = QueuedEvent(event=db_event_1.id)
+    with state.Session.begin() as s:
+        s.add(queued)
+        s.flush()
+        s.expunge(queued)
+    yield queued
+
+
+@pytest.fixture(scope='function')
+def db_queued_event_different_namespace(state, session, db_event_different_namespace):
+    """Queues db_event_1 and yields the detached QueuedEvent row."""
+    queued = QueuedEvent(event=db_event_different_namespace.id)
+    with state.Session.begin() as s:
+        s.add(queued)
+        s.flush()
+        s.expunge(queued)
+    yield queued
+
+
+@pytest.fixture(scope='function')
+def db_queued_event_different_event(state, session, db_event_different_event):
+    """Queues db_event_1 and yields the detached QueuedEvent row."""
+    queued = QueuedEvent(event=db_event_different_event.id)
     with state.Session.begin() as s:
         s.add(queued)
         s.flush()
@@ -155,9 +265,7 @@ def mock_broker() -> Broker:
 @pytest.fixture(scope='function')
 def mock_queue(mock_broker) -> Queue:
     """Queue wired to mock_broker with zero delay for fast test iteration."""
-    q = Queue(mock_broker, delay=0)
-    q.queues = []  # explicit init guards against missing instance attribute
-    return q
+    return Queue(mock_broker, delay=0)
 
 
 @pytest.fixture(scope='function')

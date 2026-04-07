@@ -30,6 +30,7 @@ class Queue:
 
     def __init__(self, broker: Broker, delay: float = 5.0):
         self.delay = delay
+        self.queues = []
         broker.subscribe_all(self.on_event)
 
     def on_event(self, event: BaseEvent):
