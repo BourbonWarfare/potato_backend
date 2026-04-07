@@ -21,7 +21,7 @@ class Event(Base):
     )
 
     event: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
-    event_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=True, unique=True, default=uuid.uuid4)
+    event_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=True, unique=False, default=uuid.uuid4)
     data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=True)
     retry: Mapped[int] = mapped_column(Integer, nullable=True)
 

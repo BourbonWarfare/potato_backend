@@ -39,6 +39,17 @@ class MockRealtimeEvent(BaseEvent, event='test_event', namespace='test'):
         return {'message': self.message}
 
 
+class MockRealtimeEventNoId(BaseEvent, event='test_event_no_id', namespace='test'):
+    """Minimal concrete BaseEvent used across realtime integration tests."""
+
+    def __init__(self, message: str = 'hello'):
+        self.message = message
+        super().__init__()
+
+    def data(self) -> dict:
+        return {'message': self.message}
+
+
 class MockDifferentNamespaceEvent(BaseEvent, event='test_event', namespace='test2'):
     """Minimal concrete BaseEvent used across realtime integration tests."""
 
@@ -106,6 +117,11 @@ def mock_event_1(mock_event_message_1, uuid1) -> MockRealtimeEvent:
 @pytest.fixture(scope='session')
 def mock_event_2(mock_event_message_2, uuid2) -> MockRealtimeEvent:
     return MockRealtimeEvent(id=uuid2, message=mock_event_message_2)
+
+
+@pytest.fixture(scope='session')
+def mock_event_no_id(mock_event_message_1, mock_event_no_id) -> MockRealtimeEvent:
+    return MockRealtimeEvent(message=mock_event_message_2)
 
 
 @pytest.fixture(scope='session')
@@ -183,6 +199,21 @@ def db_event_2(state, session, mock_event_2):
         event_id=mock_event_2.id,
         data=make_json_safe(mock_event_2.data()),
         retry=mock_event_2.retry,
+    )
+    with state.Session.begin() as s:
+        s.add(event_model)
+        s.flush()
+        s.expunge(event_model)
+    yield event_model
+
+
+@pytest.fixture(scope='function')
+def db_event_no_id(state, session, mock_event_no_id):
+    """Persists mock_event_no_id as an Event row and yields the detached model."""
+    event_model = Event(
+        event=mock_event_no_id.encoded_string(),
+        data=make_json_safe(mock_event_no_id.data()),
+        retry=mock_event_no_id.retry,
     )
     with state.Session.begin() as s:
         s.add(event_model)

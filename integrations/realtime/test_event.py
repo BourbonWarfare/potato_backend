@@ -31,6 +31,7 @@ from integrations.realtime.fixtures import (
     uuid4,
     mock_event_1,
     mock_event_2,
+    mock_event_no_id,
     mock_event_different_event,
     mock_event_different_namespace,
     mock_event_message_1,
@@ -64,6 +65,19 @@ def test__create_event__persists_event_to_database(state, session, mock_event_1)
     assert row.event == mock_event_1.encoded_string()
     assert row.data == mock_event_1.data()
     assert row.event_id == mock_event_1.id
+
+
+def test__create_event__persists_event_to_database_no_id(state, session, mock_event_no_id):
+    """Test that create_event writes an Event row with the correct fields."""
+    result = EventStore().create_event(state, mock_event_no_id)
+
+    with state.Session.begin() as s:
+        row = s.scalar(select(Event).where(Event.id == result.id))
+        s.expunge_all()
+
+    assert row is not None
+    assert row.event == mock_event_1.encoded_string()
+    assert row.data == mock_event_1.data()
 
 
 def test__create_event__returns_detached_event_model(state, session, mock_event_1):
