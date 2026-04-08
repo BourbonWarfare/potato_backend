@@ -120,8 +120,8 @@ def mock_event_2(mock_event_message_2, uuid2) -> MockRealtimeEvent:
 
 
 @pytest.fixture(scope='session')
-def mock_event_no_id(mock_event_message_1, mock_event_no_id) -> MockRealtimeEvent:
-    return MockRealtimeEvent(message=mock_event_message_2)
+def mock_event_no_id(mock_event_message_1) -> MockRealtimeEvent:
+    return MockRealtimeEvent(message=mock_event_message_1)
 
 
 @pytest.fixture(scope='session')

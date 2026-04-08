@@ -76,8 +76,8 @@ def test__create_event__persists_event_to_database_no_id(state, session, mock_ev
         s.expunge_all()
 
     assert row is not None
-    assert row.event == mock_event_1.encoded_string()
-    assert row.data == mock_event_1.data()
+    assert row.event == mock_event_no_id.encoded_string()
+    assert row.data == mock_event_no_id.data()
 
 
 def test__create_event__returns_detached_event_model(state, session, mock_event_1):
