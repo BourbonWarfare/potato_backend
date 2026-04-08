@@ -13,6 +13,9 @@ class MissionUploadEvent(MissionEvent, event='uploaded'):
     mission: uuid.UUID
     iteration: uuid.UUID
 
+    def __post_init__(self):
+        super().__init__()
+
     def data(self) -> dict[str, Any]:
         return {'mission': self.mission, 'iteration': self.iteration}
 
@@ -22,6 +25,9 @@ class IterationReviewedEvent(MissionEvent, event='reviewed'):
     iteration: uuid.UUID
     review: uuid.UUID
 
+    def __post_init__(self):
+        super().__init__()
+
     def data(self) -> dict[str, Any]:
         return {'iteration': self.iteration, 'review': self.review}
 
@@ -29,6 +35,9 @@ class IterationReviewedEvent(MissionEvent, event='reviewed'):
 @dataclass
 class IterationCosignedEvent(MissionEvent, event='cosigned'):
     review: uuid.UUID
+
+    def __post_init__(self):
+        super().__init__()
 
     def data(self) -> dict[str, Any]:
         return {'review': self.review}
