@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 from dataclasses import dataclass
 from contextlib import contextmanager
 from bw.events import Broker
@@ -14,6 +15,7 @@ logger = logging.getLogger('bw.realtime')
 class Worker:
     messages: list[BaseEvent]
     alive: bool
+    uuid: uuid.UUID = uuid.uuid4()
 
     @contextmanager
     def process(self):
@@ -42,6 +44,8 @@ class Queue:
 
     def stop(self):
         self.dead = True
+        for worker in self.queues:
+            worker.alive = False
 
     def on_event(self, event: BaseEvent):
         from bw.state import State
@@ -50,7 +54,7 @@ class Queue:
         RealtimeApi().push_event(State.state, event)
 
     def subscribe(self) -> Worker:
-        worker = Worker(messages=[], alive=True)
+        worker = Worker(messages=[], alive=not self.dead)
         self.queues.append(worker)
         return worker
 
@@ -59,13 +63,10 @@ class Queue:
         from bw.realtime.api import RealtimeApi
         from bw.realtime.event import EventStore
 
-        logger.debug('start')
         while not self.dead:
             await asyncio.sleep(self.delay)
-            logger.debug('tick')
 
             self.queues = [worker for worker in self.queues if worker.alive]
-            logger.debug(f'{len(self.queues)} queues attached')
 
             queued_events = []
             for queued_event, event in EventStore().queued_events_from_database(State.state):
@@ -75,6 +76,4 @@ class Queue:
 
                 queued_events.append(queued_event)
 
-            logger.debug(f'{len(queued_events)} queued events to publish')
             RealtimeApi().publish_queued_events(State.state, queued_events)
-        logger.debug(f'end. dead? {self.dead}')

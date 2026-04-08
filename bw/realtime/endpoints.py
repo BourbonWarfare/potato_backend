@@ -1,3 +1,4 @@
+from bw.web_event.connection import EndEvent
 import logging
 from quart import Blueprint, request
 from collections.abc import AsyncIterator
@@ -6,7 +7,7 @@ from bw.web_utils import json_endpoint, sse_endpoint
 from bw.response import Created
 from bw.auth.decorators import require_session, require_user_role
 from bw.auth.roles import Roles
-from bw.web_event.base import BaseEvent
+from bw.web_event import BaseEvent, StartEvent
 from bw.state import State
 
 logger = logging.getLogger('bw.realtime')
@@ -29,7 +30,8 @@ def define(api: Blueprint, local: Blueprint):
 
         worker = State.state.queue.subscribe()
         with worker.process():
-            while True:
+            yield StartEvent(id=worker.uuid)
+            while worker.alive:
                 event = await worker.pop_event()
                 if not relevant_events and not relevant_namespaces:
                     yield event
@@ -44,3 +46,4 @@ def define(api: Blueprint, local: Blueprint):
                     and event.namespace in relevant_namespaces
                 ):
                     yield event
+            yield EndEvent(id=worker.uuid)
