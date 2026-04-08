@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 from contextlib import contextmanager
 from bw.events import Broker
+import bw.web_event  # noqa: F401
 from bw.web_event.base import BaseEvent
 
 
