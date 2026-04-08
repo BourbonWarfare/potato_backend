@@ -30,7 +30,7 @@ def define(api: Blueprint, local: Blueprint):
 
         worker = State.state.queue.subscribe()
         with worker.process():
-            yield StartEvent(id=worker.uuid)
+            yield StartEvent(id=worker.id)
             while worker.alive:
                 event = await worker.pop_event()
                 if not relevant_events and not relevant_namespaces:
@@ -46,4 +46,4 @@ def define(api: Blueprint, local: Blueprint):
                     and event.namespace in relevant_namespaces
                 ):
                     yield event
-            yield EndEvent(id=worker.uuid)
+            yield EndEvent(id=worker.id)
