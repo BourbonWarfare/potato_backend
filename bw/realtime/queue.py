@@ -15,7 +15,7 @@ logger = logging.getLogger('bw.realtime')
 class Worker:
     messages: list[BaseEvent]
     alive: bool
-    uuid: uuid.UUID = uuid.uuid4()
+    id: uuid.UUID = uuid.uuid4()
 
     @contextmanager
     def process(self):
