@@ -29,7 +29,7 @@ class Event(Base):
 class QueuedEvent(Base):
     __tablename__ = 'queued_events'
 
-    event: Mapped[int | None] = mapped_column(ForeignKey('events.id'), primary_key=True)
+    event: Mapped[int | None] = mapped_column(ForeignKey('events.id'), nullable=False, primary_key=True)
     queued_time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.current_timestamp(), index=True
     )
@@ -38,7 +38,7 @@ class QueuedEvent(Base):
 class PublishedEvent(Base):
     __tablename__ = 'published_events'
 
-    event: Mapped[int | None] = mapped_column(ForeignKey('events.id'), primary_key=True)
+    event: Mapped[int | None] = mapped_column(ForeignKey('events.id'), nullable=False, primary_key=True)
     published_time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.current_timestamp(), index=True
     )
