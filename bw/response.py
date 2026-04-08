@@ -121,7 +121,7 @@ class ServerSentEventResponse(WebResponse):
     def headers(self) -> dict[str, str]:
         return {
             'Cache-Control': 'no-cache',
-            'Transfer-Encoding': 'chunked',
+            'X-Accel-Buffering': 'no',
         }
 
     @classmethod
