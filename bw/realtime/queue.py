@@ -58,6 +58,7 @@ class Queue:
         from bw.realtime.api import RealtimeApi
         from bw.realtime.event import EventStore
 
+        logger.debug('start')
         while not self.dead:
             await asyncio.sleep(self.delay)
             logger.debug('tick')
@@ -75,3 +76,4 @@ class Queue:
 
             logger.debug(f'{len(queued_events)} queued events to publish')
             RealtimeApi().publish_queued_events(State.state, queued_events)
+        logger.debug(f'end. dead? {self.dead}')
