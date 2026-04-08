@@ -273,7 +273,7 @@ def sse_endpoint(func: Callable[..., Awaitable[AsyncIterator[WebEvent | BaseEven
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
         async def async_byte_generator() -> AsyncGenerator[bytes]:
-            async for event in await func(*args, **kwargs):
+            async for event in func(*args, **kwargs):  # ty:ignore[not-iterable]
                 yield event.encode()
             StopAsyncIteration
 
