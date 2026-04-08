@@ -24,7 +24,15 @@ class WebResponse(Response):
                 raise BwServerError(status=self.status_code, message='An error occurred for unknown reasons.')
         return self
 
-    def __init__(self, status: int, headers: dict = {}, response='', from_exception: Exception | None = None, **kwargs):
+    def __init__(
+        self,
+        status: int,
+        headers: dict = {},
+        response='',
+        from_exception: Exception | None = None,
+        stringify_response: bool = True,
+        **kwargs,
+    ):
         self.exception = from_exception
         headers.update(self.headers())  # ty: ignore [call-non-callable]
         lower_headers = {key.lower(): value for key, value in headers.items()}
@@ -33,7 +41,7 @@ class WebResponse(Response):
 
         if isinstance(response, str):
             response = (response,)
-        elif not isinstance(response, Iterable):
+        elif not isinstance(response, Iterable) and stringify_response:
             response = (str(response),)
 
         super().__init__(
@@ -118,6 +126,6 @@ class ServerSentEventResponse(WebResponse):
 
     @classmethod
     def from_async_generator(cls, async_generator: Callable[[], AsyncGenerator[bytes]]) -> Self:
-        response = cls(status=200, response=async_generator())
+        response = cls(status=200, response=async_generator(), stringify_response=False)
         response.timeout = None  # Disable timeout for SSE
         return response
