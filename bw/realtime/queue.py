@@ -1,8 +1,12 @@
 import asyncio
+import logging
 from dataclasses import dataclass
 from contextlib import contextmanager
 from bw.events import Broker
 from bw.web_event.base import BaseEvent
+
+
+logger = logging.getLogger('bw.realtime')
 
 
 @dataclass
@@ -56,8 +60,10 @@ class Queue:
 
         while not self.dead:
             await asyncio.sleep(self.delay)
+            logger.debug('tick')
 
             self.queues = [worker for worker in self.queues if worker.alive]
+            logger.debug(f'{len(self.queues)} queues attached')
 
             queued_events = []
             for queued_event, event in EventStore().queued_events_from_database(State.state):
@@ -67,4 +73,5 @@ class Queue:
 
                 queued_events.append(queued_event)
 
+            logger.debug(f'{len(queued_events)} queued events to publish')
             RealtimeApi().publish_queued_events(State.state, queued_events)
