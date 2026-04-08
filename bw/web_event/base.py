@@ -29,7 +29,7 @@ class MetaEvent(type):
             cls.retry = retry
 
         if event and cls not in global_registered_events.values():
-            encoded_event = encode_event(event=event, namespace=namespace)
+            encoded_event = encode_event(event=event, namespace=cls.namespace)
             assert encoded_event not in global_registered_events
             global_registered_events[encoded_event] = cls
 
