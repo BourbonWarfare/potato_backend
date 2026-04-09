@@ -1,5 +1,3 @@
-import json
-from bw.converters import make_json_safe
 from bw.response import WebEvent
 from typing import Any
 import uuid
@@ -57,8 +55,7 @@ class BaseEvent(metaclass=MetaEvent):
         raise NotImplementedError('Subclasses must implement the `data` method.')
 
     def as_web_event(self) -> WebEvent:
-        json_data = json.dumps(make_json_safe(self.data()))
-        return WebEvent(event=self.encoded_string(), data=json_data, id=self.id, retry=self.retry)
+        return WebEvent(event=self.encoded_string(), data=self.data(), id=self.id, retry=self.retry)
 
     def encode(self) -> bytes:
         return self.as_web_event().encode()
