@@ -31,9 +31,9 @@ def define(api: Blueprint, local: Blueprint):
         relevant_namespaces = set(request.args.getlist('namespace'))
 
         worker = State.state.queue.subscribe()
+        logger.debug('start')
+        yield StartEvent(id=worker.id)
         with worker.process():
-            logger.debug('start')
-            yield StartEvent(id=worker.id)
             while worker.alive:
                 logger.debug('alive tick')
                 event = await worker.pop_event()
@@ -51,5 +51,5 @@ def define(api: Blueprint, local: Blueprint):
                 if should_yield:
                     logger.debug(f'yield {event}')
                     yield event
-            logger.debug('end')
-            yield EndEvent(id=worker.id)
+        logger.debug('end')
+        yield EndEvent(id=worker.id)
