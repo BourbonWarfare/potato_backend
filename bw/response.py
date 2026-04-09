@@ -1,3 +1,4 @@
+from inspect import isasyncgen, isgenerator
 from bw.converters import make_json_safe
 from quart import Response
 from werkzeug.datastructures.headers import Headers
@@ -30,7 +31,6 @@ class WebResponse(Response):
         headers: dict = {},
         response='',
         from_exception: Exception | None = None,
-        stringify_response: bool = True,
         **kwargs,
     ):
         self.exception = from_exception
@@ -39,13 +39,12 @@ class WebResponse(Response):
         if 'content-type' not in lower_headers:
             lower_headers['content-type'] = self.content_type()
 
-        if isinstance(response, str):
+        if isgenerator(response) or isasyncgen(response):
+            pass
+        elif isinstance(response, str):
             response = (response,)
         elif not isinstance(response, Iterable):
-            if stringify_response:
-                response = (str(response),)
-            else:
-                response = (response,)
+            response = (str(response),)
 
         super().__init__(
             response=response,
@@ -137,7 +136,7 @@ class ServerSentEventResponse(WebResponse):
 
     @classmethod
     def from_async_generator(cls, async_generator: Callable[[], AsyncGenerator[bytes]]) -> Self:
-        response = cls(status=200, response=async_generator(), stringify_response=False)
+        response = cls(status=200, response=async_generator())
         response.timeout = None  # Disable timeout for SSE
         return response
 

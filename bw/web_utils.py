@@ -278,13 +278,16 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
             return ServerSentResponseError(exception.status())
             raise exception
 
+        if 'test/event-stream' not in request.accept_mimetypes:
+            exception = WrongAccept(recieved=', '.join(request.accept_mimetypes.values()), expected='text/event-stream')
+            return ServerSentResponseError(exception.status())
+            raise exception
+
         async def async_byte_generator() -> AsyncGenerator[bytes]:
-            print('generator')
             async for event in func(*args, **kwargs):
                 yield event.encode()
             raise StopAsyncIteration
 
-        print('response')
         return ServerSentEventResponse.from_async_generator(async_byte_generator)
 
     return wrapper
