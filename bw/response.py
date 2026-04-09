@@ -108,9 +108,16 @@ class WebEvent:
     retry: int | None = None
 
     def encode(self) -> bytes:
-        data = f'event: {self.event}\ndata: {json.dumps(self.data)}\n'
+        json_data = ''
+        if isinstance(self.data, str):
+            json_data = json.dumps(self.data)
+        else:
+            json_data = json.dumps(make_json_safe(self.data))
         if self.id is not None:
-            data += f'id: {self.id}\n'
+            data = f'id: {self.id}\n'
+        else:
+            data = ''
+        data += f'event: {self.event}\ndata: {json_data}\n'
         if self.retry is not None:
             data += f'retry: {self.retry}\n'
         data += '\n'
