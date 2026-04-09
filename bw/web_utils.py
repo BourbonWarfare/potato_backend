@@ -279,10 +279,12 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
             raise exception
 
         async def async_byte_generator() -> AsyncGenerator[bytes]:
+            print('generator')
             async for event in func(*args, **kwargs):
                 yield event.encode()
             raise StopAsyncIteration
 
+        print('response')
         return ServerSentEventResponse.from_async_generator(async_byte_generator)
 
     return wrapper
