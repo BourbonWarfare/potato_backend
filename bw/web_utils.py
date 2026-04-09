@@ -272,7 +272,7 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
 
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
-        if 'test/event-stream' not in request.accept_mimetypes:
+        if 'text/event-stream' not in request.accept_mimetypes:
             exception = WrongAccept(recieved=', '.join(request.accept_mimetypes.values()), expected='text/event-stream')
             logger.error(f'Cannot connect SSE socket: {str(exception)}')
             return ServerSentResponseError(exception.status())
