@@ -41,8 +41,11 @@ class WebResponse(Response):
 
         if isinstance(response, str):
             response = (response,)
-        elif not isinstance(response, Iterable) and stringify_response:
-            response = (str(response),)
+        elif not isinstance(response, Iterable):
+            if stringify_response:
+                response = (str(response),)
+            else:
+                response = (response,)
 
         super().__init__(
             response=response,

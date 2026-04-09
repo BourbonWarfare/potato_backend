@@ -19,31 +19,37 @@ def define(api: Blueprint, local: Blueprint):
     @require_session
     @require_user_role(Roles.can_publish_realtime_events)
     async def push_event(event: BaseEvent) -> Created:
+        logger.info(f'Queueing event {event.encoded_string()}')
         State.state.queue.on_event(event)
         return Created()
 
     @api.get('/sse')
-    @sse_endpoint  # ty: ignore [invalid-argument-type]
+    @sse_endpoint
     async def subscribe() -> AsyncIterator[BaseEvent]:
+        logger.info('Request subscribing to SSE stream')
         relevant_events = set(request.args.getlist('event'))
         relevant_namespaces = set(request.args.getlist('namespace'))
 
         worker = State.state.queue.subscribe()
         with worker.process():
+            logger.debug('start')
             yield StartEvent(id=worker.id)
             while worker.alive:
+                logger.debug('alive tick')
                 event = await worker.pop_event()
-                if not relevant_events and not relevant_namespaces:
+                should_yield = (
+                    (not relevant_events and not relevant_namespaces)
+                    or (relevant_events and not relevant_namespaces and event.event in relevant_events)
+                    or (not relevant_events and relevant_namespaces and event.namespace in relevant_namespaces)
+                    or (
+                        relevant_events
+                        and relevant_namespaces
+                        and event.event in relevant_events
+                        and event.namespace in relevant_namespaces
+                    )
+                )
+                if should_yield:
+                    logger.debug(f'yield {event}')
                     yield event
-                elif relevant_events and not relevant_namespaces and event.event in relevant_events:
-                    yield event
-                elif not relevant_events and relevant_namespaces and event.namespace in relevant_namespaces:
-                    yield event
-                elif (
-                    relevant_events
-                    and relevant_namespaces
-                    and event.event in relevant_events
-                    and event.namespace in relevant_namespaces
-                ):
-                    yield event
+            logger.debug('end')
             yield EndEvent(id=worker.id)

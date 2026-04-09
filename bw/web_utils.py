@@ -242,7 +242,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
     return decorator
 
 
-def sse_endpoint(func: Callable[..., Awaitable[AsyncIterator[WebEvent | BaseEvent]]]):
+def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
     """
     ### Decorator for Server-Sent Events endpoint functions
 
@@ -273,7 +273,7 @@ def sse_endpoint(func: Callable[..., Awaitable[AsyncIterator[WebEvent | BaseEven
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
         async def async_byte_generator() -> AsyncGenerator[bytes]:
-            async for event in func(*args, **kwargs):  # ty:ignore[not-iterable]
+            async for event in func(*args, **kwargs):
                 yield event.encode()
             StopAsyncIteration
 
