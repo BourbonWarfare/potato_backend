@@ -272,16 +272,9 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
 
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
-        accept_header = request.headers.get('Accept', '')
-        if accept_header != 'text/event-stream':
-            exception = WrongAccept(recieved=accept_header, expected='text/event-stream')
-            return ServerSentResponseError(exception.status())
-            raise exception
-
         if 'test/event-stream' not in request.accept_mimetypes:
             exception = WrongAccept(recieved=', '.join(request.accept_mimetypes.values()), expected='text/event-stream')
             return ServerSentResponseError(exception.status())
-            raise exception
 
         async def async_byte_generator() -> AsyncGenerator[bytes]:
             async for event in func(*args, **kwargs):
