@@ -7,8 +7,8 @@ from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable
 from pathlib import Path
 from quart import request, render_template_string
 
-from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError, BadHeader
-from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse
+from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError, BadHeader, WrongAccept
+from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse, ServerSentResponseError
 from bw.web_event import BaseEvent
 
 
@@ -272,6 +272,12 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
 
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
+        accept_header = request.headers.get('Accept', '')
+        if accept_header != 'text/event-stream':
+            exception = WrongAccept(recieved=accept_header, expected='text/event-stream')
+            return ServerSentResponseError(exception.status())
+            raise exception
+
         async def async_byte_generator() -> AsyncGenerator[bytes]:
             async for event in func(*args, **kwargs):
                 yield event.encode()

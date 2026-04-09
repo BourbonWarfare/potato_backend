@@ -133,3 +133,8 @@ class ServerSentEventResponse(WebResponse):
         response = cls(status=200, response=async_generator(), stringify_response=False)
         response.timeout = None  # Disable timeout for SSE
         return response
+
+
+class ServerSentResponseError(ServerSentEventResponse):
+    def __init__(self, status: int):
+        super().__init__(status=status)

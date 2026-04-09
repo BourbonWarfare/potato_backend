@@ -49,3 +49,11 @@ class UploadError(ClientError):
 class MissionDoesNotHaveMetadata(UploadError):
     def __init__(self):
         super().__init__('mission does not have attached mission testing attributes')
+
+
+class WrongAccept(ClientError):
+    def status(self) -> int:
+        return 406
+
+    def __init__(self, *, recieved: str, expected: str):
+        super().__init__(f'Wrong `Accept` header. Expected "{expected}", recieved "{recieved}"')
