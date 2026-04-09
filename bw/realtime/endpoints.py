@@ -32,7 +32,7 @@ def define(api: Blueprint, local: Blueprint):
 
         worker = State.state.queue.subscribe()
         logger.debug('start')
-        yield StartEvent(id=worker.id)
+        yield StartEvent(worker_id=worker.id)
         with worker.process():
             while worker.alive:
                 logger.debug('alive tick')

@@ -60,9 +60,9 @@ def log_config() -> dict[str, Any]:
         },
         'loggers': {
             logger: {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG[logger],
+                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else level,
             }
-            for logger in PRODUCTION_LOG_CONFIG.keys()
+            for logger, level in PRODUCTION_LOG_CONFIG.items()
         },
     }
 
