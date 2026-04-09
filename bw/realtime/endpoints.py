@@ -27,13 +27,20 @@ def define(api: Blueprint, local: Blueprint):
     @sse_endpoint
     async def subscribe() -> AsyncIterator[BaseEvent]:
         logger.info('Request subscribing to SSE stream')
+        print(1)
         relevant_events = set(request.args.getlist('event'))
+        print(2)
         relevant_namespaces = set(request.args.getlist('namespace'))
 
+        print(3)
         worker = State.state.queue.subscribe()
+        print(4)
         yield StartEvent(worker_id=worker.id)
+        print(5)
         with worker.process():
+            print(6)
             while worker.alive:
+                print(7)
                 event = await worker.pop_event()
                 should_yield = (
                     (not relevant_events and not relevant_namespaces)
@@ -48,4 +55,5 @@ def define(api: Blueprint, local: Blueprint):
                 )
                 if should_yield:
                     yield event
+        print(8)
         yield EndEvent(worker_id=worker.id)
