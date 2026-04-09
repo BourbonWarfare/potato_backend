@@ -1,6 +1,6 @@
 from bw.web_event.connection import EndEvent
 import logging
-from quart import Blueprint, request
+from quart import Blueprint
 from collections.abc import AsyncIterator
 
 from bw.web_utils import json_endpoint, sse_endpoint
@@ -28,9 +28,9 @@ def define(api: Blueprint, local: Blueprint):
     async def subscribe() -> AsyncIterator[BaseEvent]:
         logger.info('Request subscribing to SSE stream')
         print(1)
-        relevant_events = set(request.args.getlist('event'))
+        # relevant_events = set(request.args.getlist('event'))
         print(2)
-        relevant_namespaces = set(request.args.getlist('namespace'))
+        # relevant_namespaces = set(request.args.getlist('namespace'))
 
         print(3)
         worker = State.state.queue.subscribe()
@@ -43,15 +43,16 @@ def define(api: Blueprint, local: Blueprint):
                 print(7)
                 event = await worker.pop_event()
                 should_yield = (
-                    (not relevant_events and not relevant_namespaces)
-                    or (relevant_events and not relevant_namespaces and event.event in relevant_events)
-                    or (not relevant_events and relevant_namespaces and event.namespace in relevant_namespaces)
-                    or (
-                        relevant_events
-                        and relevant_namespaces
-                        and event.event in relevant_events
-                        and event.namespace in relevant_namespaces
-                    )
+                    True
+                    # (not relevant_events and not relevant_namespaces)
+                    # or (relevant_events and not relevant_namespaces and event.event in relevant_events)
+                    # or (not relevant_events and relevant_namespaces and event.namespace in relevant_namespaces)
+                    # or (
+                    #    relevant_events
+                    #    and relevant_namespaces
+                    #    and event.event in relevant_events
+                    #    and event.namespace in relevant_namespaces
+                    # )
                 )
                 if should_yield:
                     yield event
