@@ -281,7 +281,7 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
         async def async_byte_generator() -> AsyncGenerator[bytes]:
             async for event in func(*args, **kwargs):
                 yield event.encode()
-            StopAsyncIteration
+            raise StopAsyncIteration
 
         return ServerSentEventResponse.from_async_generator(async_byte_generator)
 
