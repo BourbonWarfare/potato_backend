@@ -164,7 +164,7 @@ def db_iteration_1(state, session, db_mission_1):
             iteration=1,
             mission_length=70,
             bwmf_version='1.0.0',
-            changelog={'changes': 'Updated mission file'},
+            changelog="{'changes': 'Updated mission file'}",
         )
         session.add(iteration)
         session.flush()
@@ -176,15 +176,15 @@ def db_iteration_1(state, session, db_mission_1):
 def db_iteration_2(state, session, db_mission_1):
     with state.Session.begin() as session:
         iteration = Iteration(
-            file_name='iteration.pbo',
+            file_name='iteration_1.pbo',
             mission_id=db_mission_1.id,
-            min_player_count=1,
-            max_player_count=10,
-            desired_player_count=5,
+            min_player_count=5,
+            max_player_count=15,
+            desired_player_count=7,
             iteration=2,
-            mission_length=70,
-            bwmf_version='1.0.0',
-            changelog={'changes': 'Updated mission file again'},
+            mission_length=90,
+            bwmf_version='1.0.1',
+            changelog="{'changes': 'Updated mission file again'}",
         )
         session.add(iteration)
         session.flush()

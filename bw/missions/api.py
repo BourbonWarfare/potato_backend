@@ -1,3 +1,5 @@
+from bw.converters import make_json_safe
+import dataclasses
 import re
 import os
 import logging
@@ -16,11 +18,13 @@ from bw.error import (
     AlreadyReviewedMission,
     MissionAlreadyExists,
 )
+from bw.auth.user import UserStore
 from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
 from bw.missions.tests import TestStore
 from bw.missions.metainfo import Metainfo
 from bw.missions.test_status import TestStatus
+from bw.missions.response import MissionIterationResponse, MissionResponse, MissionTypeResponse
 from bw.models.auth import User
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.web_event.mission import MissionUploadEvent, IterationReviewedEvent, IterationCosignedEvent
@@ -317,6 +321,47 @@ class MissionsApi:
             metadata = [row for row in reader]
 
         return JsonResponse({'fields': fields, 'metadata': metadata})
+
+    @define_api
+    async def get_iteration_information(self, state: State, iteration_uuid: UUID) -> JsonResponse:
+        iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
+        mission = MissionStore().mission_with_iteration(state, iteration)
+        mission_tag = MissionTypeStore().mission_type_from_tag(state, tag=mission.mission_type)
+
+        mission_tag_info = MissionTypeResponse(
+            name=mission_tag.name, signoffs_required=mission_tag.signoffs_required, tag=mission_tag.numeric_tag
+        )
+
+        if mission.author is not None:
+            author_uuid = UserStore().user_from_id(state, mission.author).uuid
+        else:
+            author_uuid = UUID(int=0)
+
+        mission_info = MissionResponse(
+            uuid=mission.uuid,
+            server=mission.server,
+            creation_date=mission.creation_date,
+            author_uuid=author_uuid,
+            author_name=mission.author_name,
+            title=mission.title,
+            mission_type=mission_tag_info,
+            special_flags=mission.special_flags,
+        )
+
+        iteration_info = MissionIterationResponse(
+            uuid=iteration.uuid,
+            mission=mission_info,
+            min_player_count=iteration.min_player_count,
+            max_player_count=iteration.max_player_count,
+            desired_player_count=iteration.desired_player_count,
+            safe_start_length=iteration.safe_start_length,
+            mission_length=iteration.mission_length,
+            upload_date=iteration.upload_date,
+            bwmf_version=iteration.bwmf_version,
+            iteration=iteration.iteration,
+            changelog=iteration.changelog,
+        )
+        return JsonResponse(make_json_safe(dataclasses.asdict(iteration_info)))
 
 
 class TestApi:

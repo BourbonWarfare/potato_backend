@@ -1,9 +1,10 @@
 # ruff: noqa: F811, F401
 
+from uuid import UUID
 import pytest
 
 from bw.cache.l1 import L1Cache, Entry
-from bw.events import ServerEvent
+from bw.web_event import MissionUploadEvent, IterationCosignedEvent
 from bw.error import L1CacheMiss
 
 
@@ -21,8 +22,8 @@ def cache():
 def populated_cache():
     cache = L1Cache()
     cache.insert('key1', 'value1', None)
-    cache.insert('key2', 'value2', ServerEvent.MISSION_UPLOADED)
-    cache.insert('key3', 'value3', ServerEvent.TEST_EVENT)
+    cache.insert('key2', 'value2', MissionUploadEvent)
+    cache.insert('key3', 'value3', IterationCosignedEvent)
     return cache
 
 
@@ -118,15 +119,15 @@ def test__l1cache__expire__does_not_error_on_missing_key(cache):
 
 
 def test__l1cache__event__expires_correct_keys(populated_cache):
-    populated_cache.event(ServerEvent.MISSION_UPLOADED)
+    populated_cache.event(MissionUploadEvent(UUID(int=0), UUID(int=0)))
     assert populated_cache.contains('key1') is True
     assert populated_cache.contains('key2') is False
     assert populated_cache.contains('key3') is True
 
 
 def test__l1cache__event__does_nothing_if_no_matching_keys(populated_cache):
-    populated_cache.event(ServerEvent.TEST_EVENT)
-    populated_cache.event(ServerEvent.TEST_EVENT)
+    populated_cache.event(IterationCosignedEvent(UUID(int=0), UUID(int=0)))
+    populated_cache.event(IterationCosignedEvent(UUID(int=0), UUID(int=0)))
     assert populated_cache.contains('key1') is True
     assert populated_cache.contains('key2') is True
     assert populated_cache.contains('key3') is False

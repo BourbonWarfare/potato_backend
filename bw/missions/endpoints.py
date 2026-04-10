@@ -1,3 +1,4 @@
+from uuid import UUID
 import logging
 import urllib.parse
 from quart import render_template_string, Blueprint
@@ -68,6 +69,55 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
             stored_pbo_path=Path(pbo_path),
             changelog=changelog,
         )
+
+    @api.get('/iteration/<uuid:iteration_uuid>')
+    @require_session
+    async def get_iteration_information(self, iteration_uuid: UUID) -> JsonResponse:
+        """
+        ### Retrieve mission iteration information with given UUID
+
+        Retrieves iteration information as well as mission and type information for a given UUID
+
+        **Args:**
+        - `iteration_uuid` (`UUID`): The UUID of the mission iteration (path parameter).
+
+        **Returns:**
+        - `JsonResponse`:
+        - **Success (200)**: `{}`
+        **Example:**
+        ```
+        POST /api/v1/missions/iteration/...
+        {
+            "uuid": ...,
+            "mission": {
+                "uuid": ...,
+                "server": "Main",
+                "creation_date": ...,
+                "author_uuid": ...,
+                "author_name": "tcvm",
+                "title": "tcvm_coop_20",
+                "mission_type": {
+                    "name": "Co-Op",
+                    "signoffs_required": 1,
+                    "tag": 1
+                },
+                "special_flags": {
+                    ...
+                }
+            },
+            "min_player_count": 15,
+            "max_player_count": 40,
+            "desired_player_count": 30,
+            "safe_start_length": 10,
+            "mission_length": 70,
+            "upload_date", ...
+            "bwmf_version": "1.0.0",
+            "iteration": 7,
+            "changelog": "blah"
+        }
+        ```
+        """
+        return await MissionsApi().get_iteration_information(State.state, iteration_uuid)
 
     @html.get('/')
     @html_endpoint(template_path='home.html', title='Bourbon Warfare')

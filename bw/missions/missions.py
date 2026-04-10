@@ -222,6 +222,23 @@ class MissionStore:
                 session.expunge(mission[0])
         return [mission[0] for mission in missions]
 
+    def mission_with_iteration(self, state: State, iteration: Iteration) -> Mission:
+        """
+        ### Retrieve existing mission via its iteration
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `iteration` (`Iteration`): The iteration which is one of this missions
+
+        **Returns:**
+        - `Mission`: The mission.
+        """
+        with state.Session.begin() as session:
+            query = select(Mission).where(Mission.id == iteration.mission_id)
+            mission = session.execute(query).one()[0]
+            session.expunge(mission)
+        return mission
+
     def mission_with_uuid(self, state: State, uuid: UUID, server: str) -> Mission:
         """
         ### Retrieve existing mission via it's UUID

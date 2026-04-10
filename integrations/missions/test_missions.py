@@ -205,3 +205,8 @@ def test__mission_store__get_missions_by_author_with_title__returns_missions_onl
     assert len(missions) == 2
     assert missions[0].id == db_mission_1.id
     assert missions[1].id == db_mission_1_2.id
+
+
+def test__mission_store__mission_with_iteration__returns_mission(state, session, db_mission_1, db_iteration_1):
+    mission = MissionStore().mission_with_iteration(state, db_iteration_1)
+    assert mission.id == db_iteration_1.mission_id

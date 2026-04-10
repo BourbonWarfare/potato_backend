@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import json
 import unittest
 import re
 import csv
@@ -246,6 +247,73 @@ class TestMissionsApi:
         assert resp.status_code == 200
         assert resp.contained_json['fields'] == []
         assert resp.contained_json['metadata'] == []
+
+    @pytest.mark.asyncio
+    async def test__get_iteration_information__returns_full_mission_info(
+        self, state, session, db_user_1, db_mission_type_1, db_mission_1, db_iteration_1
+    ):
+        iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=db_iteration_1.uuid)
+        mission_information = iteration_information['mission']
+        type_information = mission_information['mission_type']
+
+        assert iteration_information['uuid'] == str(db_iteration_1.uuid)
+        assert iteration_information['min_player_count'] == db_iteration_1.min_player_count
+        assert iteration_information['max_player_count'] == db_iteration_1.max_player_count
+        assert iteration_information['desired_player_count'] == db_iteration_1.desired_player_count
+        assert iteration_information['safe_start_length'] == db_iteration_1.safe_start_length
+        assert iteration_information['mission_length'] == db_iteration_1.mission_length
+        assert iteration_information['upload_date'] == db_iteration_1.upload_date.isoformat()
+        assert iteration_information['bwmf_version'] == db_iteration_1.bwmf_version
+        assert iteration_information['iteration'] == db_iteration_1.iteration
+        assert iteration_information['changelog'] == db_iteration_1.changelog
+
+        assert mission_information['uuid'] == str(db_mission_1.uuid)
+        assert mission_information['server'] == db_mission_1.server
+        assert mission_information['creation_date'] == db_mission_1.creation_date.isoformat()
+        assert mission_information['author_uuid'] == str(db_user_1.uuid)
+        assert mission_information['author_name'] == db_mission_1.author_name
+        assert mission_information['title'] == db_mission_1.title
+        assert mission_information['special_flags'] == db_mission_1.special_flags
+
+        assert type_information['name'] == db_mission_type_1.name
+        assert type_information['signoffs_required'] == db_mission_type_1.signoffs_required
+        assert type_information['tag'] == db_mission_type_1.numeric_tag
+
+    @pytest.mark.asyncio
+    async def test__get_iteration_information__second_iteration_returns_full_mission_info(
+        self, state, session, db_user_1, db_mission_type_1, db_mission_1, db_iteration_2
+    ):
+        iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=db_iteration_2.uuid)
+        mission_information = iteration_information['mission']
+        type_information = mission_information['mission_type']
+
+        assert iteration_information['uuid'] == str(db_iteration_2.uuid)
+        assert iteration_information['min_player_count'] == db_iteration_2.min_player_count
+        assert iteration_information['max_player_count'] == db_iteration_2.max_player_count
+        assert iteration_information['desired_player_count'] == db_iteration_2.desired_player_count
+        assert iteration_information['safe_start_length'] == db_iteration_2.safe_start_length
+        assert iteration_information['mission_length'] == db_iteration_2.mission_length
+        assert iteration_information['upload_date'] == db_iteration_2.upload_date.isoformat()
+        assert iteration_information['bwmf_version'] == db_iteration_2.bwmf_version
+        assert iteration_information['iteration'] == db_iteration_2.iteration
+        assert iteration_information['changelog'] == db_iteration_2.changelog
+
+        assert mission_information['uuid'] == str(db_mission_1.uuid)
+        assert mission_information['server'] == db_mission_1.server
+        assert mission_information['creation_date'] == db_mission_1.creation_date.isoformat()
+        assert mission_information['author_uuid'] == str(db_user_1.uuid)
+        assert mission_information['author_name'] == db_mission_1.author_name
+        assert mission_information['title'] == db_mission_1.title
+        assert mission_information['special_flags'] == db_mission_1.special_flags
+
+        assert type_information['name'] == db_mission_type_1.name
+        assert type_information['signoffs_required'] == db_mission_type_1.signoffs_required
+        assert type_information['tag'] == db_mission_type_1.numeric_tag
+
+    @pytest.mark.asyncio
+    async def test__get_iteration_information__non_existent_iteration_returns_404(self, state, session, db_iteration_2):
+        iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=db_iteration_2.uuid)
+        assert iteration_information.status == 404
 
 
 # god i love naming conventions

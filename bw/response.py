@@ -3,7 +3,7 @@ from bw.converters import make_json_safe
 from quart import Response
 from werkzeug.datastructures.headers import Headers
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, Any
 from collections.abc import AsyncGenerator, Iterable, Callable
 import json
 
@@ -89,6 +89,14 @@ class JsonResponse(WebResponse):
             contained_status = status
         self.contained_json = json_payload
         super().__init__(status=contained_status, headers=headers, response=json.dumps(make_json_safe(self.contained_json)))
+
+    def get(self, item: str, default: Any = None) -> Any:
+        return self.contained_json.get(item, default)
+
+    def __getitem__(self, item: str) -> Any:
+        if item not in self.contained_json:
+            raise KeyError(item)
+        return self.contained_json.get(item)
 
 
 class HtmlResponse(WebResponse):
