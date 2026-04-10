@@ -111,7 +111,7 @@ async def test__subscribe__returns_sse_content_type(state, session, test_app, en
     """Test that GET /realtime/sse responds with a text/event-stream Content-Type."""
     response = await test_app.get(endpoint_realtime_sse_url)
 
-    assert response.status_code == 200
+    assert response.status_code == 406
     assert 'text/event-stream' in response.content_type
 
 

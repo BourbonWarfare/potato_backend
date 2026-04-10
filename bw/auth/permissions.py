@@ -5,5 +5,5 @@ from bw.combined_dataclass import SlotCombiner
 
 @dataclass(kw_only=True, slots=True)
 class Permissions(SlotCombiner):
-    can_upload_mission: bool
-    can_test_mission: bool
+    can_upload_mission: bool = False
+    can_test_mission: bool = False

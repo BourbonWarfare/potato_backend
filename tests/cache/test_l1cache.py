@@ -119,15 +119,19 @@ def test__l1cache__expire__does_not_error_on_missing_key(cache):
 
 
 def test__l1cache__event__expires_correct_keys(populated_cache):
-    populated_cache.event(MissionUploadEvent(UUID(int=0), UUID(int=0)))
+    populated_cache.event(MissionUploadEvent)
     assert populated_cache.contains('key1') is True
     assert populated_cache.contains('key2') is False
     assert populated_cache.contains('key3') is True
 
 
 def test__l1cache__event__does_nothing_if_no_matching_keys(populated_cache):
-    populated_cache.event(IterationCosignedEvent(UUID(int=0), UUID(int=0)))
-    populated_cache.event(IterationCosignedEvent(UUID(int=0), UUID(int=0)))
+    populated_cache.event(IterationCosignedEvent)
+    assert populated_cache.contains('key1') is True
+    assert populated_cache.contains('key2') is True
+    assert populated_cache.contains('key3') is False
+
+    populated_cache.event(IterationCosignedEvent)
     assert populated_cache.contains('key1') is True
     assert populated_cache.contains('key2') is True
     assert populated_cache.contains('key3') is False

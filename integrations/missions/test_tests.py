@@ -119,16 +119,24 @@ def test__test_store__iteration_reviews__returns_all_reviews(
 ):
     reviews = TestStore().iteration_reviews(state, db_iteration_1)
 
-    assert len(reviews) == 2
-    assert reviews[0].status == TestStatus.PASSED
-    assert reviews[0].notes == db_review_1.notes
-    assert reviews[0].original_tester_id == db_user_1.id
-    assert len(reviews[0].cosign_ids) == 0
+    review_passed = reviews[0]
+    review_failed = reviews[1]
 
-    assert reviews[1].status == TestStatus.FAILED
-    assert reviews[1].notes == db_review_2.notes
-    assert reviews[1].original_tester_id == db_user_2.id
-    assert len(reviews[1].cosign_ids) == 0
+    if review_passed.status != TestStatus.PASSED:
+        temp = review_passed
+        review_passed = review_failed
+        review_failed = temp
+
+    assert len(reviews) == 2
+    assert review_passed.status == TestStatus.PASSED
+    assert review_passed.notes == db_review_1.notes
+    assert review_passed.original_tester_id == db_user_1.id
+    assert len(review_passed.cosign_ids) == 0
+
+    assert review_failed.status == TestStatus.FAILED
+    assert review_failed.notes == db_review_2.notes
+    assert review_failed.original_tester_id == db_user_2.id
+    assert len(review_failed.cosign_ids) == 0
 
 
 def test__test_store__iteration_reviews__returns_cosigns(
@@ -146,7 +154,7 @@ def test__test_store__iteration_reviews__returns_cosigns(
 
 
 def test__test_store__remove_cosign__removes_cosign_from_iteration_reviews(
-    state, session, db_iteration_1, db_review_1, db_review_2, db_test_result_1, db_test_result_1_2, db_user_1, db_user_2
+    state, session, db_iteration_1, db_review_2, db_review_1, db_test_result_1_2, db_test_result_1, db_user_1, db_user_2
 ):
     TestStore().cosign_result(state, db_user_2, db_test_result_1)
     TestStore().remove_cosign(state, db_user_2, db_test_result_1)
@@ -154,12 +162,21 @@ def test__test_store__remove_cosign__removes_cosign_from_iteration_reviews(
     reviews = TestStore().iteration_reviews(state, db_iteration_1)
 
     assert len(reviews) == 2
-    assert reviews[0].status == TestStatus.PASSED
-    assert reviews[0].notes == db_review_1.notes
-    assert reviews[0].original_tester_id == db_user_1.id
-    assert len(reviews[0].cosign_ids) == 0
 
-    assert reviews[1].status == TestStatus.FAILED
-    assert reviews[1].notes == db_review_2.notes
-    assert reviews[1].original_tester_id == db_user_2.id
-    assert len(reviews[1].cosign_ids) == 0
+    review_passed = reviews[0]
+    review_failed = reviews[1]
+
+    if review_passed.status != TestStatus.PASSED:
+        temp = review_passed
+        review_passed = review_failed
+        review_failed = temp
+
+    assert review_passed.status == TestStatus.PASSED
+    assert review_passed.notes == db_review_1.notes
+    assert review_passed.original_tester_id == db_user_1.id
+    assert len(review_passed.cosign_ids) == 0
+
+    assert review_failed.status == TestStatus.FAILED
+    assert review_failed.notes == db_review_2.notes
+    assert review_failed.original_tester_id == db_user_2.id
+    assert len(review_failed.cosign_ids) == 0

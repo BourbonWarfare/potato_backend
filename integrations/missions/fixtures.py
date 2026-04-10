@@ -40,12 +40,12 @@ def fake_changelog():
 
 @pytest.fixture
 def fake_iteration_1():
-    return type('FakeIteration', (), {'iteration': 1})()
+    return type('FakeIteration', (), {'iteration': 1, 'uuid': uuid.uuid4()})()
 
 
 @pytest.fixture
 def fake_iteration_2():
-    return type('FakeIteration', (), {'iteration': 2})()
+    return type('FakeIteration', (), {'iteration': 2, 'uuid': uuid.uuid4()})()
 
 
 @pytest.fixture(scope='function')

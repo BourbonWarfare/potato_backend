@@ -226,7 +226,7 @@ class ArmaApi:
         logger.info(
             f"""Attempting command with
     name={server.server_name()}
-    path={server.server_path()}
+    path={str(server.server_path())}
     port={server.server_port()}
     hc_count={server.headless_client_count()}
     mods={mods}

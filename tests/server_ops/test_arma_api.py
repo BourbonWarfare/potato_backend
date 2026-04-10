@@ -113,6 +113,10 @@ def test_server_with_mixed_mods():
     server.server_password.return_value = 'password123'
     server.server_port.return_value = 2302
     server.arma_base_path.return_value = Path('/arma3')
+    server.server_path.return_value = Path('/server')
+    server.mission_path.return_value = Path('/missions')
+    server.mod_install_path.return_value = Path('/mods')
+    server.key_install_path.return_value = Path('/keys')
     server.headless_client_count.return_value = 1
 
     mod1 = Mock(spec=Mod)
@@ -198,7 +202,13 @@ def mock_filesystem():
         patch('bw.server_ops.arma.api.shutil.copy') as mock_copy,
     ):
         mock_iterdir = Mock(return_value=[])
-        with patch('pathlib.Path.iterdir', mock_iterdir):
+        with (
+            patch('pathlib.Path.iterdir', mock_iterdir),
+            patch('pathlib.Path.mkdir') as path_mkdir,
+            patch('pathlib.Path.exists', return_value=False) as path_exists,
+        ):
+            mocks['path_exists'] = path_exists
+            mocks['path_mkdir'] = path_mkdir
             mocks['exists'] = mock_exists
             mocks['makedirs'] = mock_makedirs
             mocks['symlink'] = mock_symlink
@@ -223,13 +233,21 @@ def mock_filesystem_with_existing():
     with (
         patch('bw.server_ops.arma.api.os.path.exists', return_value=True),
         patch('bw.server_ops.arma.api.os.makedirs') as mock_makedirs,
+        patch('bw.server_ops.arma.api.os.mkdir') as mock_mkdir,
         patch('bw.server_ops.arma.api.os.symlink') as mock_symlink,
         patch('bw.server_ops.arma.api.os.unlink') as mock_unlink,
         patch('bw.server_ops.arma.api.shutil.rmtree') as mock_rmtree,
     ):
         mock_iterdir = Mock(return_value=[existing_symlink, existing_dir])
-        with patch('pathlib.Path.iterdir', mock_iterdir):
+        with (
+            patch('pathlib.Path.iterdir', mock_iterdir),
+            patch('pathlib.Path.mkdir') as path_mkdir,
+            patch('pathlib.Path.exists', return_value=True) as path_exists,
+        ):
+            mocks['path_exists'] = path_exists
+            mocks['path_mkdir'] = path_mkdir
             mocks['makedirs'] = mock_makedirs
+            mocks['mkdir'] = mock_mkdir
             mocks['symlink'] = mock_symlink
             mocks['unlink'] = mock_unlink
             mocks['rmtree'] = mock_rmtree
@@ -245,7 +263,11 @@ def mock_filesystem_with_errors():
         patch('bw.server_ops.arma.api.os.symlink', side_effect=OSError('Permission denied')),
     ):
         mock_iterdir = Mock(return_value=[])
-        with patch('pathlib.Path.iterdir', mock_iterdir):
+        with (
+            patch('pathlib.Path.iterdir', mock_iterdir),
+            patch('pathlib.Path.mkdir'),
+            patch('pathlib.Path.exists', return_value=False),
+        ):
             yield
 
 
@@ -256,7 +278,12 @@ def mock_filesystem_with_copy_errors():
         patch('bw.server_ops.arma.api.os.makedirs'),
         patch('bw.server_ops.arma.api.shutil.copy', side_effect=shutil.SameFileError('Same file')),
     ):
-        yield
+        with (
+            patch('pathlib.Path.iterdir'),
+            patch('pathlib.Path.mkdir'),
+            patch('pathlib.Path.exists', return_value=False),
+        ):
+            yield
 
 
 @pytest.fixture
@@ -339,6 +366,7 @@ async def test__arma_api__server_steam_status__success(arma_api, mock_a3sb_info)
             'map': 'Altis',
             'players': 10,
             'max_players': 50,
+            'result': 'success',
         }
     )
     mock_a3sb_info.acall.return_value = query_response, None
@@ -349,7 +377,9 @@ async def test__arma_api__server_steam_status__success(arma_api, mock_a3sb_info)
     expected_status = ServerStatus(
         name='Test Server', mission='Test Mission', state=ServerState.PLAYING, map='Altis', players=10, max_players=50
     )
-    assert result.contained_json == dataclasses.asdict(expected_status)
+    result_json = result.contained_json
+    result_json.pop('result')
+    assert result_json == dataclasses.asdict(expected_status)
     mock_a3sb_info.acall.assert_called_once_with('example.com', 2304, json=True, deadline_timeout=1)
 
 
@@ -359,7 +389,8 @@ async def test__arma_api__server_steam_status__failure(arma_api, mock_a3sb_info)
 
     response = await arma_api.server_steam_status('example.com', 2304)
     assert isinstance(response, WebResponse)
-    assert response.status_code == 500
+    assert response.status_code == 200
+    assert response['result'] == 'unresponsive'
 
 
 @pytest.mark.asyncio
@@ -446,7 +477,7 @@ def test__arma_api__deploy_mods__success(arma_api, mock_server_map, mock_filesys
     result = arma_api.deploy_mods('test_server')
 
     assert isinstance(result, Ok)
-    mock_filesystem['makedirs'].assert_called_once()
+    mock_filesystem['path_mkdir'].assert_called_once()
     assert mock_filesystem['symlink'].call_count == len(test_mods)
 
 
@@ -474,7 +505,7 @@ def test__arma_api__deploy_keys__success(arma_api, mock_server_map, mock_filesys
     result = arma_api.deploy_keys('test_server')
 
     assert isinstance(result, Ok)
-    mock_filesystem['makedirs'].assert_called_once()
+    mock_filesystem['path_mkdir'].assert_called_once()
     mock_filesystem['copy'].assert_called()
 
 
@@ -502,12 +533,22 @@ async def test__arma_api__update_server__success(arma_api, mock_server_map, mock
         patch.object(arma_api, 'start_server') as mock_start,
         patch.object(arma_api, 'server_pid_status') as mock_status,
     ):
-        mock_stop.return_value = JsonResponse({'status': 'stopped'})
+        final_status = JsonResponse({'server_status': 'Running', 'hc_status': 'Running'})
+
+        async def mock_stop_return():
+            return JsonResponse({'status': 'stopped'})
+
+        async def mock_start_return():
+            return JsonResponse({'status': 'stopped'})
+
+        async def mock_pid_status_return():
+            return final_status
+
+        mock_stop.return_value = mock_stop_return()
         mock_deploy_mods.return_value = Ok()
         mock_deploy_keys.return_value = Ok()
-        mock_start.return_value = JsonResponse({'status': 'started'})
-        final_status = JsonResponse({'server_status': 'Running', 'hc_status': 'Running'})
-        mock_status.return_value = final_status
+        mock_start.return_value = mock_start_return()
+        mock_status.return_value = mock_pid_status_return()
         result = await arma_api.update_server('test_server')
 
         assert result == final_status
@@ -529,7 +570,7 @@ async def test__arma_api__update_server__server_not_found(arma_api):
 @pytest.mark.asyncio
 async def test__arma_api___manage_server__formats_mods_correctly(arma_api, test_server_with_mixed_mods):
     mock_command = AsyncMock()
-    mock_command.return_value = ServerResult(message='Success')
+    mock_command.return_value = (ServerResult(message='Success'), None)
 
     await arma_api._manage_server(mock_command, test_server_with_mixed_mods)
 
@@ -543,7 +584,7 @@ async def test__arma_api___manage_server__formats_mods_correctly(arma_api, test_
     assert '@servermod1;' in call_kwargs['servermods']
 
     assert call_kwargs['name'] == test_server_with_mixed_mods.server_name()
-    assert call_kwargs['path'] == test_server_with_mixed_mods.arma_base_path()
+    assert str(call_kwargs['path']) == str(test_server_with_mixed_mods.server_path())
     assert call_kwargs['port'] == test_server_with_mixed_mods.server_port()
     assert call_kwargs['hc_count'] == test_server_with_mixed_mods.headless_client_count()
     assert call_kwargs['pass'] == test_server_with_mixed_mods.server_password()

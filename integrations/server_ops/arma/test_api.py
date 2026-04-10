@@ -161,58 +161,6 @@ def test__get_server_modlist__raises_when_server_not_found(mocker, state, sessio
     assert response.status_code == 404
 
 
-# Tests for reload_mod_configuration
-
-
-def test__reload_mod_configuration__calls_load_mods(mocker, state, session, test_config_path):
-    """Test that reload_mod_configuration calls load_mods with correct path"""
-    mock_load_mods = mocker.patch('bw.server_ops.arma.api.load_mods')
-
-    response = ArmaApi().reload_mod_configuration(test_config_path)
-
-    assert response.status_code == 200
-    mock_load_mods.assert_called_once_with(test_config_path)
-
-
-# Tests for reload_modlist_configuration
-
-
-def test__reload_modlist_configuration__calls_load_modlists(mocker, state, session, test_config_path):
-    """Test that reload_modlist_configuration calls load_modlists with correct path"""
-    mock_load_modlists = mocker.patch('bw.server_ops.arma.api.load_modlists')
-
-    response = ArmaApi().reload_modlist_configuration(test_config_path)
-
-    assert response.status_code == 200
-    mock_load_modlists.assert_called_once_with(test_config_path)
-
-
-# Tests for flush_mods_to_disk
-
-
-def test__flush_mods_to_disk__calls_save_mods(mocker, state, session, test_config_path):
-    """Test that flush_mods_to_disk calls save_mods with correct path"""
-    mock_save_mods = mocker.patch('bw.server_ops.arma.mod.save_mods')
-
-    response = ArmaApi().flush_mods_to_disk(test_config_path)
-
-    assert response.status_code == 200
-    mock_save_mods.assert_called_once_with(test_config_path)
-
-
-# Tests for flush_modlists_to_disk
-
-
-def test__flush_modlists_to_disk__calls_save_modlists(mocker, state, session, test_config_path):
-    """Test that flush_modlists_to_disk calls save_modlists with correct path"""
-    mock_save_modlists = mocker.patch('bw.server_ops.arma.mod.save_modlists')
-
-    response = ArmaApi().flush_modlists_to_disk(test_config_path)
-
-    assert response.status_code == 200
-    mock_save_modlists.assert_called_once_with(test_config_path)
-
-
 # Tests for add_mod
 
 

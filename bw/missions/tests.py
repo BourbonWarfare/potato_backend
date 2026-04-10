@@ -184,18 +184,24 @@ class TestStore:
         # TestCosign object
         ```
         """
-        if test_result.review_id == tester.id:
-            raise CouldNotCosignResult()
 
         with state.Session.begin() as session:
-            review = TestCosign(test_result_id=test_result.id, tester_id=tester.id)
+            query = select(Review).where(Review.id == test_result.review_id)
+            review = session.scalar(query)
+            assert review is not None
+
+            print(review.tester_id, review.id, review.notes, tester.id)
+            if review.tester_id == tester.id:
+                raise CouldNotCosignResult()
+
+            cosign = TestCosign(test_result_id=test_result.id, tester_id=tester.id)
             try:
-                session.add(review)
+                session.add(cosign)
                 session.flush()
             except IntegrityError:
                 raise CouldNotCosignResult()
-            session.expunge(review)
-        return review
+            session.expunge(cosign)
+        return cosign
 
     def remove_cosign(self, state: State, tester: User, test_result: TestResult):
         """

@@ -1,3 +1,4 @@
+from inspect import isawaitable
 import logging
 import traceback
 import functools
@@ -61,7 +62,10 @@ def define_api(func: Callable[..., WebResponse | Awaitable[WebResponse]]):
     async def asyncfunc(*args, **kwargs) -> WebResponse:
         try:
             value = func(*args, **kwargs)
-            return await value  # ty: ignore[invalid-await]
+            assert isawaitable(value)
+            awaited_value = await value
+            assert isinstance(awaited_value, WebResponse)
+            return awaited_value
         except BwServerError as e:
             return await async_handle_exception(e)
 

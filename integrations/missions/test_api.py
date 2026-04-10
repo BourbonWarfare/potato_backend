@@ -1,5 +1,6 @@
 # ruff: noqa: F811, F401
 
+from uuid import UUID
 import pytest
 import json
 import unittest
@@ -63,7 +64,7 @@ class TestMissionsApi:
     ):
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
-        mocker.patch('bw.missions.api.pathlib.Path.exists', return_value=True)
+        mocker.patch('bw.missions.api.Path.exists', return_value=True)
 
         resp = await MissionsApi().upload_mission(state, arma_server, db_user_1, 'fake_path', fake_changelog)
         assert not isinstance(resp, JsonResponse)
@@ -312,8 +313,8 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__get_iteration_information__non_existent_iteration_returns_404(self, state, session, db_iteration_2):
-        iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=db_iteration_2.uuid)
-        assert iteration_information.status == 404
+        iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=UUID(int=0))
+        assert iteration_information.status_code == 404
 
 
 # god i love naming conventions
