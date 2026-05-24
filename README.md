@@ -1,49 +1,41 @@
-# potato_backend
-## The backend server Bourbon Warfare uses to manage stuff
+# potato_db
 
-### What is this?
+The HTTP backend powering the [Bourbon Warfare](https://bourbonwarfare.com) ARMA group.
 
-This is a server for the ARMA group Bourbon Warfare. It was originally created to
-be a backend for the BW Mission Database, but it is used for any of the groups needs.
+It started life as the backend for the BW Mission Database and grew into a general-purpose group server: user/role/group management, mission upload and metadata, ARMA dedicated-server orchestration, a cron runner for scheduled work, and a small realtime event bus that talks back to the Discord bot.
 
-## Development
-### Setup
-Use your favourite Python package manager to install the requirements as laid out in
-`pyproject.toml`. `development` and `tests` are available as extras if you want to
-use additional features
+It is the backend half of a pair. The frontend is the Discord bot [potato_bot](https://github.com/bourbonwarfare/potato_bot), which consumes this API over HTTP.
 
-#### Example
-**Install project and all extras**
-`uv sync --locked --all-extras --dev`
+## What it does
 
-**Install project, but only test extras**
-`uv sync --locked --extra tests --dev`
+- **Auth / users / groups / roles.** Discord OAuth2 login, session tokens, per-role permissions, group membership. Bot-style logins for trusted clients (the Discord bot, the cron runner).
+- **Missions.** Upload and version ARMA `.pbo` missions, store metadata, track iterations.
+- **ARMA server ops.** Start, stop, restart, update, and mod-update dedicated ARMA servers via `steamcmd` and a PowerShell helper.
+- **Cron runner.** Loads `cron_*.py` files from a configurable directory and runs them on a schedule. Reloads on change.
+- **Realtime bus.** Internal event queue that lets crons and endpoints push messages to the Discord bot via `/api/v1/realtime`.
 
-## Running
-### Local
-A helper `main.py` function is available in the root directory to run the server locally.
-Connect to `localhost:8080` to see the server
+Architecture diagrams live in [`arch/`](./arch).
 
-### Production
-The project uses `Quart` to manage the server. This framework requires a valid `ASGI`
-server to run. See [Quart documentation](https://quart.palletsprojects.com/en/latest/tutorials/deployment/)
-for more information.
+## Technology
 
-## Configuration
-All server-specific configuration is contained in `conf.txt`. Some attributes are required,
-and if not present the project will exist with a `ConfigError` exception.
+- **Python 3.12**, dependencies pinned with [uv](https://docs.astral.sh/uv/).
+- **[Quart](https://quart.palletsprojects.com/)** ASGI web framework, served by **[Uvicorn](https://www.uvicorn.org/)** in production.
+- **[SQLAlchemy](https://www.sqlalchemy.org/)** + **[pg8000](https://github.com/tlocke/pg8000)** against **PostgreSQL**, with **[Alembic](https://alembic.sqlalchemy.org/)** migrations.
+- **[aiohttp](https://docs.aiohttp.org/)** + **aiodns** for outbound HTTP (Discord OAuth, the cron runner's self-calls).
+- **[cron-converter](https://pypi.org/project/cron-converter/)** for parsing cron strings.
+- **[python-dotenv](https://pypi.org/project/python-dotenv/)** plus a small key-value config loader (`conf.kv`).
+- **[pytest](https://pytest.org/)** (+ `pytest-asyncio`, `pytest-mock`, `pytest-cov`) for tests, **[ruff](https://docs.astral.sh/ruff/)** for lint and format, **[ty](https://github.com/astral-sh/ty)** for type checking.
 
-Values are stored as `key=value`, and you can add comments with `# comment` syntax.
+## Surfaces
 
-## Database
-Some server features requires a database to run. The server is developed assuming Postgres
-is used, but other databases may work.
+- REST API mounted under `/api/v1/{auth,user,group,admin,missions,server_ops,realtime}`.
+- Loopback-only API under `/api/local/*` for trusted same-host callers.
+- HTML routes under `/` for the OAuth callback flow.
 
-### Configuration
-In `conf.txt`, the following keys are required for database connections:
-- `db_driver`: driver which is powering the database, see
-[SQL Alchemy documentation](https://docs.sqlalchemy.org/en/20/core/engines.html) for more information
-- `db_username`: username which will be connected for all database operations
-- `db_password`: password for `db_username`
-- `db_address`: address which will be connected to
-- `db_name`: the specific database which operations will be performed on
+## Building and running
+
+See [BUILDING.md](./BUILDING.md) for local setup, tests, migrations, cron, and the production runbook.
+
+## License
+
+See [LICENSE](./LICENSE).
