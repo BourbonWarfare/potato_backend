@@ -212,7 +212,7 @@ class MissionsApi:
             raise MissionDoesNotHaveMetadata()
 
         try:
-            existing_mission = MissionStore().mission_with_uuid(state, uuid, server.server_name())
+            existing_mission = MissionStore().mission_with_uuid_in_server(state, uuid, server.server_name())
         except MissionDoesNotExist:
             existing_mission = None
 
@@ -362,6 +362,33 @@ class MissionsApi:
             changelog=iteration.changelog,
         )
         return JsonResponse(make_json_safe(dataclasses.asdict(iteration_info)))
+
+    @define_api
+    async def get_mission_information(self, state: State, mission_uuid: UUID) -> JsonResponse:
+        mission = MissionStore().mission_with_uuid(state, mission_uuid)
+        mission_tag = MissionTypeStore().mission_type_from_tag(state, tag=mission.mission_type)
+
+        mission_tag_info = MissionTypeResponse(
+            name=mission_tag.name, signoffs_required=mission_tag.signoffs_required, tag=mission_tag.numeric_tag
+        )
+
+        if mission.author is not None:
+            author_uuid = UserStore().user_from_id(state, mission.author).uuid
+        else:
+            author_uuid = UUID(int=0)
+
+        mission_info = MissionResponse(
+            uuid=mission.uuid,
+            server=mission.server,
+            creation_date=mission.creation_date,
+            author_uuid=author_uuid,
+            author_name=mission.author_name,
+            title=mission.title,
+            mission_type=mission_tag_info,
+            special_flags=mission.special_flags,
+        )
+
+        return JsonResponse(make_json_safe(dataclasses.asdict(mission_info)))
 
 
 class TestApi:

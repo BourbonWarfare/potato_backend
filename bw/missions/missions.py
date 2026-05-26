@@ -239,7 +239,27 @@ class MissionStore:
             session.expunge(mission)
         return mission
 
-    def mission_with_uuid(self, state: State, uuid: UUID, server: str) -> Mission:
+    def mission_with_uuid(self, state: State, uuid: UUID) -> Mission:
+        """
+        ### Retrieve existing mission via it's UUID
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `uuid` (`UUID`): The UUID a mission may have.
+
+        **Returns:**
+        - `Mission`: The mission, if the UUID is in the database.
+        """
+        with state.Session.begin() as session:
+            query = select(Mission).where(Mission.uuid == uuid)
+            try:
+                mission = session.execute(query).one()[0]
+            except NoResultFound as e:
+                raise MissionDoesNotExist(uuid) from e
+            session.expunge(mission)
+        return mission
+
+    def mission_with_uuid_in_server(self, state: State, uuid: UUID, server: str) -> Mission:
         """
         ### Retrieve existing mission via it's UUID
 

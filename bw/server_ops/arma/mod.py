@@ -257,7 +257,7 @@ def load_mod_configs(mods_file: Path):
     if not isinstance(defaults['server_mod_directory'], str):
         raise ModFieldInvalid('defaults', 'server_mod_directory', 'must be a string')
 
-    mod_list: dict[str, str] = config['mod']
+    mod_list: dict[str, dict[str, Any]] = config['mod']
 
     for mod_name, mod_data in mod_list.items():
         # Check if mod already exists

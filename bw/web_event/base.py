@@ -1,5 +1,5 @@
 from bw.response import WebEvent
-from typing import Any
+from typing import Any, cast
 import uuid
 
 
@@ -29,7 +29,7 @@ class MetaEvent(type):
         if event and cls not in global_registered_events.values():
             encoded_event = encode_event(event=event, namespace=cls.namespace)
             assert encoded_event not in global_registered_events
-            global_registered_events[encoded_event] = cls
+            global_registered_events[encoded_event] = cast(type['BaseEvent'], cls)
 
 
 class BaseEvent(metaclass=MetaEvent):

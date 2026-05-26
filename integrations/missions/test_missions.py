@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import uuid
 from sqlalchemy import select
 
 from bw.error import CouldNotCreateMissionType, NoMissionTypeWithName, CouldNotCreateIteration, MissionDoesNotExist
@@ -210,3 +211,35 @@ def test__mission_store__get_missions_by_author_with_title__returns_missions_onl
 def test__mission_store__mission_with_iteration__returns_mission(state, session, db_mission_1, db_iteration_1):
     mission = MissionStore().mission_with_iteration(state, db_iteration_1)
     assert mission.id == db_iteration_1.mission_id
+
+
+def test__mission_store__mission_with_uuid__returns_mission(state, session, db_mission_1):
+    mission = MissionStore().mission_with_uuid(state, db_mission_1.uuid)
+    assert mission.id == db_mission_1.id
+    assert mission.uuid == db_mission_1.uuid
+
+
+def test__mission_store__mission_with_uuid__unknown_uuid_raises(state, session):
+    with pytest.raises(MissionDoesNotExist):
+        MissionStore().mission_with_uuid(state, uuid.UUID(int=0))
+
+
+def test__mission_store__mission_with_uuid__ignores_server(state, session, db_mission_1):
+    # mission_with_uuid is the server-agnostic form: no server filter applies.
+    mission = MissionStore().mission_with_uuid(state, db_mission_1.uuid)
+    assert mission.server == db_mission_1.server
+
+
+def test__mission_store__mission_with_uuid_in_server__returns_mission(state, session, db_mission_1):
+    mission = MissionStore().mission_with_uuid_in_server(state, db_mission_1.uuid, db_mission_1.server)
+    assert mission.id == db_mission_1.id
+
+
+def test__mission_store__mission_with_uuid_in_server__wrong_server_raises(state, session, db_mission_1):
+    with pytest.raises(MissionDoesNotExist):
+        MissionStore().mission_with_uuid_in_server(state, db_mission_1.uuid, 'not-a-real-server')
+
+
+def test__mission_store__mission_with_uuid_in_server__unknown_uuid_raises(state, session, db_mission_1):
+    with pytest.raises(MissionDoesNotExist):
+        MissionStore().mission_with_uuid_in_server(state, uuid.UUID(int=0), db_mission_1.server)

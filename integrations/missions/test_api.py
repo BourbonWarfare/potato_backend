@@ -146,7 +146,7 @@ class TestMissionsApi:
         }
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
-        mocker.patch.object(MissionStore, 'mission_with_uuid', return_value=db_mission_1)
+        mocker.patch.object(MissionStore, 'mission_with_uuid_in_server', return_value=db_mission_1)
         mocker.patch.object(MissionStore, 'add_iteration', return_value=fake_iteration_2)
         mocker.patch('bw.missions.api.shutil.copyfile', return_value=None)
         resp = await MissionsApi().upload_mission(state, arma_server, db_user_1, 'fake_path', fake_changelog)
@@ -315,6 +315,42 @@ class TestMissionsApi:
     async def test__get_iteration_information__non_existent_iteration_returns_404(self, state, session, db_iteration_2):
         iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=UUID(int=0))
         assert iteration_information.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test__get_mission_information__returns_full_mission_info(
+        self, state, session, db_user_1, db_mission_type_1, db_mission_1
+    ):
+        mission_information = await MissionsApi().get_mission_information(state, mission_uuid=db_mission_1.uuid)
+        type_information = mission_information['mission_type']
+
+        assert mission_information['uuid'] == str(db_mission_1.uuid)
+        assert mission_information['server'] == db_mission_1.server
+        assert mission_information['creation_date'] == db_mission_1.creation_date.isoformat()
+        assert mission_information['author_uuid'] == str(db_user_1.uuid)
+        assert mission_information['author_name'] == db_mission_1.author_name
+        assert mission_information['title'] == db_mission_1.title
+        assert mission_information['special_flags'] == db_mission_1.special_flags
+
+        assert type_information['name'] == db_mission_type_1.name
+        assert type_information['signoffs_required'] == db_mission_type_1.signoffs_required
+        assert type_information['tag'] == db_mission_type_1.numeric_tag
+
+    @pytest.mark.asyncio
+    async def test__get_mission_information__authorless_mission_uses_nil_uuid(
+        self, state, session, db_mission_type_1, db_mission_1
+    ):
+        # Wipe the author link to simulate a mission with no author.
+        with state.Session.begin() as db_session:
+            mission = db_session.merge(db_mission_1)
+            mission.author = None
+
+        mission_information = await MissionsApi().get_mission_information(state, mission_uuid=db_mission_1.uuid)
+        assert mission_information['author_uuid'] == str(UUID(int=0))
+
+    @pytest.mark.asyncio
+    async def test__get_mission_information__non_existent_mission_returns_404(self, state, session):
+        resp = await MissionsApi().get_mission_information(state, mission_uuid=UUID(int=0))
+        assert resp.status_code == 404
 
 
 # god i love naming conventions

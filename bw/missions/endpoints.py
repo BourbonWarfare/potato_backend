@@ -119,6 +119,43 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         return await MissionsApi().get_iteration_information(State.state, iteration_uuid)
 
+    @api.get('/mission/<uuid:mission_uuid>')
+    @require_session
+    async def get_mission_information(self, mission_uuid: UUID) -> JsonResponse:
+        """
+        ### Retrieve mission information with given UUID
+
+        Retrieves mission information as well as mission type information for a given UUID
+
+        **Args:**
+        - `mission_uuid` (`UUID`): The UUID of the mission (path parameter).
+
+        **Returns:**
+        - `JsonResponse`:
+        - **Success (200)**: `{}`
+        **Example:**
+        ```
+        POST /api/v1/missions/mission/...
+        {
+            "uuid": ...,
+            "server": "Main",
+            "creation_date": ...,
+            "author_uuid": ...,
+            "author_name": "tcvm",
+            "title": "tcvm_coop_20",
+            "mission_type": {
+                "name": "Co-Op",
+                "signoffs_required": 1,
+                "tag": 1
+            },
+            "special_flags": {
+                ...
+            }
+        }
+        ```
+        """
+        return await MissionsApi().get_mission_information(State.state, mission_uuid)
+
     @html.get('/')
     @html_endpoint(template_path='home.html', title='Bourbon Warfare')
     async def html_home(html: str) -> str:
