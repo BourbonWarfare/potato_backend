@@ -72,7 +72,7 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.get('/iteration/<uuid:iteration_uuid>')
     @require_session
-    async def get_iteration_information(self, iteration_uuid: UUID) -> JsonResponse:
+    async def get_iteration_information(iteration_uuid: UUID) -> JsonResponse:
         """
         ### Retrieve mission iteration information with given UUID
 
@@ -121,7 +121,7 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
 
     @api.get('/mission/<uuid:mission_uuid>')
     @require_session
-    async def get_mission_information(self, mission_uuid: UUID) -> JsonResponse:
+    async def get_mission_information(mission_uuid: UUID) -> JsonResponse:
         """
         ### Retrieve mission information with given UUID
 
