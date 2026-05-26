@@ -4,7 +4,7 @@ import urllib.parse
 from quart import render_template_string, Blueprint
 from pathlib import Path
 
-from bw.web_utils import json_endpoint, html_endpoint
+from bw.web_utils import json_endpoint, url_endpoint, html_endpoint
 from bw.response import JsonResponse
 from bw.models.auth import User
 from bw.auth.decorators import require_session, require_group_permission
@@ -71,8 +71,9 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         )
 
     @api.get('/iteration/<uuid:iteration_uuid>')
+    @url_endpoint
     @require_session
-    async def get_iteration_information(iteration_uuid: UUID) -> JsonResponse:
+    async def get_iteration_information(iteration_uuid: UUID, session_user: User) -> JsonResponse:
         """
         ### Retrieve mission iteration information with given UUID
 
@@ -120,8 +121,9 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         return await MissionsApi().get_iteration_information(State.state, iteration_uuid)
 
     @api.get('/mission/<uuid:mission_uuid>')
+    @url_endpoint
     @require_session
-    async def get_mission_information(mission_uuid: UUID) -> JsonResponse:
+    async def get_mission_information(mission_uuid: UUID, session_user: User) -> JsonResponse:
         """
         ### Retrieve mission information with given UUID
 
