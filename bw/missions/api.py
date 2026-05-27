@@ -326,7 +326,7 @@ class MissionsApi:
     async def get_iteration_information(self, state: State, iteration_uuid: UUID) -> JsonResponse:
         iteration = MissionStore().iteration_with_uuid(state, iteration_uuid)
         mission = MissionStore().mission_with_iteration(state, iteration)
-        mission_tag = MissionTypeStore().mission_type_from_tag(state, tag=mission.mission_type)
+        mission_tag = MissionTypeStore().mission_type_from_id(state, tag_id=mission.mission_type)
 
         mission_tag_info = MissionTypeResponse(
             name=mission_tag.name, signoffs_required=mission_tag.signoffs_required, tag=mission_tag.numeric_tag
