@@ -203,13 +203,15 @@ class MissionsApi:
 
         info = mission.custom_attributes['potato_missiontesting_missionTestingInfo']
         if 'potato_missiontesting_missionType' not in info:
-            raise MissionDoesNotHaveMetadata()
+            raise MissionDoesNotHaveMetadata('mission type')
+
+        print(info['potato_missiontesting_missionType'])
 
         if 'potato_missionMaking_uuid' in info:
             uuid = info['potato_missionMaking_uuid']['data']['value']
             uuid = UUID(hex=uuid)
         else:
-            raise MissionDoesNotHaveMetadata()
+            raise MissionDoesNotHaveMetadata('UUID')
 
         try:
             existing_mission = MissionStore().mission_with_uuid_in_server(state, uuid, server.server_name())

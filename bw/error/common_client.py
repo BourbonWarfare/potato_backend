@@ -47,8 +47,10 @@ class UploadError(ClientError):
 
 
 class MissionDoesNotHaveMetadata(UploadError):
-    def __init__(self):
-        super().__init__('mission does not have attached mission testing attributes')
+    def __init__(self, metadata_kind: str = ''):
+        super().__init__(
+            'mission does not have attached mission testing attributes' + (f' (missing {metadata_kind})' if metadata_kind else '')
+        )
 
 
 class WrongAccept(ClientError):
