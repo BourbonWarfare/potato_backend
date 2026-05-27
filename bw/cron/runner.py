@@ -179,7 +179,7 @@ class Runner:
                     async with aiohttp.ClientSession(headers=auth_headers) as session:
                         for cron in async_requests:
                             with OutCapture():
-                                async_runner.run(cron(session))
+                                await cron(session)
 
                 try:
                     refresh_session()
