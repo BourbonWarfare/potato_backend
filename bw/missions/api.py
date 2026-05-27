@@ -205,8 +205,6 @@ class MissionsApi:
         if 'potato_missiontesting_missionType' not in info:
             raise MissionDoesNotHaveMetadata('mission type')
 
-        print(info['potato_missiontesting_missionType'])
-
         if 'potato_missionMaking_uuid' in info:
             uuid = info['potato_missionMaking_uuid']['data']['value']
             uuid = UUID(hex=uuid)
@@ -368,7 +366,7 @@ class MissionsApi:
     @define_api
     async def get_mission_information(self, state: State, mission_uuid: UUID) -> JsonResponse:
         mission = MissionStore().mission_with_uuid(state, mission_uuid)
-        mission_tag = MissionTypeStore().mission_type_from_tag(state, tag=mission.mission_type)
+        mission_tag = MissionTypeStore().mission_type_from_id(state, tag_id=mission.mission_type)
 
         mission_tag_info = MissionTypeResponse(
             name=mission_tag.name, signoffs_required=mission_tag.signoffs_required, tag=mission_tag.numeric_tag

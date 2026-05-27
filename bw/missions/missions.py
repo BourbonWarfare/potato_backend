@@ -134,6 +134,29 @@ class MissionTypeStore:
             session.expunge(mission_type)
         return mission_type
 
+    def mission_type_from_id(self, state: State, tag_id: int) -> MissionType:
+        """
+        ### Retrieve a mission type by its primary key
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `tag_id` (`int`): The primary key of the mission tag.
+
+        **Returns:**
+        - `MissionType`: The mission type object with the given primary key.
+
+        **Raises:**
+        - `NoMissionTypeWithTag`: If no mission type with the given primary key exists.
+        """
+        with state.Session.begin() as session:
+            query = select(MissionType).where(MissionType.id == tag_id)
+            try:
+                mission_type = session.execute(query).one()[0]
+            except NoResultFound as e:
+                raise NoMissionTypeWithTag(tag_id) from e
+            session.expunge(mission_type)
+        return mission_type
+
 
 class MissionStore:
     def create_mission(
