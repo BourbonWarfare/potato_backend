@@ -180,6 +180,7 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
                 logger.warning(e)
                 return e.as_response_code()
         else:
+            logger.warning('Endpoint expects Json')
             return ExpectedJson().as_response_code()
 
     return wrapper

@@ -23,6 +23,7 @@ def define(api: Blueprint, local: Blueprint):
     async def push_event(event: str, arguments: dict[str, Any] | None = None) -> Created | DoesNotExist:
         logger.info(f'Queueing event {event}')
         if event not in global_registered_events:
+            logger.warning(f'Attempted to publish an unknown event "{event}"')
             return DoesNotExist()
         event_cls = global_registered_events[event]
         kwargs = arguments if arguments else {}
