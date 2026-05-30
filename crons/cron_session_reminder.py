@@ -10,7 +10,7 @@ class MyExampleCron(Cron):
         Returns a cron-encoded string defining when this job will be run next
         """
         # return '0 1800 * * 0,3'
-        return '0 1 * * *'
+        return '* * * * *'
 
     async def request(self, session: aiohttp.ClientSession) -> None:
         print('Remind that session starts in an hour!')
