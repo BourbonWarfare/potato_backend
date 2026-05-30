@@ -5,7 +5,7 @@ import uuid
 
 
 @dataclass
-class ConnectionEvent(UniqueEvent, namespace='connection'):
+class ConnectionEvent(UniqueEvent, namespace='connection', abstract=True):
     worker_id: uuid.UUID
 
     def data(self) -> dict[str, Any]:

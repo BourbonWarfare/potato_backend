@@ -4,7 +4,7 @@ from typing import Any
 import uuid
 
 
-class MissionEvent(BaseEvent, namespace='mission'):
+class MissionEvent(BaseEvent, namespace='mission', abstract=True):
     pass
 
 
