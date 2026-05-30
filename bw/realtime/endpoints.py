@@ -3,6 +3,7 @@ from bw.web_event.connection import EndEvent
 import logging
 from quart import Blueprint
 from collections.abc import AsyncIterator
+from typing import Any
 
 from bw.web_utils import json_endpoint, sse_endpoint
 from bw.response import Created, DoesNotExist
@@ -19,12 +20,13 @@ def define(api: Blueprint, local: Blueprint):
     @json_endpoint
     @require_session
     @require_user_role(Roles.can_publish_realtime_events)
-    async def push_event(event: str) -> Created | DoesNotExist:
+    async def push_event(event: str, arguments: dict[str, Any] | None = None) -> Created | DoesNotExist:
         logger.info(f'Queueing event {event}')
         if event not in global_registered_events:
             return DoesNotExist()
         event_cls = global_registered_events[event]
-        event_instance = event_cls()
+        kwargs = arguments if arguments else {}
+        event_instance = event_cls(**kwargs)
         State.state.queue.on_event(event_instance)
         return Created()
 
