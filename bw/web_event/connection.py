@@ -5,14 +5,11 @@ import uuid
 
 
 @dataclass
-class ConnectionEvent(UniqueEvent, namespace='connection', abstract=True):
+class ConnectionEvent(UniqueEvent, namespace='connection'):
     worker_id: uuid.UUID
 
     def data(self) -> dict[str, Any]:
         return {'worker_id': self.worker_id}
-
-    def __post_init__(self):
-        super().__init__()
 
 
 class StartEvent(ConnectionEvent, event='connected'):

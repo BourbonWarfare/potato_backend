@@ -5,7 +5,7 @@ from bw.converters import make_json_safe
 import aiohttp
 
 
-class MyExampleCron(Cron):
+class SessionReminder(Cron):
     @staticmethod
     def cron_str() -> str:
         """

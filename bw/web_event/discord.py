@@ -1,5 +1,6 @@
 from bw.web_event import BaseEvent
 from dataclasses import dataclass
+from typing import Any
 
 
 class DiscordEvent(BaseEvent, namespace='discord', abstract=True):
@@ -8,4 +9,5 @@ class DiscordEvent(BaseEvent, namespace='discord', abstract=True):
 
 @dataclass
 class SessionNotification(DiscordEvent, event='uploaded'):
-    pass
+    def data(self) -> dict[str, Any]:
+        return {}
