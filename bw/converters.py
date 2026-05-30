@@ -1,11 +1,11 @@
-from bw.web_event.base import BaseEvent
-
 import datetime
 import uuid
 from typing import Any
 
 
 def make_json_safe(json: dict[str, Any]):
+    from bw.web_event.base import BaseEvent
+
     json_safe: dict[str, Any] = {}
     for key, value in json.items():
         safe_value = value
