@@ -187,6 +187,8 @@ class Runner:
                 try:
                     refresh_session()
                     async_runner.run(run_requests())
+                except Exception as err:
+                    logger.warning(f'A cron job has returned with an error: {err}')
                 finally:
                     time.sleep(self.time_to_next_minute())
 
