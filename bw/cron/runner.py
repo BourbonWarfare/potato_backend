@@ -118,6 +118,7 @@ class Runner:
         for cron in self.crons_:
             if cron not in self.loaded_crons_:
                 logger.warning(f'We found the cron file but no class is within: {cron}')
+                continue
             new_cron = ScheduledCron(cron_class=self.loaded_crons_[cron].cron_class, init_time=datetime.datetime.now())
             if cron in new_crons or new_cron > self.cron_queue_[-1]:
                 heappush(self.cron_queue_, new_cron)
