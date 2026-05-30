@@ -14,16 +14,20 @@ def encode_event(*, event: str, namespace: str | None) -> str:
 
 
 class MetaEvent(type):
-    event: str
-    namespace: str | None
-    retry: int | None
-    id: str | None
-
     def __new__(mcs, name, bases, attrs, **kwargs):
         cls = super().__new__(mcs, name, bases, attrs)
         return cls
 
-    def __init__(cls, name, bases, attrs, event: str | None = None, namespace: str | None = None, retry: int | None = None):
+    def __init__(
+        cls,
+        name,
+        bases,
+        attrs,
+        event: str | None = None,
+        namespace: str | None = None,
+        retry: int | None = None,
+        abstract: bool = False,
+    ):
         super().__init__(name, bases, attrs)
 
         # Resolve from kwargs, falling back to class attributes
@@ -45,7 +49,7 @@ class MetaEvent(type):
 
         # Only enforce/register on concrete subclasses, not the base
         is_base = not bases  # BaseEvent has no bases
-        if is_base:
+        if is_base or abstract:
             return
 
         if not getattr(cls, 'event', None):
@@ -76,7 +80,7 @@ class BaseEvent(metaclass=MetaEvent):
         return self.as_web_event().encode()
 
 
-class UniqueEvent(BaseEvent):
+class UniqueEvent(BaseEvent, abstract=True):
     def __init__(self, id: Any | None = None):
         if id is None:
             id = str(uuid.uuid4())
