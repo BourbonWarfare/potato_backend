@@ -53,6 +53,11 @@ class Environment:
         assert isinstance(tz, str)
         return tz
 
+    def server_url(self) -> str:
+        url = GC.require('server_url').get()
+        assert isinstance(url, str)
+        return url
+
 
 class Local(Environment):
     def port(self) -> int:
