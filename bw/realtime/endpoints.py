@@ -1,3 +1,4 @@
+from bw.models.auth import User
 from bw.web_event.base import global_registered_events
 from bw.web_event.connection import EndEvent
 import logging
@@ -20,7 +21,7 @@ def define(api: Blueprint, local: Blueprint):
     @json_endpoint
     @require_session
     @require_user_role(Roles.can_publish_realtime_events)
-    async def push_event(event: str, arguments: dict[str, Any] | None = None) -> Created | DoesNotExist:
+    async def push_event(session_user: User, event: str, arguments: dict[str, Any] | None = None) -> Created | DoesNotExist:
         logger.info(f'Queueing event {event}')
         if event not in global_registered_events:
             logger.warning(f'Attempted to publish an unknown event "{event}"')
