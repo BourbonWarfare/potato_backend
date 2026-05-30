@@ -14,21 +14,46 @@ def encode_event(*, event: str, namespace: str | None) -> str:
 
 
 class MetaEvent(type):
-    def __new__(cls, name, bases, attrs, **kwargs):
-        return super().__new__(cls, name, bases, attrs)
+    event: str
+    namespace: str | None
+    retry: int | None
+    id: str | None
+
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        cls = super().__new__(mcs, name, bases, attrs)
+        return cls
 
     def __init__(cls, name, bases, attrs, event: str | None = None, namespace: str | None = None, retry: int | None = None):
         super().__init__(name, bases, attrs)
-        if not hasattr(cls, 'event') or getattr(cls, 'event') is None:
-            cls.event = event
-        if not hasattr(cls, 'namespace') or getattr(cls, 'namespace') is None:
-            cls.namespace = namespace
-        if not hasattr(cls, 'retry') or getattr(cls, 'retry') is None:
-            cls.retry = retry
 
-        if event and cls not in global_registered_events.values():
-            encoded_event = encode_event(event=event, namespace=cls.namespace)
-            assert encoded_event not in global_registered_events
+        # Resolve from kwargs, falling back to class attributes
+        if event is not None:
+            cls.event = event
+
+        if namespace is not None:
+            cls.namespace = namespace
+        elif not hasattr(cls, 'namespace'):
+            cls.namespace = None
+
+        if retry is not None:
+            cls.retry = retry
+        elif not hasattr(cls, 'retry'):
+            cls.retry = None
+
+        if not hasattr(cls, 'id'):
+            cls.id = None
+
+        # Only enforce/register on concrete subclasses, not the base
+        is_base = not bases  # BaseEvent has no bases
+        if is_base:
+            return
+
+        if not getattr(cls, 'event', None):
+            raise TypeError(f"Class {name} must define an 'event' attribute.")
+
+        if cls not in global_registered_events.values():
+            encoded_event = encode_event(event=cls.event, namespace=cls.namespace)
+            assert encoded_event not in global_registered_events, f'Duplicate event: {encoded_event}'
             global_registered_events[encoded_event] = cast(type['BaseEvent'], cls)
 
 
@@ -37,16 +62,6 @@ class BaseEvent(metaclass=MetaEvent):
     namespace: str | None
     retry: int | None
     id: str | None
-
-    def __init__(self):
-        if not hasattr(self, 'event'):
-            raise TypeError(f"Class {self.__class__.__name__} must define an 'event' attribute.")
-        if not hasattr(self, 'retry'):
-            self.retry = None
-        if not hasattr(self, 'id'):
-            self.id = None
-        if not hasattr(self, 'namespace'):
-            self.namespace = None
 
     def encoded_string(self) -> str:
         return encode_event(event=self.event, namespace=self.namespace)
