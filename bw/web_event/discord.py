@@ -2,7 +2,7 @@ from bw.web_event import BaseEvent
 from dataclasses import dataclass
 
 
-class DiscordEvent(BaseEvent, namespace='discord'):
+class DiscordEvent(BaseEvent, namespace='discord', abstract=True):
     pass
 
 
