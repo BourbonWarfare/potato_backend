@@ -1,6 +1,7 @@
 from bw.environment import ENVIRONMENT
 from crons.cron import Cron
 from bw.web_event.discord import SessionNotification
+from bw.converters import make_json_safe
 import aiohttp
 
 
@@ -15,7 +16,7 @@ class MyExampleCron(Cron):
 
     async def request(self, session: aiohttp.ClientSession) -> None:
         print('Remind that session starts in an hour!')
-        payload = {'event': SessionNotification()}
+        payload = {'event': make_json_safe(SessionNotification())}
         async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/realtime/', json=payload) as request:
             request.raise_for_status()
             print('Pushed reminder')

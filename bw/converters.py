@@ -4,6 +4,8 @@ from typing import Any
 
 
 def make_json_safe(json: dict[str, Any]):
+    from bw.web_event.base import BaseEvent
+
     json_safe: dict[str, Any] = {}
     for key, value in json.items():
         safe_value = value
@@ -13,6 +15,8 @@ def make_json_safe(json: dict[str, Any]):
             safe_value = value.isoformat()
         elif isinstance(value, uuid.UUID):
             safe_value = str(value)
+        elif isinstance(value, BaseEvent):
+            safe_value = value.encoded_string()
 
         json_safe[key] = safe_value
     return json_safe
