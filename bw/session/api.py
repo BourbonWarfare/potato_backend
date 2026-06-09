@@ -7,12 +7,14 @@ from bw.state import State
 from bw.response import JsonResponse, Created
 from bw.missions.missions import MissionStore, MissionHistoryStore
 from bw.web_utils import define_api
+from bw.web_event.session import SessionStartedEvent, MissionEndedEvent
 
 
 class SessionApi:
     @define_api
     async def register(self) -> JsonResponse:
         session = SessionStore().create_session(State.state)
+        State.broker.publish(SessionStartedEvent(session=session.uuid))
         return JsonResponse(make_json_safe({'id': session.id}))
 
     @define_api
@@ -30,4 +32,7 @@ class SessionApi:
 
         MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, player_count)
 
+        State.broker.publish(
+            MissionEndedEvent(session=session.uuid, mission=mission_id, iteration=iteration.uuid, player_count=player_count)
+        )
         return Created()
