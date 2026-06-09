@@ -19,6 +19,7 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
     @require_session
     @require_user_role(Roles.can_manage_session)
     async def register(session_user: User) -> JsonResponse:
+        logger.info('New session registered')
         return await SessionApi().register()
 
     @api.post('/mission/finish')
@@ -28,4 +29,5 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
     async def finish_mission(
         session_user: User, session_id: UUID, mission_name_with_version: str, mission_map: str, player_count: int
     ) -> Ok:
+        logger.info(f'Mission finished for session {session_id}')
         return await SessionApi().finish_mission(session_id, mission_name_with_version, mission_map, player_count)
