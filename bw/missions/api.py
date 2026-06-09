@@ -95,7 +95,10 @@ class MissionsApi:
             raise MissionDoesNotHaveMetadata('mission type')
 
         non_versioned_mission_name, _ = name_and_version_from_name(mission.source_name)
-        mission_map = stored_pbo_path.suffixes[0].strip('.')
+        if stored_pbo_path.suffixes:
+            mission_map = stored_pbo_path.suffixes[0].strip('.')
+        else:
+            mission_map = ''
 
         if 'pbo' in mission_map:
             raise MissionHasNoMap(stored_pbo_path.name)

@@ -43,7 +43,7 @@ def define(app: Quart):
     missions_define(mission_blueprint, local_mission_blueprint, html_blueprint)
     server_ops_define(server_ops_blueprint, local_server_ops_blueprint, html_blueprint)
     realtime_define(realtime_blueprint, local_realtime_blueprint)
-    sessions_define(sessions_blueprint, local_sessions_blueprint)
+    sessions_define(sessions_blueprint, local_sessions_blueprint, html_blueprint)
 
     api_blueprint.register_blueprint(mission_blueprint)
     api_blueprint.register_blueprint(auth_blueprint)
