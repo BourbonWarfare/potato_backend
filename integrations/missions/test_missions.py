@@ -1,5 +1,6 @@
 # ruff: noqa: F811, F401
 
+from uuid import uuid4
 import pytest
 import uuid
 from sqlalchemy import select
@@ -92,21 +93,26 @@ def test__mission_type_store__mission_type_from_name__retrieve_none_raises(state
 
 
 def test__mission_store__create_mission__can_create(state, session, db_user_1, db_mission_type_1):
+    uuid = uuid4()
     mission = MissionStore().create_mission(
         state,
         server='main',
         creator=db_user_1,
         author='AuthorName',
         title='Test Mission',
+        map='Mappy',
         type=db_mission_type_1,
         flags={'foo': 'bar'},
+        uuid=uuid,
     )
     assert mission.server == 'main'
     assert mission.author == db_user_1.id
     assert mission.author_name == 'AuthorName'
     assert mission.title == 'Test Mission'
+    assert mission.map == 'Mappy'
     assert mission.mission_type == db_mission_type_1.id
     assert mission.special_flags == {'foo': 'bar'}
+    assert mission.uuid == uuid
     with state.Session.begin() as session:
         query = select(Mission).where(Mission.id == mission.id)
         row = session.execute(query).first()
@@ -186,7 +192,9 @@ def test__mission_store__add_iteration__invalid_mission_raises(state, session):
 
 def test__mission_store__create_mission__invalid_args_raises(state, session, db_user_1, db_mission_type_1):
     with pytest.raises(Exception):
-        MissionStore().create_mission(state, creator=db_user_1, author=None, title=None, type=db_mission_type_1, flags=None)
+        MissionStore().create_mission(
+            state, creator=db_user_1, author=None, title=None, map='blah', type=db_mission_type_1, flags=None, uuid=uuid4()
+        )
 
 
 def test__mission_store__get_missions_by_author__returns_missions(

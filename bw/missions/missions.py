@@ -166,9 +166,10 @@ class MissionStore:
         creator: User,
         author: str,
         title: str,
+        map: str,
         type: MissionType,
         flags: dict,
-        uuid: UUID | None = None,
+        uuid: UUID,
     ) -> Mission:
         """
         ### Create a new mission stored in the given server
@@ -181,26 +182,22 @@ class MissionStore:
         - `title` (`str`): The title of the mission.
         - `type` (`MissionType`): The mission type.
         - `flags` (`dict`): Special flags for the mission.
-        - `uuid` (`UUID | None`): The UUID of the mission, if it has one.
+        - `uuid` (`UUID`): The UUID of the mission, generated from its name.
 
         **Returns:**
         - `Mission`: The created mission object.
         """
         with state.Session.begin() as session:
-            if uuid is not None:
-                mission = Mission(
-                    server=server,
-                    author=creator.id,
-                    author_name=author,
-                    title=title,
-                    mission_type=type.id,
-                    special_flags=flags,
-                    uuid=uuid,
-                )
-            else:
-                mission = Mission(
-                    server=server, author=creator.id, author_name=author, title=title, mission_type=type.id, special_flags=flags
-                )
+            mission = Mission(
+                server=server,
+                author=creator.id,
+                author_name=author,
+                title=title,
+                map=map,
+                mission_type=type.id,
+                special_flags=flags,
+                uuid=uuid,
+            )
             session.add(mission)
             session.flush()
             session.expunge(mission)

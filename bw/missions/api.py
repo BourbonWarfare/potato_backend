@@ -110,6 +110,7 @@ class MissionsApi:
                 user,
                 author=mission.author,
                 title=non_versioned_mission_name,
+                map=mission_map,
                 type=mission_type,
                 flags=flags,
                 uuid=uuid,

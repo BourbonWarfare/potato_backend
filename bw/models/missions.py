@@ -31,6 +31,7 @@ class Mission(Base):
     author: Mapped[int | None] = mapped_column(ForeignKey('users.id'))
     author_name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
     title: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
+    map: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False)
     mission_type: Mapped[int] = mapped_column(ForeignKey('mission_types.id'), nullable=False)
     special_flags: Mapped[dict] = mapped_column(JSON, nullable=False)
 
