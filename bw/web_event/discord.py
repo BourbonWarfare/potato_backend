@@ -8,6 +8,6 @@ class DiscordEvent(BaseEvent, namespace='discord', abstract=True):
 
 
 @dataclass
-class SessionNotification(DiscordEvent, event='uploaded'):
+class SessionNotification(DiscordEvent, event='session_starting_soon'):
     def data(self) -> dict[str, Any]:
         return {}

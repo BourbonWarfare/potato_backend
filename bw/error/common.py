@@ -16,4 +16,9 @@ class MissionFileDoesNotExist(MissionFileError):
         return 404
 
     def __init__(self, directory: str):
-        super().__init__("mission does not exist at directory '{directory}'")
+        super().__init__(f"mission does not exist at directory '{directory}'")
+
+
+class MissionHasNoMap(ClientError):
+    def __init__(self, mission_name: str):
+        super().__init__(f'Stored mission has no attached map "{mission_name}"')
