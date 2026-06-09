@@ -33,6 +33,20 @@ from bw.server_ops.arma.server import Server
 logger = logging.getLogger('bw.missions')
 
 
+def name_and_version_from_name(mission_name_with_version: str) -> tuple[str, str]:
+    match = re.search('_[vV][0-9]+', mission_name_with_version)
+    if not match:
+        return mission_name_with_version, ''
+
+    version = match.group().strip('_')
+    mission_name = mission_name_with_version[0 : match.start()]
+    return mission_name, version
+
+
+def uuid_from_name_and_map(mission_name: str, mission_map: str) -> UUID:
+    return uuid5(namespace=BW_UUID_NAMESPACE, name=f'{mission_name}:{mission_map}')
+
+
 class MissionsApi:
     @define_api
     async def upload_mission(
@@ -80,13 +94,13 @@ class MissionsApi:
         if 'potato_missiontesting_missionType' not in info:
             raise MissionDoesNotHaveMetadata('mission type')
 
-        non_versioned_mission_name = re.sub('_[vV][0-9]*', '', mission.source_name)
+        non_versioned_mission_name, _ = name_and_version_from_name(mission.source_name)
         mission_map = stored_pbo_path.suffixes[0].strip('.')
 
         if 'pbo' in mission_map:
             raise MissionHasNoMap(stored_pbo_path.name)
 
-        uuid = uuid5(namespace=BW_UUID_NAMESPACE, name=f'{non_versioned_mission_name}:{mission_map}')
+        uuid = uuid_from_name_and_map(non_versioned_mission_name, mission_map)
         try:
             existing_mission = MissionStore().mission_with_uuid_in_server(state, uuid, server.server_name())
         except MissionDoesNotExist:
@@ -142,7 +156,7 @@ class MissionsApi:
         iteration = MissionStore().add_iteration(
             state,
             existing_mission,
-            working_pbo_path.name,
+            working_pbo_path.stem,
             min_players=min_players,
             desired_players=desired_players,
             max_players=max_players,

@@ -9,3 +9,4 @@ class Roles(SlotCombiner):
     can_create_group: bool = False
     can_manage_server: bool = False
     can_publish_realtime_events: bool = False
+    can_manage_session: bool = False

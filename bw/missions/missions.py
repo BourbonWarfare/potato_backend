@@ -1,10 +1,11 @@
+from bw.models.session import Session
 from uuid import UUID
 from sqlalchemy import delete, select
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from bw.state import State
 from bw.models.auth import User
-from bw.models.missions import MissionType, Mission, Iteration
+from bw.models.missions import MissionType, Mission, Iteration, PlayedMission
 from bw.error import (
     CouldNotCreateMissionType,
     NoMissionTypeWithName,
@@ -322,6 +323,16 @@ class MissionStore:
             session.expunge(iteration)
         return iteration
 
+    def iteration_with_mission_and_name(self, state: State, mission: Mission, file_name_no_pbo: str) -> Iteration:
+        with state.Session.begin() as session:
+            query = select(Iteration).join(Mission, Mission.id == mission.id).where(Iteration.file_name == file_name_no_pbo)
+            try:
+                iteration = session.execute(query).one()[0]
+            except NoResultFound as e:
+                raise IterationDoesNotExist() from e
+            session.expunge(iteration)
+        return iteration
+
     def add_iteration(
         self,
         state: State,
@@ -412,3 +423,17 @@ class MissionStore:
                 session.expunge(iteration[0])
                 iterations.append(iteration[0])
         return iterations
+
+
+class MissionHistoryStore:
+    def add_played_mission(
+        self, state: State, mission: Mission, iteration: Iteration, session: Session, player_count: int
+    ) -> PlayedMission:
+        with state.Session.begin() as db_session:
+            played = PlayedMission(
+                session_id=session.id, iteration_id=iteration.id, mission_id=mission.id, player_count=player_count
+            )
+            db_session.add(played)
+            db_session.flush()
+            db_session.expunge(played)
+            return played

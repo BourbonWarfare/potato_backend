@@ -42,6 +42,7 @@ class PlayedMission(Base):
     __tablename__ = 'played_missions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey('arma_sessions.id'), nullable=False)
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
     play_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())

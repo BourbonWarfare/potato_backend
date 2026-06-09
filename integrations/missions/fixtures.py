@@ -105,6 +105,7 @@ def db_mission_1(state, session, db_user_1, db_mission_type_1):
             author=db_user_1.id,
             author_name='me',
             title='foobar',
+            map='blah',
             mission_type=db_mission_type_1.id,
             special_flags={'is_night': True},
         )
@@ -124,6 +125,7 @@ def db_mission_1_1(state, session, db_user_1, db_mission_type_2):
             author=db_user_1.id,
             author_name='me',
             title='foobar 2',
+            map='blah',
             mission_type=db_mission_type_2.id,
             special_flags={'is_night': True},
         )
@@ -143,6 +145,7 @@ def db_mission_1_2(state, session, db_user_1, db_mission_type_1):
             author=db_user_1.id,
             author_name='me',
             title='foobar',
+            map='blah',
             mission_type=db_mission_type_1.id,
             special_flags={'is_night': True},
         )

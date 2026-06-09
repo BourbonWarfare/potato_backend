@@ -31,6 +31,7 @@ from bw.models.auth import *
 from bw.models.missions import *
 from bw.models.arma import *
 from bw.models.realtime import *
+from bw.models.session import *
 target_metadata = bw.models.Base.metadata
 
 # other values from the config, defined by the needs of env.py,

@@ -15,8 +15,9 @@ PRODUCTION_LOG_CONFIG = {
     'bw.server_ops': 'INFO',
     'bw.server_ops.arma': 'INFO',
     'bw.web_utils': 'INFO',
-    'bw.cron': 'DEBUG',
-    'bw.realtime': 'DEBUG',
+    'bw.cron': 'INFO',
+    'bw.realtime': 'INFO',
+    'bw.session': 'DEBUG',
 }
 
 

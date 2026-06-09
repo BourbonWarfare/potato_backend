@@ -4,6 +4,7 @@ from bw.auth.endpoints import define_auth, define_user, define_group, define_adm
 from bw.missions.endpoints import define as missions_define
 from bw.server_ops.endpoints import define as server_ops_define
 from bw.realtime.endpoints import define as realtime_define
+from bw.session.endpoints import define as sessions_define
 
 
 def define(app: Quart):
@@ -32,6 +33,9 @@ def define(app: Quart):
     local_realtime_blueprint = Blueprint('local_realtime', __name__, url_prefix='/realtime')
     realtime_blueprint = Blueprint('realtime', __name__, url_prefix='/realtime')
 
+    local_sessions_blueprint = Blueprint('local_sessions', __name__, url_prefix='/session')
+    sessions_blueprint = Blueprint('sessions', __name__, url_prefix='/session')
+
     define_auth(auth_blueprint, local_auth_blueprint, html_blueprint)
     define_user(user_blueprint, local_user_blueprint, html_blueprint)
     define_group(group_blueprint, local_group_blueprint, html_blueprint)
@@ -39,6 +43,7 @@ def define(app: Quart):
     missions_define(mission_blueprint, local_mission_blueprint, html_blueprint)
     server_ops_define(server_ops_blueprint, local_server_ops_blueprint, html_blueprint)
     realtime_define(realtime_blueprint, local_realtime_blueprint)
+    sessions_define(sessions_blueprint, local_sessions_blueprint)
 
     api_blueprint.register_blueprint(mission_blueprint)
     api_blueprint.register_blueprint(auth_blueprint)
@@ -46,6 +51,7 @@ def define(app: Quart):
     api_blueprint.register_blueprint(group_blueprint)
     api_blueprint.register_blueprint(server_ops_blueprint)
     api_blueprint.register_blueprint(realtime_blueprint)
+    api_blueprint.register_blueprint(sessions_blueprint)
 
     local_blueprint.register_blueprint(local_auth_blueprint)
     local_blueprint.register_blueprint(local_user_blueprint)
@@ -53,6 +59,7 @@ def define(app: Quart):
     local_blueprint.register_blueprint(local_mission_blueprint)
     local_blueprint.register_blueprint(local_server_ops_blueprint)
     local_blueprint.register_blueprint(local_realtime_blueprint)
+    local_blueprint.register_blueprint(local_sessions_blueprint)
 
     app.register_blueprint(api_blueprint)
     app.register_blueprint(local_blueprint)
