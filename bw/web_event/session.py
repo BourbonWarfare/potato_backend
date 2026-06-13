@@ -13,6 +13,11 @@ class SessionStartedEvent(SesssionEvent, event='started'):
 
 
 @dataclass
+class SessionEndedEvent(SesssionEvent, event='ended'):
+    session: uuid.UUID
+
+
+@dataclass
 class MissionEndedEvent(SesssionEvent, event='finished mission'):
     session: uuid.UUID
     mission: uuid.UUID

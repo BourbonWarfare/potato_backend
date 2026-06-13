@@ -9,11 +9,11 @@ class SessionReminder(Cron):
         """
         Returns a cron-encoded string defining when this job will be run next
         """
-        # return '0 18 * * 0,3'
+        # return '0 23 * * 0,3'
         return '* * * * *'
 
     async def request(self, session: aiohttp.ClientSession) -> None:
-        print('Start a new session (1 hour from now)!')
-        async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/session/register/') as request:
+        print('Ending session!')
+        async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/session/finish/') as request:
             request.raise_for_status()
-            print('Started session')
+            print('finished session')

@@ -22,6 +22,22 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         logger.info('New session registered')
         return await SessionApi().register()
 
+    @api.post('/finish')
+    @json_endpoint
+    @require_session
+    @require_user_role(Roles.can_manage_session)
+    async def finish(session_user: User, session_id: UUID) -> JsonResponse:
+        logger.info('Finishing session')
+        return await SessionApi().finish(session_id)
+
+    @api.get('/current')
+    @json_endpoint
+    @require_session
+    @require_user_role(Roles.can_manage_session)
+    async def current_session(session_user: User) -> JsonResponse:
+        logger.info('Getting latest session')
+        return await SessionApi().get_latest_session()
+
     @api.post('/mission/finish')
     @json_endpoint
     @require_session

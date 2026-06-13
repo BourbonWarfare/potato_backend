@@ -79,6 +79,11 @@ class DoesNotExist(Exists):
         super().__init__(False)
 
 
+class BadRequest(WebResponse):
+    def __init__(self, data: str = ''):
+        super().__init__(400, response=data)
+
+
 class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'application/json'

@@ -1,10 +1,11 @@
+from bw.environment import ENVIRONMENT
 from bw.missions.api import uuid_from_name_and_map, name_and_version_from_name
 from bw.session.session import SessionStore
 from bw.converters import make_json_safe
 from uuid import UUID
 
 from bw.state import State
-from bw.response import JsonResponse, Created
+from bw.response import JsonResponse, Created, BadRequest, Ok
 from bw.missions.missions import MissionStore, MissionHistoryStore
 from bw.web_utils import define_api
 from bw.web_event.session import SessionStartedEvent, MissionEndedEvent
@@ -18,9 +19,22 @@ class SessionApi:
         return JsonResponse(make_json_safe({'id': session.id}))
 
     @define_api
+    async def finish(self, session_id: UUID) -> Ok:
+        SessionStore().end_session(State.state, session_id)
+        return Ok()
+
+    @define_api
+    async def get_latest_session(self) -> JsonResponse:
+        session = SessionStore().get_latest_session(State.state)
+        return JsonResponse(make_json_safe({'id': session.id}))
+
+    @define_api
     async def finish_mission(
         self, session_id: UUID, mission_name_with_version: str, mission_map: str, player_count: int
-    ) -> Created:
+    ) -> Created | BadRequest:
+        if player_count < ENVIRONMENT.session_playercount_cutoff():
+            return BadRequest()
+
         mission_name, _ = name_and_version_from_name(mission_name_with_version)
         mission_id = uuid_from_name_and_map(mission_name, mission_map)
         mission = MissionStore().mission_with_uuid(State.state, mission_id)

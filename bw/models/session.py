@@ -14,3 +14,4 @@ class Session(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
     start_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())
+    finish_date: Mapped[datetime.datetime] = mapped_column(nullable=True, default=None)

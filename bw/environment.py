@@ -58,6 +58,11 @@ class Environment:
         assert isinstance(url, str)
         return url
 
+    def session_playercount_cutoff(self) -> int:
+        player_count = GC.require('session_playercount_cutoff').get()
+        assert isinstance(player_count, str)
+        return int(player_count)
+
 
 class Local(Environment):
     def port(self) -> int:
