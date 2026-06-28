@@ -26,11 +26,15 @@ class SessionApi:
     @define_api
     async def get_latest_session(self) -> JsonResponse:
         session = SessionStore().get_latest_session(State.state)
-        return JsonResponse(make_json_safe({'id': session.id}))
+        return JsonResponse(make_json_safe({'id': session.uuid}))
 
     @define_api
     async def finish_mission(
-        self, session_id: UUID, mission_name_with_version: str, mission_map: str, player_count: int
+        self,
+        session_id: UUID,
+        mission_name_with_version: str,
+        mission_map: str,
+        player_count: int,
     ) -> Created | BadRequest:
         if player_count < ENVIRONMENT.session_playercount_cutoff():
             return BadRequest()
@@ -47,6 +51,11 @@ class SessionApi:
         MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, player_count)
 
         State.broker.publish(
-            MissionEndedEvent(session=session.uuid, mission=mission_id, iteration=iteration.uuid, player_count=player_count)
+            MissionEndedEvent(
+                session=session.uuid,
+                mission=mission_id,
+                iteration=iteration.uuid,
+                player_count=player_count,
+            )
         )
         return Created()
