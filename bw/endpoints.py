@@ -6,8 +6,14 @@ from bw.server_ops.endpoints import define as server_ops_define
 from bw.realtime.endpoints import define as realtime_define
 from bw.session.endpoints import define as sessions_define
 
+from bw.response import Ok
+
 
 def define(app: Quart):
+    @app.get('/healthcheck')
+    async def healthcheck() -> Ok:
+        return Ok()
+
     api_blueprint = Blueprint('bw_api', __name__, url_prefix='/api/v1')
     local_blueprint = Blueprint('bw_api_local', __name__, url_prefix='/api/local')
     html_blueprint = Blueprint('bw_frontend', __name__, url_prefix='/')
