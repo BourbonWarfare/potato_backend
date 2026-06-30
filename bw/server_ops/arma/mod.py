@@ -97,7 +97,9 @@ class SteamWorkshopDetails:
         )
 
 
-async def fetch_mod_details_from_workshop(mods: Collection['Mod']) -> dict[WorkshopId, SteamWorkshopDetails]:
+async def fetch_mod_details_from_workshop(
+    mods: Collection['Mod'],
+) -> dict[WorkshopId, SteamWorkshopDetails]:
     """
     ### Fetch mod details from Steam Workshop API
 
@@ -234,6 +236,10 @@ def load_mod_configs(mods_file: Path):
     mods_added: dict[str, Mod] = {}
     mod_workshop_ids: dict[WorkshopId, str] = {mod.workshop_id: mod.name for mod in MODS.values() if mod.workshop_id is not None}
     mod_filenames: dict[str, str] = {mod.filename: mod.name for mod in MODS.values()}
+
+    if not mods_file.exists():
+        logger.error(f'Mod file does not exist on the system: {mods_file}')
+        return
 
     with open(mods_file, 'rb') as f:
         config = tomllib.load(f)

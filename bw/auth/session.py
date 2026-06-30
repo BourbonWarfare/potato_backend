@@ -70,7 +70,11 @@ class SessionStore:
         with state.Session.begin() as session:
             query = (
                 insert(Session)
-                .values(user_id=user.id, token=token, expire_time=Session.human_session_length())
+                .values(
+                    user_id=user.id,
+                    token=token,
+                    expire_time=Session.human_session_length(),
+                )
                 .returning(Session.expire_time)
             )
             expire_time = session.scalar(query)
@@ -78,7 +82,7 @@ class SessionStore:
         if expire_time is None:
             raise SessionExpired()
 
-        return {'session_token': token, 'expire_time': str(expire_time)}
+        return {'session_token': token, 'expire_time': expire_time}
 
     def start_api_session(self, state: State, user: User) -> dict:
         """
@@ -114,7 +118,11 @@ class SessionStore:
         with state.Session.begin() as session:
             query = (
                 insert(Session)
-                .values(user_id=user.id, token=token, expire_time=Session.api_session_length())
+                .values(
+                    user_id=user.id,
+                    token=token,
+                    expire_time=Session.api_session_length(),
+                )
                 .returning(Session.expire_time)
             )
             expire_time = session.scalar(query)
@@ -122,7 +130,7 @@ class SessionStore:
         if expire_time is None:
             raise SessionExpired()
 
-        return {'session_token': token, 'expire_time': str(expire_time)}
+        return {'session_token': token, 'expire_time': expire_time}
 
     def is_session_active(self, state: State, session_token: str) -> bool:
         """

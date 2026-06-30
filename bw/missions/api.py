@@ -22,10 +22,18 @@ from bw.missions.pbo import MissionLoader
 from bw.missions.missions import MissionTypeStore, MissionStore
 from bw.missions.tests import TestStore
 from bw.missions.test_status import TestStatus
-from bw.missions.response import MissionIterationResponse, MissionResponse, MissionTypeResponse
+from bw.missions.response import (
+    MissionIterationResponse,
+    MissionResponse,
+    MissionTypeResponse,
+)
 from bw.models.auth import User
 from bw.settings import BW_UUID_NAMESPACE
-from bw.web_event.mission import MissionUploadEvent, IterationReviewedEvent, IterationCosignedEvent
+from bw.web_event.mission import (
+    MissionUploadEvent,
+    IterationReviewedEvent,
+    IterationCosignedEvent,
+)
 from bw.web_utils import define_api
 from bw.server_ops.arma.server import Server
 
@@ -50,7 +58,12 @@ def uuid_from_name_and_map(mission_name: str, mission_map: str) -> UUID:
 class MissionsApi:
     @define_api
     async def upload_mission(
-        self, state: State, server: Server, user: User, stored_pbo_path: Path, changelog: dict
+        self,
+        state: State,
+        server: Server,
+        user: User,
+        stored_pbo_path: Path,
+        changelog: dict,
     ) -> JsonResponse:
         """
         ### Upload a mission to the database
@@ -189,7 +202,9 @@ class MissionsApi:
         mission_tag = MissionTypeStore().mission_type_from_id(state, tag_id=mission.mission_type)
 
         mission_tag_info = MissionTypeResponse(
-            name=mission_tag.name, signoffs_required=mission_tag.signoffs_required, tag=mission_tag.numeric_tag
+            name=mission_tag.name,
+            signoffs_required=mission_tag.signoffs_required,
+            tag=mission_tag.numeric_tag,
         )
 
         if mission.author is not None:
@@ -229,7 +244,9 @@ class MissionsApi:
         mission_tag = MissionTypeStore().mission_type_from_id(state, tag_id=mission.mission_type)
 
         mission_tag_info = MissionTypeResponse(
-            name=mission_tag.name, signoffs_required=mission_tag.signoffs_required, tag=mission_tag.numeric_tag
+            name=mission_tag.name,
+            signoffs_required=mission_tag.signoffs_required,
+            tag=mission_tag.numeric_tag,
         )
 
         if mission.author is not None:
@@ -254,7 +271,12 @@ class MissionsApi:
 class TestApi:
     @define_api
     async def review_mission(
-        self, state: State, tester: User, iteration_uuid: UUID, status: TestStatus, notes: dict[str, str]
+        self,
+        state: State,
+        tester: User,
+        iteration_uuid: UUID,
+        status: TestStatus,
+        notes: dict[str, str],
     ) -> JsonResponse:
         """
         ### Review a mission iteration
@@ -297,7 +319,7 @@ class TestApi:
                 raise e
 
         State.broker.publish(IterationReviewedEvent(iteration=iteration.uuid, review=result.uuid))
-        return JsonResponse({'result_uuid': str(result.uuid)})
+        return JsonResponse({'result_uuid': result.uuid})
 
     @define_api
     async def cosign_result(self, state: State, tester: User, result_uuid: UUID) -> WebResponse:
