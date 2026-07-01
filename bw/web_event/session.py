@@ -1,15 +1,16 @@
+from bw.session.orbat import Orbat
 from bw.web_event import BaseEvent
 from dataclasses import dataclass
 from typing import Any
 import uuid
 
 
-class SesssionEvent(BaseEvent, namespace='session', abstract=True):
+class SessionEvent(BaseEvent, namespace='session', abstract=True):
     pass
 
 
 @dataclass
-class SessionStartedEvent(SesssionEvent, event='started'):
+class SessionStartedEvent(SessionEvent, event='started'):
     session: uuid.UUID
 
     def data(self) -> dict[str, Any]:
@@ -17,7 +18,7 @@ class SessionStartedEvent(SesssionEvent, event='started'):
 
 
 @dataclass
-class SessionEndedEvent(SesssionEvent, event='ended'):
+class SessionEndedEvent(SessionEvent, event='ended'):
     session: uuid.UUID
 
     def data(self) -> dict[str, Any]:
@@ -25,16 +26,16 @@ class SessionEndedEvent(SesssionEvent, event='ended'):
 
 
 @dataclass
-class MissionEndedEvent(SesssionEvent, event='finished mission'):
+class MissionEndedEvent(SessionEvent, event='finished mission'):
     session: uuid.UUID
     mission: uuid.UUID
     iteration: uuid.UUID
-    player_count: int
+    orbat: Orbat
 
     def data(self) -> dict[str, Any]:
         return {
             'session': self.session,
             'mission': self.mission,
             'iteration': self.iteration,
-            'player_count': self.player_count,
+            'player_count': self.orbat,
         }

@@ -46,7 +46,7 @@ class PlayedMission(Base):
     iteration_id: Mapped[int] = mapped_column(ForeignKey('mission_iterations.id'), nullable=False)
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'), nullable=False)
     play_date: Mapped[datetime.datetime] = mapped_column(nullable=False, server_default=func.current_timestamp())
-    player_count: Mapped[int] = mapped_column(nullable=False)
+    orbat: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class PassedMission(Base):

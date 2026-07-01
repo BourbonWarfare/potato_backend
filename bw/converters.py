@@ -1,5 +1,6 @@
 import datetime
 import uuid
+import dataclasses
 from typing import Any
 
 
@@ -17,6 +18,8 @@ def make_json_safe(json: dict[str, Any]):
             safe_value = str(value)
         elif isinstance(value, BaseEvent):
             safe_value = value.encoded_string()
+        elif dataclasses.is_dataclass(value):
+            safe_value = make_json_safe(dataclasses.asdict(value))
 
         json_safe[key] = safe_value
     return json_safe

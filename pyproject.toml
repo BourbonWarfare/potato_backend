@@ -15,7 +15,8 @@ dependencies = [
     "aiodns",
     "tomli-w",
     "pytz",
-    "cron-converter"
+    "cron-converter",
+    "dacite>=1.9.2",
 ]
 authors = [
     {name="Bailey Danyluk"}

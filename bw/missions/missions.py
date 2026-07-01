@@ -1,3 +1,6 @@
+import dataclasses
+from bw.converters import make_json_safe
+from bw.session.orbat import Orbat
 from bw.models.session import Session
 from uuid import UUID
 from sqlalchemy import delete, select
@@ -427,11 +430,14 @@ class MissionStore:
 
 class MissionHistoryStore:
     def add_played_mission(
-        self, state: State, mission: Mission, iteration: Iteration, session: Session, player_count: int
+        self, state: State, mission: Mission, iteration: Iteration, session: Session, orbat: Orbat
     ) -> PlayedMission:
         with state.Session.begin() as db_session:
             played = PlayedMission(
-                session_id=session.id, iteration_id=iteration.id, mission_id=mission.id, player_count=player_count
+                session_id=session.id,
+                iteration_id=iteration.id,
+                mission_id=mission.id,
+                orbat=make_json_safe(dataclasses.asdict(orbat)),
             )
             db_session.add(played)
             db_session.flush()

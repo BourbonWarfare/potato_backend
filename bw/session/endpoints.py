@@ -1,8 +1,10 @@
+from bw.session.orbat import Orbat
 from uuid import UUID
 from bw.session.api import SessionApi
 from bw.auth.roles import Roles
 import logging
 from quart import Blueprint
+from dacite import from_dict
 
 from bw.web_utils import json_endpoint, url_endpoint
 from bw.response import JsonResponse, Ok
@@ -47,7 +49,8 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         session_id: UUID,
         mission_name_with_version: str,
         mission_map: str,
-        player_count: int,
+        orbat: dict,
     ) -> Ok:
         logger.info(f'Mission finished for session {session_id}')
-        return await SessionApi().finish_mission(session_id, mission_name_with_version, mission_map, player_count)
+        orbat_casted = from_dict(data_class=Orbat, data=orbat)
+        return await SessionApi().finish_mission(session_id, mission_name_with_version, mission_map, orbat_casted)

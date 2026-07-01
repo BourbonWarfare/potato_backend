@@ -1,3 +1,4 @@
+from bw.session.orbat import Orbat
 from bw.environment import ENVIRONMENT
 from bw.missions.api import uuid_from_name_and_map, name_and_version_from_name
 from bw.session.session import SessionStore
@@ -34,9 +35,9 @@ class SessionApi:
         session_id: UUID,
         mission_name_with_version: str,
         mission_map: str,
-        player_count: int,
+        orbat: Orbat,
     ) -> Created | BadRequest:
-        if player_count < ENVIRONMENT.session_playercount_cutoff():
+        if orbat.player_count() < ENVIRONMENT.session_playercount_cutoff():
             return BadRequest()
 
         mission_name, _ = name_and_version_from_name(mission_name_with_version)
@@ -48,14 +49,14 @@ class SessionApi:
 
         session = SessionStore().session_with_uuid(State.state, session_id)
 
-        MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, player_count)
+        MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, orbat)
 
         State.broker.publish(
             MissionEndedEvent(
                 session=session.uuid,
                 mission=mission_id,
                 iteration=iteration.uuid,
-                player_count=player_count,
+                orbat=orbat,
             )
         )
         return Created()
