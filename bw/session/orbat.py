@@ -4,12 +4,16 @@ from dataclasses import dataclass
 @dataclass
 class Individual:
     variable: str
+    name: str
+    is_member: bool
+    rank: int
     steam_id: str
 
 
 @dataclass
 class Group:
-    variable: str
+    name: str
+    side: str
     leader: str
     members: list[Individual]
 

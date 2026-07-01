@@ -9,7 +9,7 @@ from bw.state import State
 from bw.response import JsonResponse, Created, BadRequest, Ok
 from bw.missions.missions import MissionStore, MissionHistoryStore
 from bw.web_utils import define_api
-from bw.web_event.session import SessionStartedEvent, MissionEndedEvent
+from bw.web_event.session import SessionStartedEvent, MissionEndedEvent, SafeStartOffEvent
 
 
 class SessionApi:
@@ -53,6 +53,36 @@ class SessionApi:
 
         State.broker.publish(
             MissionEndedEvent(
+                session=session.uuid,
+                mission=mission_id,
+                iteration=iteration.uuid,
+                orbat=orbat,
+            )
+        )
+        return Created()
+
+    @define_api
+    async def safe_start_ended(
+        self,
+        session_id: UUID,
+        mission_name_with_version: str,
+        mission_map: str,
+        orbat: Orbat,
+    ) -> Created | BadRequest:
+        if orbat.player_count() < ENVIRONMENT.session_playercount_cutoff():
+            return BadRequest()
+
+        mission_name, _ = name_and_version_from_name(mission_name_with_version)
+        mission_id = uuid_from_name_and_map(mission_name, mission_map)
+        mission = MissionStore().mission_with_uuid(State.state, mission_id)
+        iteration = MissionStore().iteration_with_mission_and_name(
+            State.state, mission, f'{mission_name_with_version}.{mission_map}'
+        )
+
+        session = SessionStore().session_with_uuid(State.state, session_id)
+
+        State.broker.publish(
+            SafeStartOffEvent(
                 session=session.uuid,
                 mission=mission_id,
                 iteration=iteration.uuid,

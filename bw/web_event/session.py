@@ -37,5 +37,21 @@ class MissionEndedEvent(SessionEvent, event='finished mission'):
             'session': self.session,
             'mission': self.mission,
             'iteration': self.iteration,
-            'player_count': self.orbat,
+            'orbat': self.orbat,
+        }
+
+
+@dataclass
+class SafeStartOffEvent(SessionEvent, event='safestart off'):
+    session: uuid.UUID
+    mission: uuid.UUID
+    iteration: uuid.UUID
+    orbat: Orbat
+
+    def data(self) -> dict[str, Any]:
+        return {
+            'session': self.session,
+            'mission': self.mission,
+            'iteration': self.iteration,
+            'orbat': self.orbat,
         }

@@ -54,3 +54,18 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         logger.info(f'Mission finished for session {session_id}')
         orbat_casted = from_dict(data_class=Orbat, data=orbat)
         return await SessionApi().finish_mission(session_id, mission_name_with_version, mission_map, orbat_casted)
+
+    @api.post('/mission/safeStart/disabled')
+    @json_endpoint
+    @require_session
+    @require_user_role(Roles.can_manage_session)
+    async def safe_start_disabled(
+        session_user: User,
+        session_id: UUID,
+        mission_name_with_version: str,
+        mission_map: str,
+        orbat: dict,
+    ) -> Ok:
+        logger.info(f'Safe start ended for session {session_id}')
+        orbat_casted = from_dict(data_class=Orbat, data=orbat)
+        return await SessionApi().safe_start_ended(session_id, mission_name_with_version, mission_map, orbat_casted)
