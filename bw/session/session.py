@@ -32,10 +32,11 @@ class SessionStore:
 
     def get_latest_session(self, state: State) -> Session:
         with state.Session.begin() as session:
-            query = select(Session).where(Session.finish_date.is_not(None)).order_by(Session.start_date.desc())
+            query = select(Session).where(Session.finish_date.is_(None)).order_by(Session.start_date.desc())
             arma_session = session.execute(query).scalar()
             if not arma_session:
                 raise NoSessionsRegistered()
+            session.expunge(arma_session)
         return arma_session
 
     def session_with_uuid(self, state: State, session_id: UUID) -> Session:
