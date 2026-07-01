@@ -13,7 +13,7 @@ class SessionStartedEvent(SesssionEvent, event='started'):
     session: uuid.UUID
 
     def data(self) -> dict[str, Any]:
-        return {'session_id': self.session}
+        return {'session': self.session}
 
 
 @dataclass
@@ -21,7 +21,7 @@ class SessionEndedEvent(SesssionEvent, event='ended'):
     session: uuid.UUID
 
     def data(self) -> dict[str, Any]:
-        return {'session_id': self.session}
+        return {'session': self.session}
 
 
 @dataclass
@@ -33,8 +33,8 @@ class MissionEndedEvent(SesssionEvent, event='finished mission'):
 
     def data(self) -> dict[str, Any]:
         return {
-            'session_id': self.session,
-            'mission_id': self.mission,
-            'iteration_id': self.iteration,
+            'session': self.session,
+            'mission': self.mission,
+            'iteration': self.iteration,
             'player_count': self.player_count,
         }
