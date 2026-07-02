@@ -719,6 +719,10 @@ class Modlist:
             with open(file) as f:
                 for mod in f:
                     mod = mod.strip()
+                    if not mod:
+                        # ignore newlines
+                        continue
+
                     if mod not in MODS:
                         raise ModNotDefined(mod)
                     self._mods.append(MODS[mod])
