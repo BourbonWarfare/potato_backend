@@ -9,8 +9,7 @@ class SessionReminder(Cron):
         """
         Returns a cron-encoded string defining when this job will be run next
         """
-        # return '0 23 * * 0,3'
-        return '* * * * *'
+        return '0 23 * * 0,3'
 
     async def request(self, session: aiohttp.ClientSession) -> None:
         print('Ending session!')
