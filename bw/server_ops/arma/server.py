@@ -13,10 +13,8 @@ class Server:
         self._config_path = config_directory
         self._config = Configuration.load_toml(self._config_path / f'{self._name}.toml')
 
-        self._server, self._session, self._crons = self._config.require('server', 'session', 'crons').get()
+        self._server = self._config.require('server', 'session').get()
         self._server = Configuration(self._server)
-        self._session = Configuration(self._session)
-        self._crons = Configuration(self._crons)
 
     def server_name(self) -> str:
         return self._name
@@ -44,6 +42,9 @@ class Server:
 
     def headless_client_count(self) -> int:
         return int(self._server.require('hc_count').get())  # ty: ignore[invalid-argument-type]
+
+    def cdlc(self) -> list[str]:
+        return list(self._server.require('cdlc').get())
 
     def modlist(self) -> Modlist:
         list_name = str(self._server.require('modlist').get())
