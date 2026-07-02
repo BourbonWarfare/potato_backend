@@ -9,12 +9,13 @@ class Server:
         present_characters = set(name.lower()).intersection(set('abcdefghijklmnopqrstuvwxyz0123456789-_'))
         if len(present_characters) != len(set(name.lower())):
             raise ServerConfigNameNotPermitted(name)
-        self._name = name
         self._config_path = config_directory
-        self._config = Configuration.load_toml(self._config_path / f'{self._name}.toml')
+        self._config = Configuration.load_toml(self._config_path / f'{name}.toml')
 
         self._server = self._config.require('server', 'session').get()
         self._server = Configuration(self._server)
+
+        self._name = name
 
     def server_name(self) -> str:
         return self._name
