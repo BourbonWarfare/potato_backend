@@ -9,6 +9,7 @@ from bw.endpoints import define as define_endpoints
 from bw.cron import runner
 import bw.response  # noqa: F401
 import multiprocessing
+import os
 
 setup_log_config()
 
@@ -59,18 +60,6 @@ def run():
 def production():
     import uvicorn
 
-    if ENVIRONMENT.use_ssl():
-        print('Starting production server with SSL')
-        GLOBAL_CONFIGURATION.require('ssl_ca_certs_path', 'ssl_certfile_path', 'ssl_keyfile_path')
-        ssl_ca_certs_path = GLOBAL_CONFIGURATION['ssl_ca_certs_path']
-        ssl_certfile_path = GLOBAL_CONFIGURATION['ssl_certfile_path']
-        ssl_keyfile_path = GLOBAL_CONFIGURATION['ssl_keyfile_path']
-    else:
-        print('Starting ASGI server !!WITHOUT!! SSL')
-        ssl_ca_certs_path = None
-        ssl_certfile_path = None
-        ssl_keyfile_path = None
-
     print('Starting cron runner')
     cron_runner = multiprocessing.Process(target=runner.spawn, args=(ENVIRONMENT.cron_token(),))
     cron_runner.start()
@@ -79,11 +68,10 @@ def production():
         'bw.server:app',
         host='0.0.0.0',
         port=ENVIRONMENT.port(),
-        ssl_keyfile=ssl_keyfile_path,
-        ssl_certfile=ssl_certfile_path,
-        ssl_ca_certs=ssl_ca_certs_path,
         log_config=log_config(),
         log_level='info',
+        workers=int(os.getenv('WEB_CONCURRENCY', 6)),
+        limit_max_requests=10000,  # Recycle workers to prevent memory leaks
     )
     cron_runner.kill()
     print('thats all, folks')
