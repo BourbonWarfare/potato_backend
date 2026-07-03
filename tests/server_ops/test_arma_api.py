@@ -118,6 +118,7 @@ def test_server_with_mixed_mods():
     server.mod_install_path.return_value = Path('/mods')
     server.key_install_path.return_value = Path('/keys')
     server.headless_client_count.return_value = 1
+    server.cdlc.return_value = ['vn']
 
     mod1 = Mock(spec=Mod)
     mod1.kind = Kind.MOD
@@ -148,6 +149,7 @@ def mock_server_map(test_mods):
     test_server.mod_install_path.return_value = Path('/arma3/test_server/mods')
     test_server.key_install_path.return_value = Path('/arma3/test_server/keys')
     test_server.headless_client_count.return_value = 2
+    test_server.cdlc.return_value = ['vn']
     # Create mock modlist
     mock_modlist = Mock(spec=Modlist)
     mock_modlist.mods = test_mods
