@@ -25,7 +25,7 @@ class ModAdded(ArmaServerManagementEvent, event='mod_added'):
         return {'mod_name': self.mod_name, 'workshop_id': self.workshop_id}
 
 @dataclass
-class ModlistAdded(ArmaServerManagementEvent, event='mod_added'):
+class ModlistAdded(ArmaServerManagementEvent, event='modlist_added'):
     modlist_name: str
     def data(self) -> dict[str, Any]:
         return {'modlist_name': self.modlist_name}

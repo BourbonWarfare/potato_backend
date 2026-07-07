@@ -437,7 +437,7 @@ class MissionHistoryStore:
                 session_id=session.id,
                 iteration_id=iteration.id,
                 mission_id=mission.id,
-                orbat=make_json_safe(dataclasses.asdict(orbat)),
+                orbat=make_json_safe(orbat),
             )
             db_session.add(played)
             db_session.flush()
