@@ -12,10 +12,18 @@ from bw.server_ops.arma.mod import Mod, Kind, Modlist
 from bw.error import ArmaServerUnresponsive
 from bw.response import WebResponse, Ok, JsonResponse
 from bw.subprocess.server_manage import ServerResult
+from bw.state import State
+from bw.events import Broker
+
+@pytest.fixture(scope='function')
+def state():
+    state = State()
+    State.broker = Mock(spec=Broker)
+    yield state
 
 
 @pytest.fixture
-def arma_api():
+def arma_api(state):
     return ArmaApi()
 
 
