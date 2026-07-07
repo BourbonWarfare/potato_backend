@@ -3,9 +3,11 @@ import uuid
 import dataclasses
 from typing import Any
 
-
-def make_json_safe(json: dict[str, Any]):
+def make_json_safe(json: Any):
     from bw.web_event.base import BaseEvent
+
+    if dataclasses.is_dataclass(json):
+        json = dataclasses.asdict(json)
 
     json_safe: dict[str, Any] = {}
     for key, value in json.items():

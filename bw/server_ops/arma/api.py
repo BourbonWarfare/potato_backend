@@ -42,6 +42,7 @@ from bw.settings import GLOBAL_CONFIGURATION
 from bw.response import WebResponse, Ok, JsonResponse, Created
 from bw.web_utils import define_api
 from bw.state import State
+from bw.converters import make_json_safe
 from bw.web_event import (
     ReloadedServerConfig,
     ReloadedModlistConfig,
@@ -55,7 +56,6 @@ from bw.web_event import (
     ServerUpdateEvent,
     ServerModUpdateEvent,
 )
-from bw.converters import make_json_safe
 
 
 logger = logging.getLogger('bw.server_ops.arma')
@@ -299,7 +299,7 @@ class ArmaApi:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.start.acall, SERVER_MAP[server_name])
         State.broker.publish(ServerStartEvent(server=server_name, result=response))
-        return JsonResponse(make_json_safe(response))
+        return JsonResponse(response)
 
     @define_api
     async def stop_server(self, server_name: str) -> JsonResponse:
@@ -334,7 +334,7 @@ class ArmaApi:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.stop.acall, SERVER_MAP[server_name])
         State.broker.publish(ServerStopEvent(server=server_name, result=response))
-        return JsonResponse(make_json_safe(response))
+        return JsonResponse(response)
 
     @define_api
     async def restart_server(self, server_name: str) -> JsonResponse:
@@ -372,7 +372,7 @@ class ArmaApi:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.restart.acall, SERVER_MAP[server_name])
         State.broker.publish(ServerRestartEvent(server=server_name, result=response))
-        return JsonResponse(make_json_safe(response))
+        return JsonResponse(response)
 
     @define_api
     async def server_pid_status(self, server_name: str) -> JsonResponse:
@@ -406,7 +406,7 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.status.acall, SERVER_MAP[server_name])
-        return JsonResponse(make_json_safe(response))
+        return JsonResponse(response)
 
     @define_api
     def deploy_mods(self, server_name: str) -> WebResponse:
@@ -731,12 +731,12 @@ class ArmaApi:
             for server in affected_servers
         ]
         State.broker.publish(ServerModUpdateEvent(servers=[server.server_name() for server in affected_servers]))
-        return JsonResponse(make_json_safe(
+        return JsonResponse(
             {
                 'affected_servers': {server_name: server_status for server_name, server_status in response},
                 'updated_mods': [mod.to_json() for mod in out_of_date_steam_mods],
             }
-        ))
+        )
 
     @define_api
     async def update_server_mods(self, state: State, server_name: str) -> JsonResponse:
