@@ -1,4 +1,3 @@
-import dataclasses
 from bw.converters import make_json_safe
 from bw.session.orbat import Orbat
 from bw.models.session import Session

@@ -467,7 +467,7 @@ class ArmaApi:
             except OSError as e:
                 logger.warning(f'Failed to link mod {mod.name} from {mod_source} to {mod_destination}: {e}')
 
-        State.broker.publish(ModsDeployed(server=server.server_name(), mods=server.modlist().mods))
+        State.broker.publish(ModsDeployed(server=server.server_name(), mods=[mod.name for mod in server.modlist().mods]))
         return Ok()
 
     @define_api
@@ -516,7 +516,7 @@ class ArmaApi:
             except shutil.SameFileError as e:
                 logger.warning(f'Failed to copy key {key} to {destination}: {e}')
 
-        State.broker.publish(KeysDeployed(server=server.server_name(), mods=server.modlist().mods))
+        State.broker.publish(KeysDeployed(server=server.server_name(), mods=[mod.name for mod in server.modlist().mods]))
         return Ok()
 
     @define_api
@@ -730,11 +730,18 @@ class ArmaApi:
             (server.server_name(), (await self.server_pid_status(server.server_name())).contained_json)
             for server in affected_servers
         ]
-        State.broker.publish(ServerModUpdateEvent(servers=[server.server_name() for server in affected_servers]))
+        updated_mods = [mod.to_json() for mod in out_of_date_steam_mods]
+        State.broker.publish(
+            ServerModUpdateEvent(
+                servers=[server.server_name() for server in affected_servers],
+                servers_with_results=[results for _, results in response],
+                updated_mods=updated_mods,
+            )
+        )
         return JsonResponse(
             {
                 'affected_servers': {server_name: server_status for server_name, server_status in response},
-                'updated_mods': [mod.to_json() for mod in out_of_date_steam_mods],
+                'updated_mods': updated_mods,
             }
         )
 
@@ -1150,7 +1157,7 @@ class ArmaApi:
 
         MODS[mod_name] = mod
         logger.info(f'Successfully added mod: {mod_name}')
-        State.broker.publish(ModAdded(mod_name=mod_name, workshop_id=workshop_id))
+        State.broker.publish(ModAdded(mod_name=mod_name, workshop_id=str(workshop_id) if workshop_id else None))
         return Created()
 
     @define_api

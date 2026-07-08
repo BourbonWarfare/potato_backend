@@ -15,6 +15,7 @@ from bw.subprocess.server_manage import ServerResult
 from bw.state import State
 from bw.events import Broker
 
+
 @pytest.fixture(scope='function')
 def state():
     state = State()

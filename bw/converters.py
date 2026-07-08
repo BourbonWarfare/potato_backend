@@ -3,6 +3,7 @@ import uuid
 import dataclasses
 from typing import Any
 
+
 def make_json_safe(json: Any):
     from bw.web_event.base import BaseEvent
 

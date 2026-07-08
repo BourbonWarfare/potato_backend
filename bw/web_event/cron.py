@@ -6,6 +6,7 @@ from typing import Any
 class CronEvent(BaseEvent, namespace='cron', abstract=True):
     pass
 
+
 @dataclass
 class CronRun(CronEvent, event='run'):
     cron: str

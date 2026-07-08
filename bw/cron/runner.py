@@ -126,6 +126,17 @@ class Runner:
             if cron in new_crons or new_cron > self.cron_queue_[-1]:
                 heappush(self.cron_queue_, new_cron)
 
+    async def push_cron_run_event(self, cron: ScheduledCron):
+        auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
+        async with aiohttp.ClientSession(headers=auth_headers) as session:
+            event = CronRun(cron=cron.path.stem)
+            payload = {'event': event.encoded_string(), 'arguments': event}
+            async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/realtime/', json=make_json_safe(payload)) as request:
+                try:
+                    request.raise_for_status()
+                except Exception as err:
+                    logger.warning(f'Could not publish event: {err}')
+
     def run(self):
         with asyncio.Runner() as async_runner:
 
@@ -171,21 +182,7 @@ class Runner:
                     front = heappop(self.cron_queue_)
                     assert issubclass(front.cron_class, Cron)
 
-                    auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
-                    async with aiohttp.ClientSession(headers=auth_headers) as session:
-                        event = CronRun(cron=front.path.stem)
-                        payload = {
-                            'event': event.encoded_string(),
-                            'arguments': event
-                        }
-                        async with session.post(
-                                f'{ENVIRONMENT.server_url()}/api/v1/realtime/',
-                                json=make_json_safe(payload)
-                        ) as request:
-                            try:
-                                request.raise_for_status()
-                            except Exception as err:
-                                logger.warning(f'Could not publish event: {err}')
+                    async_runner.run(self.push_cron_run_event(front))
 
                     cron = front.cron_class()
                     with OutCapture():
