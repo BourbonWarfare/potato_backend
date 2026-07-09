@@ -132,7 +132,7 @@ async def fetch_mod_details_from_workshop(
 
     logger.debug(f'mod_workshop_ids={mod_workshop_ids}')
 
-    request_url = 'http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
+    request_url = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
     params: dict[str, Any] = {
         'itemcount': len(mods),
         **{f'publishedfileids[{idx}]': str(mod.workshop_id) for idx, mod in enumerate(mods)},
