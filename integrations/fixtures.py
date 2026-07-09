@@ -1,6 +1,7 @@
 import alembic
 import alembic.config
 import pytest
+import logging
 
 from sqlalchemy.sql import text
 
@@ -26,10 +27,12 @@ def session(request, state):
         # Create a temporary DB to do tests in. Per-test
         alembic_cfg = alembic.config.Config(toml_file='./pyproject.toml')
 
+        logging.info(f'CREATE DATABASE {test_db_name}')
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'CREATE DATABASE {test_db_name}'))
 
+        logging.info('alembic upgrade head')
         state.register_database(test_db_name)
         state.default_database = test_db_name
         with state.Engine.connect() as session:
@@ -40,6 +43,7 @@ def session(request, state):
     finally:
         # Drop database; unneeded after test
         state.default_database = original_default
+        logging.info(f'DROP DATABASE {test_db_name}')
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'DROP DATABASE {test_db_name}'))
