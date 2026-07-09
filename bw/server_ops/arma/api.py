@@ -41,7 +41,7 @@ from bw.error import (
 )
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.response import WebResponse, Ok, JsonResponse, Created, ChunkedResponse
-from bw.web_utils import define_api, chunk_text_response
+from bw.web_utils import define_api, chunk_file_response
 from bw.state import State
 from bw.converters import make_json_safe
 from bw.web_event import (
@@ -102,8 +102,7 @@ class ArmaApi:
         if latest_rpt is None:
             raise NotFoundError(f'No RPT found for {server} at {rpt_path}')
 
-        with open(latest_rpt) as file:
-            return chunk_text_response(file.read())
+        return chunk_file_response(open(latest_rpt))
 
     @define_api
     def get_all_servers(self) -> JsonResponse:

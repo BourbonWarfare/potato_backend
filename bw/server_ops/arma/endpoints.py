@@ -48,7 +48,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         logger.info('Getting all configured servers')
         return ArmaApi().get_all_servers()
 
-    @api.post('/<string:server>/rpt')
+    @api.get('/<string:server>/rpt')
     @url_endpoint
     @require_session
     @require_user_role(Roles.can_manage_server)

@@ -49,6 +49,88 @@ from integrations.server_ops.arma.fixtures import (
 )
 from bw.server_ops.arma.mod import MODS, MODLISTS, Mod, Modlist, WorkshopId
 from bw.auth.user import UserStore
+from bw.response import WebResponse
+
+
+# Tests for GET /<server>/rpt
+
+
+@pytest.mark.asyncio
+async def test__get_latest_rpt__returns_stream_successfully(
+    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
+):
+    """Test that GET /<server>/rpt successfully returns the latest RPT stream"""
+    # Arrange
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    
+    mock_response = WebResponse(200, response="arma 3 server log data chunk")
+    mock_get_rpt = mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_latest_rpt', return_value=mock_response)
+
+    # Act
+    url = f'{endpoint_arma_base_url}/{server_name_1}/rpt'
+    response = await test_app.get(url, headers={'Authorization': f'Bearer {db_session_1.token}'})
+
+    # Assert
+    assert response.status_code == 200
+    mock_get_rpt.assert_called_once_with(server_name_1)
+    assert await response.get_data(as_text=True) == "arma 3 server log data chunk"
+
+
+@pytest.mark.asyncio
+async def test__get_latest_rpt__returns_404_when_not_found(
+    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_2
+):
+    """Test that GET /<server>/rpt returns 404 when server or RPT logs are missing"""
+    # Arrange
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    
+    mock_response = WebResponse(404)
+    mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_latest_rpt', return_value=mock_response)
+
+    # Act
+    url = f'{endpoint_arma_base_url}/{server_name_2}/rpt'
+    response = await test_app.get(url, headers={'Authorization': f'Bearer {db_session_1.token}'})
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test__get_latest_rpt__requires_authentication(state, session, test_app, endpoint_arma_base_url, server_name_1):
+    """Test that GET /<server>/rpt requires authentication"""
+    # Act
+    url = f'{endpoint_arma_base_url}/{server_name_1}/rpt'
+    response = await test_app.get(url)
+
+    # Assert
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__get_latest_rpt__requires_permission(state, session, test_app, db_user_1, db_session_1, endpoint_arma_base_url, server_name_1):
+    """Test that GET /<server>/rpt requires can_manage_server role"""
+    # Act
+    url = f'{endpoint_arma_base_url}/{server_name_1}/rpt'
+    response = await test_app.get(url, headers={'Authorization': f'Bearer {db_session_1.token}'})
+
+    # Assert
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test__get_latest_rpt__rejects_expired_session(
+    mocker, state, session, test_app, db_user_1, db_expired_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
+):
+    """Test that GET /<server>/rpt rejects expired sessions"""
+    # Arrange
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+
+    # Act
+    url = f'{endpoint_arma_base_url}/{server_name_1}/rpt'
+    response = await test_app.get(url, headers={'Authorization': f'Bearer {db_expired_session_1.token}'})
+
+    # Assert
+    assert response.status_code == 401
 
 
 # Tests for GET /mods
