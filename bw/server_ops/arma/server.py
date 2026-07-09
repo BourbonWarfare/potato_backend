@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from bw.configuration import Configuration
 from bw.server_ops.arma.mod import Modlist, MODLISTS
@@ -64,4 +65,5 @@ def load_server_config_directory(config_directory: Path):
     for _, dirnames, filenames in config_directory.walk():
         del dirnames
         for file in [file.strip('.toml') for file in filenames if file.endswith('toml')]:
+            logging.info(f'Loading {file} from {config_directory}')
             SERVER_MAP[file] = Server(config_directory, file)
