@@ -65,6 +65,6 @@ def load_server_config_directory(config_directory: Path):
     for _, dirnames, filenames in config_directory.walk():
         del dirnames
         logging.info(f'Found the following files:\n{"\n".join(filenames)}')
-        for file in [file.strip('.toml') for file in filenames if file.endswith('toml')]:
+        for file in [file[:-5] for file in filenames if file.endswith('toml')]:
             logging.info(f'Loading {file} from {config_directory}')
             SERVER_MAP[file] = Server(config_directory, file)
