@@ -18,35 +18,42 @@ def pytest_keyboard_interrupt(excinfo):
 def state():
     yield State()
 
-
-@pytest.fixture(scope='function')
-def session(request, state):
+@pytest.fixture(scope='session')
+def test_database(request, state):
     original_default = state.default_database
-    test_db_name = f'bw_integration__{request.node.name}'
+    test_db_name = 'bw_integration'
     try:
-        # Create a temporary DB to do tests in. Per-test
-        alembic_cfg = alembic.config.Config(toml_file='./pyproject.toml')
-
+        # Create a temporary DB to do tests in
         logging.info(f'CREATE DATABASE {test_db_name}')
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'CREATE DATABASE {test_db_name}'))
 
-        logging.info('alembic upgrade head')
         state.register_database(test_db_name)
         state.default_database = test_db_name
-        with state.Engine.connect() as session:
-            alembic_cfg.attributes['connection'] = session
-            alembic.command.upgrade(alembic_cfg, 'head')
-            yield session
+
+        yield
         state.Engine.dispose()
     finally:
-        # Drop database; unneeded after test
+        # Drop database to be clean :)
         state.default_database = original_default
         logging.info(f'DROP DATABASE {test_db_name}')
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'DROP DATABASE {test_db_name}'))
+
+@pytest.fixture(scope='function')
+def session(request, state):
+    # temporarily create tables for test. downgrade immediately after
+    alembic_cfg = alembic.config.Config(toml_file='./pyproject.toml')
+    logging.info('alembic upgrade head')
+    with state.Engine.connect() as session:
+        alembic_cfg.attributes['connection'] = session
+        alembic.command.upgrade(alembic_cfg, 'head')
+        try:
+            yield session
+        finally:
+            alembic.command.downgrade(alembic_cfg, 'base')
 
 
 @pytest.fixture(scope='function')

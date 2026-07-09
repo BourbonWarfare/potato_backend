@@ -22,7 +22,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
-    role: Mapped[int | None] = mapped_column(ForeignKey('user_roles.id'))
+    role: Mapped[int | None] = mapped_column(ForeignKey(Roles.id, name='linked_role_for_user'))
     creation_date: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.current_timestamp()
     )
@@ -32,7 +32,7 @@ class DiscordUser(Base):
     __tablename__ = 'discord_users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_discord'), nullable=False, unique=True)
     discord_id: Mapped[DiscordSnowflake] = mapped_column(unique=True)
 
 
@@ -40,7 +40,7 @@ class BotUser(Base):
     __tablename__ = 'bot_users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_bot'), nullable=False, unique=True)
     bot_token: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
 
 
@@ -64,7 +64,7 @@ class Session(Base):
     __tablename__ = 'sessions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, unique=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_session'), nullable=False, unique=False)
     token: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
     expire_time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False),
@@ -102,7 +102,7 @@ class Group(Base):
     __tablename__ = 'groups'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    permissions: Mapped[int] = mapped_column(ForeignKey('group_permissions.id'), nullable=False)
+    permissions: Mapped[int] = mapped_column(ForeignKey(GroupPermission.id, name='linked_group_permission_for_group'), nullable=False)
     name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
 
 
@@ -110,8 +110,8 @@ class UserGroup(Base):
     __tablename__ = 'user_groups'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
-    group_id: Mapped[int] = mapped_column(ForeignKey('groups.id'), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_group'), nullable=False)
+    group_id: Mapped[int] = mapped_column(ForeignKey(Group.id, name='linked_group_for_group'), nullable=False)
 
     __table_args__ = (UniqueConstraint('user_id', 'group_id', name='can_be_added_to_group_once'),)
 
