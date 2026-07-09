@@ -34,7 +34,7 @@ def session(request, state):
         state.default_database = test_db_name
         with state.Engine.connect() as session:
             alembic_cfg.attributes['connection'] = session
-            alembic.command.upgrade(alembic_cfg, 'heads')
+            alembic.command.upgrade(alembic_cfg, 'head')
             yield session
         state.Engine.dispose()
     finally:
