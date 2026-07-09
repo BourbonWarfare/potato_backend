@@ -22,8 +22,7 @@ PRODUCTION_LOG_CONFIG = {
 
 
 def log_config() -> dict[str, Any]:
-    if not os.path.exists('./logs'):
-        os.makedirs('./logs')
+    os.makedirs('./logs', exist_ok=True)
     log_config = {
         'version': 1,
         'formatters': {
