@@ -345,10 +345,10 @@ def chunk_text_response(to_stream: str, *, max_chunk_size: int = 2**15) -> Chunk
 def chunk_json_response(to_stream: Iterable[dict[str, Any]], *, max_chunk_size: int = 2**15) -> ChunkedResponse:
     async def chunk_generator():
         response_buffer: bytes = b''
-        
+
         for response in to_stream:
             response_bytes = (json.dumps(make_json_safe(response)) + '\n').encode('utf-8')
-            
+
             if len(response_bytes) >= max_chunk_size:
                 # Push the rows before us to maintain order
                 if len(response_buffer) > 0:
@@ -377,7 +377,6 @@ def chunk_file_response(file_obj: IO, *, chunk_size: int = 2**15) -> ChunkedResp
                     yield chunk
         finally:
             if not file_obj.closed:
-                file_obj.close() # Safely closes the file when the stream ends or aborts
+                file_obj.close()  # Safely closes the file when the stream ends or aborts
 
     return ChunkedResponse.from_async_generator('text/plain', chunk_generator)
-

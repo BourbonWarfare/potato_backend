@@ -52,13 +52,13 @@ from bw.error import ServerConfigNotFound, ModAlreadyDefined, ModNotDefined, Mod
 async def test__get_latest_rpt__returns_latest_rpt_content(mocker, state, session, server_name_1, tmp_path):
     """Test that get_latest_rpt returns the content of the newest RPT file for the server"""
     # Arrange: Set up mock files with distinct modification times
-    old_file = tmp_path / "old_log.rpt"
-    new_file = tmp_path / "new_log.rpt"
-    ignored_file = tmp_path / "other_file.txt"
+    old_file = tmp_path / 'old_log.rpt'
+    new_file = tmp_path / 'new_log.rpt'
+    ignored_file = tmp_path / 'other_file.txt'
 
-    old_file.write_text("older rpt log content")
-    new_file.write_text("newest rpt log content")
-    ignored_file.write_text("ignore this content")
+    old_file.write_text('older rpt log content')
+    new_file.write_text('newest rpt log content')
+    ignored_file.write_text('ignore this content')
 
     # Explicitly set modification times (new_file is newer)
     os.utime(old_file, (1000, 1000))
@@ -75,7 +75,7 @@ async def test__get_latest_rpt__returns_latest_rpt_content(mocker, state, sessio
     # Assert: Verify observed contract/behavior
     assert response.status_code == 200
     assert response.headers.get('Transfer-Encoding') == 'chunked'
-    assert await response.get_data(as_text=True) == "newest rpt log content"
+    assert await response.get_data(as_text=True) == 'newest rpt log content'
 
 
 def test__get_latest_rpt__raises_when_server_not_found(mocker, state, session, server_name_2):
@@ -93,7 +93,7 @@ def test__get_latest_rpt__raises_when_server_not_found(mocker, state, session, s
 def test__get_latest_rpt__raises_when_no_rpt_files_exist(mocker, state, session, server_name_1, tmp_path):
     """Test that get_latest_rpt returns 404 when the directory contains no .rpt files"""
     # Arrange: Directory exists, but has no files matching *.rpt
-    (tmp_path / "readme.txt").write_text("just a text file")
+    (tmp_path / 'readme.txt').write_text('just a text file')
 
     mock_server = mocker.Mock()
     mock_server.server_rpt.return_value = tmp_path
