@@ -130,12 +130,18 @@ async def fetch_mod_details_from_workshop(
         mod.workshop_id: mod.name for mod in mods if not mod.manual_install and mod.workshop_id is not None
     }
 
+    if not mod_workshop_ids:
+        logger.info('No valid workshop IDs found to fetch.')
+        return {}
+
     logger.debug(f'mod_workshop_ids={mod_workshop_ids}')
 
     request_url = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
+
+    valid_ids = list(mod_workshop_ids.keys())
     params: dict[str, Any] = {
-        'itemcount': str(len(mods)),
-        **{f'publishedfileids[{idx}]': str(mod.workshop_id) for idx, mod in enumerate(mods)},
+        'itemcount': str(len(valid_ids)),
+        **{f'publishedfileids[{idx}]': str(w_id) for idx, w_id in enumerate(valid_ids)},
     }
 
     # Get mods name form Steam Workshop
