@@ -31,6 +31,7 @@ development = [
 ]
 tests = [
     "pytest>=9.0",
+    "pytest-xdist",
     "pytest-mock",
     "pytest-cov",
     "pytest-asyncio",
