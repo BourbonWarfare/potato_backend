@@ -17,12 +17,28 @@ NAME_LENGTH = 64
 TOKEN_LENGTH = 32
 
 
+class Role(Base):
+    __tablename__ = 'user_roles'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(NAME_LENGTH), unique=True)
+
+    can_create_role: Mapped[bool]
+    can_create_group: Mapped[bool]
+    can_manage_server: Mapped[bool]
+    can_publish_realtime_events: Mapped[bool]
+    can_manage_session: Mapped[bool]
+
+    def into_roles(self) -> Roles:
+        return Roles.from_keys(**{key: getattr(self, key) for key in Roles.__slots__})
+
+
 class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
-    role: Mapped[int | None] = mapped_column(ForeignKey(Roles.id, name='linked_role_for_user'))
+    role: Mapped[int | None] = mapped_column(ForeignKey(Role.id, name='linked_role_for_user'))
     creation_date: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.current_timestamp()
     )
@@ -42,22 +58,6 @@ class BotUser(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_bot'), nullable=False, unique=True)
     bot_token: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
-
-
-class Role(Base):
-    __tablename__ = 'user_roles'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(NAME_LENGTH), unique=True)
-
-    can_create_role: Mapped[bool]
-    can_create_group: Mapped[bool]
-    can_manage_server: Mapped[bool]
-    can_publish_realtime_events: Mapped[bool]
-    can_manage_session: Mapped[bool]
-
-    def into_roles(self) -> Roles:
-        return Roles.from_keys(**{key: getattr(self, key) for key in Roles.__slots__})
 
 
 class Session(Base):
@@ -102,7 +102,9 @@ class Group(Base):
     __tablename__ = 'groups'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    permissions: Mapped[int] = mapped_column(ForeignKey(GroupPermission.id, name='linked_group_permission_for_group'), nullable=False)
+    permissions: Mapped[int] = mapped_column(
+        ForeignKey(GroupPermission.id, name='linked_group_permission_for_group'), nullable=False
+    )
     name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
 
 

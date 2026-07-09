@@ -18,6 +18,7 @@ def pytest_keyboard_interrupt(excinfo):
 def state():
     yield State()
 
+
 @pytest.fixture(scope='session')
 def test_database(request, state):
     original_default = state.default_database
@@ -41,6 +42,7 @@ def test_database(request, state):
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'DROP DATABASE {test_db_name}'))
+
 
 @pytest.fixture(scope='function')
 def session(request, state):
