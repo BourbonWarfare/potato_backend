@@ -134,7 +134,7 @@ async def fetch_mod_details_from_workshop(
 
     request_url = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
     params: dict[str, Any] = {
-        'itemcount': len(mods),
+        'itemcount': str(len(mods)),
         **{f'publishedfileids[{idx}]': str(mod.workshop_id) for idx, mod in enumerate(mods)},
     }
 
@@ -145,9 +145,9 @@ async def fetch_mod_details_from_workshop(
 
     details: dict[WorkshopId, SteamWorkshopDetails] = {}
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, params=params, data=params) as response:
+        async with session.post(url, data=params) as response:
             if response.status != 200:
-                logger.error(f'Failed to fetch mod names ({response.status} {response.reason})')
+                logger.error(f'Failed to fetch mod names ({response.status} {response.reason} {await response.text()})')
                 return {}
             if response.content_type != 'application/json':
                 logger.error(f'Unexpected content type trying to fetch mod names: {response.content_type}')
