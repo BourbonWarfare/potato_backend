@@ -39,7 +39,9 @@ jobs:
         with:
           python-version-file: "pyproject.toml" 
       - name: install project
-        run: uv sync --locked --extra tests --dev
+        run: |
+          uv sync --locked --extra tests --dev
+          pip install pytest-xdist
       - name: run tests
         run: |
           mkdir bin
@@ -50,5 +52,5 @@ jobs:
           touch bin/a3sb
           chmod +x bin/a3sb
           cp tests/test_config.kv conf.kv
-          uv run pytest --cov=bw
+          uv run pytest -n auto --cov=bw
       

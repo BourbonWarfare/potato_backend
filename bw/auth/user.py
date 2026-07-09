@@ -142,11 +142,7 @@ class UserStore:
         ```
         """
         with state.Session.begin() as session:
-            query = (
-                select(User)
-                .join_from(DiscordUser, User, DiscordUser.user_id == User.id)
-                .where(DiscordUser.discord_id == discord_id)
-            )
+            query = select(User).join(DiscordUser, DiscordUser.user_id == User.id).where(DiscordUser.discord_id == discord_id)
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
@@ -182,7 +178,7 @@ class UserStore:
         ```
         """
         with state.Session.begin() as session:
-            query = select(User).join_from(BotUser, User, BotUser.user_id == User.id).where(BotUser.bot_token == bot_token)
+            query = select(User).join(BotUser, BotUser.user_id == User.id).where(BotUser.bot_token == bot_token)
             try:
                 user = session.execute(query).one()[0]
             except NoResultFound:
