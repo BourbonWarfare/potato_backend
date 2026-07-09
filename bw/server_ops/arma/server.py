@@ -26,6 +26,9 @@ class Server:
     def server_port(self) -> int:
         return self._server.require('port').get()  # ty: ignore[invalid-return-type]
 
+    def server_rpt(self) -> Path:
+        return Path(self._server.require('rpt').get())  # ty: ignore[invalid-argument-type]
+
     def arma_base_path(self) -> Path:
         return Path(self._server.require('path').get())  # ty: ignore[invalid-argument-type]
 

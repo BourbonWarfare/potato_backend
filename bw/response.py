@@ -158,6 +158,21 @@ class ServerSentEventResponse(WebResponse):
         return response
 
 
+class ChunkedResponse(WebResponse):
+    def headers(self) -> dict[str, str]:
+        return {
+            'Cache-Control': 'no-cache',
+            'Transfer-Encoding': 'chunked',
+            'X-Accel-Buffering': 'no',
+        }
+
+    @classmethod
+    def from_async_generator(cls, content_type: str, async_generator: Callable[[], AsyncGenerator[bytes]]) -> Self:
+        response = cls(status=200, response=async_generator(), headers={'Content-Type': content_type})
+        response.timeout = None  # Disable timeout for large chunks
+        return response
+
+
 class ServerSentResponseError(ServerSentEventResponse):
     def __init__(self, status: int):
         super().__init__(status=status)

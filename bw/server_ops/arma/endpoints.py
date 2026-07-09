@@ -3,7 +3,7 @@ import urllib.parse
 from quart import Blueprint
 
 from bw.web_utils import url_endpoint, json_endpoint
-from bw.response import JsonResponse, WebResponse
+from bw.response import JsonResponse, WebResponse, ChunkedResponse
 from bw.auth.decorators import require_user_role, require_session
 from bw.auth.roles import Roles
 from bw.server_ops.arma.api import ArmaApi
@@ -47,6 +47,33 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         logger.info('Getting all configured servers')
         return ArmaApi().get_all_servers()
+
+    @api.post('/<string:server>/rpt')
+    @url_endpoint
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def get_latest_rpt(session_user: User, server: str) -> ChunkedResponse:
+        """
+        ### Get latest RPT for server
+
+        Returns a text stream containing the latest RPT for the server
+
+        **Args:**
+        None
+
+        **Returns:**
+        - `ChunkedResponse`:
+        - **Success (200)**: Streamed text response containing content of server RPT
+        - **Error (404)**: HTTP 404 response for when no RPT is found
+
+        **Example:**
+        GET /api/v1/server_ops/arma/main/rpt
+
+        Success response (200):
+        blah blah blah\nblah
+        """
+        logger.info(f'Getting RPT for {server}')
+        return ArmaApi().get_latest_rpt(server)
 
     @api.post('servers/reload')
     @url_endpoint

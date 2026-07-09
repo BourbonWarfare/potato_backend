@@ -3,14 +3,16 @@ import logging
 import traceback
 import functools
 import asyncio
+import json
 from typing import Any
-from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable
+from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable, Iterable
 from pathlib import Path
 from quart import request, render_template_string
 
 from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError, BadHeader, WrongAccept
-from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse, ServerSentResponseError
+from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse, ServerSentResponseError, ChunkedResponse
 from bw.web_event import BaseEvent
+from bw.converters import make_json_safe
 
 
 logger = logging.getLogger('bw.web_utils')
@@ -330,3 +332,34 @@ def unwrap_headers(*headers: tuple[str, Any]):
         return wrapper
 
     return decorator
+
+
+def chunk_text_response(to_stream: str, *, max_chunk_size: int = 2**15) -> ChunkedResponse:
+    async def chunk_generator():
+        to_stream_bin = to_stream.encode('utf-8')
+        for idx in range(0, len(to_stream_bin), max_chunk_size):
+            yield to_stream_bin[idx : idx + max_chunk_size]
+        raise StopAsyncIteration
+
+    return ChunkedResponse.from_async_generator('text/plain', chunk_generator)
+
+
+def chunk_json_response(to_stream: Iterable[dict[str, Any]], *, max_chunk_size: int = 2**15) -> ChunkedResponse:
+    async def chunk_generator():
+        response_buffer: bytes = b''
+        for response in to_stream:
+            response_bytes = (json.dumps(make_json_safe(response)) + '\n').encode('utf-8')
+            if len(response_bytes) >= max_chunk_size:
+                # push the rows before us to maintain order
+                if len(response_buffer) > 0:
+                    yield response_buffer
+                    response_buffer = b''
+                yield response_bytes
+            else:
+                response_buffer += response_bytes
+                if len(response_buffer) >= max_chunk_size:
+                    yield response_buffer
+                    response_buffer = b''
+        raise StopAsyncIteration
+
+    return ChunkedResponse.from_async_generator('application/x-ndjson', chunk_generator)

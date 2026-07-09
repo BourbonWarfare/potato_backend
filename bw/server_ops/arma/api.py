@@ -29,6 +29,7 @@ from bw.subprocess.steam import steam
 from bw.subprocess.command import Chain
 from bw.error import (
     BwServerError,
+    NotFoundError,
     ServerConfigNotFound,
     DuplicateModWorkshopID,
     ModMissingField,
@@ -39,8 +40,8 @@ from bw.error import (
     ArmaServerUnresponsive,
 )
 from bw.settings import GLOBAL_CONFIGURATION
-from bw.response import WebResponse, Ok, JsonResponse, Created
-from bw.web_utils import define_api
+from bw.response import WebResponse, Ok, JsonResponse, Created, ChunkedResponse
+from bw.web_utils import define_api, chunk_text_response
 from bw.state import State
 from bw.converters import make_json_safe
 from bw.web_event import (
@@ -66,6 +67,43 @@ class ArmaApi:
         if server not in SERVER_MAP:
             raise ServerConfigNotFound(server)
         return SERVER_MAP[server]
+
+    @define_api
+    def get_latest_rpt(self, server: str) -> ChunkedResponse:
+        """
+        ### Retrieve the latest RPT for the server
+
+        Returns the content of the latest RPT for the given server
+
+        **Async:** No
+
+        **Args:**
+        None
+
+        **Returns:**
+        - `ChunkedResponse`: A chunked text response of the entire server RPT.
+
+        **Example:**
+        ```python
+            response = arma_api.get_latest_rpt('Main Server')
+        ```
+        """
+        logger.info(f'Retrieving RPT for {server}')
+        server_obj = self.get_server_from_string(server)
+        rpt_path = server_obj.server_rpt()
+
+        latest_rpt: Path | None = None
+        latest_rpt_time = 0
+        for rpt in rpt_path.glob('*.rpt'):
+            if rpt.stat().st_mtime > latest_rpt_time:
+                latest_rpt = rpt
+                latest_rpt_time = rpt.stat().st_mtime
+
+        if latest_rpt is None:
+            raise NotFoundError(f'No RPT found for {server} at {rpt_path}')
+
+        with open(latest_rpt) as file:
+            return chunk_text_response(file.read())
 
     @define_api
     def get_all_servers(self) -> JsonResponse:
