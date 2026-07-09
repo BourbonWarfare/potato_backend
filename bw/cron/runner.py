@@ -1,6 +1,8 @@
 from bw.environment import ENVIRONMENT
 from bw.cron.utils import backoff
 from bw.cron.stdout_capture import OutCapture
+from bw.web_event import CronRun
+from bw.converters import make_json_safe
 import time
 import asyncio
 import logging
@@ -42,6 +44,7 @@ class Session:
 
 @dataclass
 class ScheduledCron:
+    path: Path
     init_time: datetime.datetime
     cron_class: type
 
@@ -119,9 +122,20 @@ class Runner:
             if cron not in self.loaded_crons_:
                 logger.warning(f'We found the cron file but no class is within: {cron}')
                 continue
-            new_cron = ScheduledCron(cron_class=self.loaded_crons_[cron].cron_class, init_time=datetime.datetime.now())
+            new_cron = ScheduledCron(path=cron, cron_class=self.loaded_crons_[cron].cron_class, init_time=datetime.datetime.now())
             if cron in new_crons or new_cron > self.cron_queue_[-1]:
                 heappush(self.cron_queue_, new_cron)
+
+    async def push_cron_run_event(self, cron: ScheduledCron):
+        auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
+        async with aiohttp.ClientSession(headers=auth_headers) as session:
+            event = CronRun(cron=cron.path.stem)
+            payload = {'event': event.encoded_string(), 'arguments': event}
+            async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/realtime/', json=make_json_safe(payload)) as request:
+                try:
+                    request.raise_for_status()
+                except Exception as err:
+                    logger.warning(f'Could not publish event: {err}')
 
     def run(self):
         with asyncio.Runner() as async_runner:
@@ -153,7 +167,10 @@ class Runner:
                 exit(1)
 
             while True:
-                logger.info('Tick')
+                try:
+                    refresh_session()
+                except Exception as err:
+                    logger.warning(f'Could not refresh session: {err}')
                 self.gather_crons()
                 for cron in self.cron_queue_:
                     assert issubclass(cron.cron_class, Cron)
@@ -164,6 +181,8 @@ class Runner:
                 while len(self.cron_queue_) > 0 and self.cron_queue_[0].next() <= now:
                     front = heappop(self.cron_queue_)
                     assert issubclass(front.cron_class, Cron)
+
+                    async_runner.run(self.push_cron_run_event(front))
 
                     cron = front.cron_class()
                     with OutCapture():
@@ -185,7 +204,6 @@ class Runner:
                                 await cron(session)
 
                 try:
-                    refresh_session()
                     async_runner.run(run_requests())
                 except Exception as err:
                     logger.warning(f'A cron job has returned with an error: {err}')

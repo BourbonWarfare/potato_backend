@@ -94,7 +94,9 @@ async def test__login_with_discord__can_login_when_user_exists(
 
 
 @pytest.mark.asyncio
-async def test__login_with_discord__nonexistant_id_creates_user(mocker, state, expire_valid, token_1, token_2, discord_id_1):
+async def test__login_with_discord__nonexistant_id_creates_user(
+    mocker, state, session, expire_valid, token_1, token_2, discord_id_1
+):
     class MockSessionObject:
         async def __aenter__(self):
             return self

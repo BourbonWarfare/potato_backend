@@ -1,7 +1,6 @@
 import os
 import logging
 import shutil
-import dataclasses
 import json
 from pathlib import Path
 from typing import Any
@@ -30,6 +29,7 @@ from bw.subprocess.steam import steam
 from bw.subprocess.command import Chain
 from bw.error import (
     BwServerError,
+    NotFoundError,
     ServerConfigNotFound,
     DuplicateModWorkshopID,
     ModMissingField,
@@ -40,9 +40,23 @@ from bw.error import (
     ArmaServerUnresponsive,
 )
 from bw.settings import GLOBAL_CONFIGURATION
-from bw.response import WebResponse, Ok, JsonResponse, Created
-from bw.web_utils import define_api
+from bw.response import WebResponse, Ok, JsonResponse, Created, ChunkedResponse
+from bw.web_utils import define_api, chunk_file_response
 from bw.state import State
+from bw.converters import make_json_safe
+from bw.web_event import (
+    ReloadedServerConfig,
+    ReloadedModlistConfig,
+    ModAdded,
+    ModlistAdded,
+    ModsDeployed,
+    KeysDeployed,
+    ServerStartEvent,
+    ServerStopEvent,
+    ServerRestartEvent,
+    ServerUpdateEvent,
+    ServerModUpdateEvent,
+)
 
 
 logger = logging.getLogger('bw.server_ops.arma')
@@ -53,6 +67,42 @@ class ArmaApi:
         if server not in SERVER_MAP:
             raise ServerConfigNotFound(server)
         return SERVER_MAP[server]
+
+    @define_api
+    def get_latest_rpt(self, server: str) -> ChunkedResponse:
+        """
+        ### Retrieve the latest RPT for the server
+
+        Returns the content of the latest RPT for the given server
+
+        **Async:** No
+
+        **Args:**
+        None
+
+        **Returns:**
+        - `ChunkedResponse`: A chunked text response of the entire server RPT.
+
+        **Example:**
+        ```python
+            response = arma_api.get_latest_rpt('Main Server')
+        ```
+        """
+        logger.info(f'Retrieving RPT for {server}')
+        server_obj = self.get_server_from_string(server)
+        rpt_path = server_obj.server_rpt()
+
+        latest_rpt: Path | None = None
+        latest_rpt_time = 0
+        for rpt in rpt_path.glob('*.rpt'):
+            if rpt.stat().st_mtime > latest_rpt_time:
+                latest_rpt = rpt
+                latest_rpt_time = rpt.stat().st_mtime
+
+        if latest_rpt is None:
+            raise NotFoundError(f'No RPT found for {server} at {rpt_path}')
+
+        return chunk_file_response(open(latest_rpt))
 
     @define_api
     def get_all_servers(self) -> JsonResponse:
@@ -110,6 +160,7 @@ class ArmaApi:
         """
         logger.info('Retrieving all configured servers')
         load_server_config_directory(config_path)
+        State.broker.publish(ReloadedServerConfig())
         return Ok()
 
     @define_api
@@ -191,7 +242,7 @@ class ArmaApi:
             players=query['players'],
             max_players=query['max_players'],
         )
-        return JsonResponse({'result': 'success'} | dataclasses.asdict(status))
+        return JsonResponse({'result': 'success'} | make_json_safe(status))
 
     async def _manage_server(self, command: Callable[..., Awaitable[tuple[ServerResult, None]]], server: Server) -> ServerResult:
         """
@@ -284,7 +335,8 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.start.acall, SERVER_MAP[server_name])
-        return JsonResponse(dataclasses.asdict(response))
+        State.broker.publish(ServerStartEvent(server=server_name, result=response))
+        return JsonResponse(response)
 
     @define_api
     async def stop_server(self, server_name: str) -> JsonResponse:
@@ -318,7 +370,8 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.stop.acall, SERVER_MAP[server_name])
-        return JsonResponse(dataclasses.asdict(response))
+        State.broker.publish(ServerStopEvent(server=server_name, result=response))
+        return JsonResponse(response)
 
     @define_api
     async def restart_server(self, server_name: str) -> JsonResponse:
@@ -355,7 +408,8 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.restart.acall, SERVER_MAP[server_name])
-        return JsonResponse(dataclasses.asdict(response))
+        State.broker.publish(ServerRestartEvent(server=server_name, result=response))
+        return JsonResponse(response)
 
     @define_api
     async def server_pid_status(self, server_name: str) -> JsonResponse:
@@ -389,7 +443,7 @@ class ArmaApi:
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         response = await self._manage_server(server_manage.status.acall, SERVER_MAP[server_name])
-        return JsonResponse(dataclasses.asdict(response))
+        return JsonResponse(response)
 
     @define_api
     def deploy_mods(self, server_name: str) -> WebResponse:
@@ -450,6 +504,7 @@ class ArmaApi:
             except OSError as e:
                 logger.warning(f'Failed to link mod {mod.name} from {mod_source} to {mod_destination}: {e}')
 
+        State.broker.publish(ModsDeployed(server=server.server_name(), mods=[mod.name for mod in server.modlist().mods]))
         return Ok()
 
     @define_api
@@ -498,6 +553,7 @@ class ArmaApi:
             except shutil.SameFileError as e:
                 logger.warning(f'Failed to copy key {key} to {destination}: {e}')
 
+        State.broker.publish(KeysDeployed(server=server.server_name(), mods=[mod.name for mod in server.modlist().mods]))
         return Ok()
 
     @define_api
@@ -552,6 +608,7 @@ class ArmaApi:
         (self.deploy_keys(server_name)).raise_if_unsuccessful()
         (await self.start_server(server_name)).raise_if_unsuccessful()
 
+        State.broker.publish(ServerUpdateEvent(server=server_name))
         return await self.server_pid_status(server_name)
 
     @define_api
@@ -710,10 +767,18 @@ class ArmaApi:
             (server.server_name(), (await self.server_pid_status(server.server_name())).contained_json)
             for server in affected_servers
         ]
+        updated_mods = [mod.to_json() for mod in out_of_date_steam_mods]
+        State.broker.publish(
+            ServerModUpdateEvent(
+                servers=[server.server_name() for server in affected_servers],
+                servers_with_results=[results for _, results in response],
+                updated_mods=updated_mods,
+            )
+        )
         return JsonResponse(
             {
                 'affected_servers': {server_name: server_status for server_name, server_status in response},
-                'updated_mods': [mod.to_json() for mod in out_of_date_steam_mods],
+                'updated_mods': updated_mods,
             }
         )
 
@@ -945,6 +1010,7 @@ class ArmaApi:
         """
         logger.info(f'Reloading mod configuration from: {config_path}')
         load_mod_configs(config_path)
+        State.broker.publish(ReloadedServerConfig())
         return Ok()
 
     @define_api
@@ -975,6 +1041,7 @@ class ArmaApi:
         """
         logger.info(f'Reloading modlist configuration from: {config_path}')
         load_modlists(config_path)
+        State.broker.publish(ReloadedModlistConfig())
         return Ok()
 
     @define_api
@@ -1127,6 +1194,7 @@ class ArmaApi:
 
         MODS[mod_name] = mod
         logger.info(f'Successfully added mod: {mod_name}')
+        State.broker.publish(ModAdded(mod_name=mod_name, workshop_id=str(workshop_id) if workshop_id else None))
         return Created()
 
     @define_api
@@ -1179,4 +1247,5 @@ class ArmaApi:
         modlist = Modlist(name=name, mods=mods)
         MODLISTS[name] = modlist
         logger.info(f'Successfully added modlist: {name}')
+        State.broker.publish(ModlistAdded(modlist_name=name))
         return Created()

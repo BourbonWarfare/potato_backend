@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import pytest
+import os
 from pathlib import Path
 
 from integrations.fixtures import session, state
@@ -42,6 +43,68 @@ from integrations.server_ops.arma.fixtures import (
 from bw.server_ops.arma.api import ArmaApi
 from bw.server_ops.arma.mod import MODS, MODLISTS, Mod, Modlist, Kind, WorkshopId
 from bw.error import ServerConfigNotFound, ModAlreadyDefined, ModNotDefined, ModMissingField, ModInvalidKind
+
+
+# Tests for get_latest_rpt
+
+
+@pytest.mark.asyncio
+async def test__get_latest_rpt__returns_latest_rpt_content(mocker, state, session, server_name_1, tmp_path):
+    """Test that get_latest_rpt returns the content of the newest RPT file for the server"""
+    # Arrange: Set up mock files with distinct modification times
+    old_file = tmp_path / 'old_log.rpt'
+    new_file = tmp_path / 'new_log.rpt'
+    ignored_file = tmp_path / 'other_file.txt'
+
+    old_file.write_text('older rpt log content')
+    new_file.write_text('newest rpt log content')
+    ignored_file.write_text('ignore this content')
+
+    # Explicitly set modification times (new_file is newer)
+    os.utime(old_file, (1000, 1000))
+    os.utime(new_file, (2000, 2000))
+
+    mock_server = mocker.Mock()
+    mock_server.server_rpt.return_value = tmp_path
+
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: mock_server})
+
+    # Act
+    response = ArmaApi().get_latest_rpt(server_name_1)
+
+    # Assert: Verify observed contract/behavior
+    assert response.status_code == 200
+    assert response.headers.get('Transfer-Encoding') == 'chunked'
+    assert await response.get_data(as_text=True) == 'newest rpt log content'
+
+
+def test__get_latest_rpt__raises_when_server_not_found(mocker, state, session, server_name_2):
+    """Test that get_latest_rpt returns 404 when the requested server does not exist"""
+    # Arrange
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
+
+    # Act
+    response = ArmaApi().get_latest_rpt(server_name_2)
+
+    # Assert
+    assert response.status_code == 404
+
+
+def test__get_latest_rpt__raises_when_no_rpt_files_exist(mocker, state, session, server_name_1, tmp_path):
+    """Test that get_latest_rpt returns 404 when the directory contains no .rpt files"""
+    # Arrange: Directory exists, but has no files matching *.rpt
+    (tmp_path / 'readme.txt').write_text('just a text file')
+
+    mock_server = mocker.Mock()
+    mock_server.server_rpt.return_value = tmp_path
+
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: mock_server})
+
+    # Act
+    response = ArmaApi().get_latest_rpt(server_name_1)
+
+    # Assert
+    assert response.status_code == 404
 
 
 # Tests for get_all_configured_mods

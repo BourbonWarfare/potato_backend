@@ -3,14 +3,16 @@ import logging
 import traceback
 import functools
 import asyncio
-from typing import Any
-from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable
+import json
+from typing import Any, IO
+from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable, Iterable
 from pathlib import Path
 from quart import request, render_template_string
 
 from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError, BadHeader, WrongAccept
-from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse, ServerSentResponseError
+from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse, ServerSentResponseError, ChunkedResponse
 from bw.web_event import BaseEvent
+from bw.converters import make_json_safe
 
 
 logger = logging.getLogger('bw.web_utils')
@@ -285,7 +287,6 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
         async def async_byte_generator() -> AsyncGenerator[bytes]:
             async for event in func(*args, **kwargs):
                 yield event.encode()
-            raise StopAsyncIteration
 
         return ServerSentEventResponse.from_async_generator(async_byte_generator)
 
@@ -323,10 +324,59 @@ def unwrap_headers(*headers: tuple[str, Any]):
                     if header not in request.headers:
                         raise KeyError(header, request.headers)
                     kwargs[transform(header)] = header_type(request.headers.get(header))
-                except TypeError or KeyError:
+                except (TypeError, KeyError):
                     raise BadHeader()
             return await func(*args, **kwargs)
 
         return wrapper
 
     return decorator
+
+
+def chunk_text_response(to_stream: str, *, max_chunk_size: int = 2**15) -> ChunkedResponse:
+    async def chunk_generator():
+        to_stream_bin = to_stream.encode('utf-8')
+        for idx in range(0, len(to_stream_bin), max_chunk_size):
+            yield to_stream_bin[idx : idx + max_chunk_size]
+
+    return ChunkedResponse.from_async_generator('text/plain', chunk_generator)
+
+
+def chunk_json_response(to_stream: Iterable[dict[str, Any]], *, max_chunk_size: int = 2**15) -> ChunkedResponse:
+    async def chunk_generator():
+        response_buffer: bytes = b''
+
+        for response in to_stream:
+            response_bytes = (json.dumps(make_json_safe(response)) + '\n').encode('utf-8')
+
+            if len(response_bytes) >= max_chunk_size:
+                # Push the rows before us to maintain order
+                if len(response_buffer) > 0:
+                    yield response_buffer
+                    response_buffer = b''
+                yield response_bytes
+            else:
+                response_buffer += response_bytes
+                if len(response_buffer) >= max_chunk_size:
+                    yield response_buffer
+                    response_buffer = b''
+
+        if response_buffer:
+            yield response_buffer
+
+    return ChunkedResponse.from_async_generator('application/x-ndjson', chunk_generator)
+
+
+def chunk_file_response(file_obj: IO, *, chunk_size: int = 2**15) -> ChunkedResponse:
+    async def chunk_generator():
+        try:
+            while chunk := file_obj.read(chunk_size):
+                if isinstance(chunk, str):
+                    yield chunk.encode('utf-8')
+                else:
+                    yield chunk
+        finally:
+            if not file_obj.closed:
+                file_obj.close()  # Safely closes the file when the stream ends or aborts
+
+    return ChunkedResponse.from_async_generator('text/plain', chunk_generator)

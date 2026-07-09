@@ -38,6 +38,6 @@ jobs:
         with:
           python-version-file: "pyproject.toml" 
       - name: install project
-        run: uv sync --locked --extra development --dev
+        run: uv sync --locked --all-extras --dev
       - name: run type checker
         run: uv tool run ty check

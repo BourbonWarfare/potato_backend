@@ -94,7 +94,7 @@ class EventStore:
         event_namespaces: Iterable[str] = (),
     ) -> tuple[tuple[QueuedEvent, Event], ...]:
         with state.Session.begin() as session:
-            query = select(QueuedEvent, Event).join_from(QueuedEvent, Event, QueuedEvent.event == Event.id)
+            query = select(QueuedEvent, Event).join(QueuedEvent, QueuedEvent.event == Event.id)
             if event_ids or encoded_event_names or event_namespaces:
                 query = query.where(
                     or_(

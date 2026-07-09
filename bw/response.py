@@ -88,10 +88,14 @@ class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'application/json'
 
-    def __init__(self, json_payload: dict, headers: dict = {}, status=200):
+    def __init__(self, json_payload: Any, *, headers: dict = {}, status=200):
+        if not isinstance(json_payload, dict):
+            json_payload = make_json_safe(json_payload)
+
         contained_status = json_payload.pop('status', None)
         if contained_status is None:
             contained_status = status
+
         self.contained_json = make_json_safe(json_payload)
         super().__init__(status=contained_status, headers=headers, response=json.dumps(self.contained_json))
 
@@ -151,6 +155,21 @@ class ServerSentEventResponse(WebResponse):
     def from_async_generator(cls, async_generator: Callable[[], AsyncGenerator[bytes]]) -> Self:
         response = cls(status=200, response=async_generator())
         response.timeout = None  # Disable timeout for SSE
+        return response
+
+
+class ChunkedResponse(WebResponse):
+    def headers(self) -> dict[str, str]:
+        return {
+            'Cache-Control': 'no-cache',
+            'Transfer-Encoding': 'chunked',
+            'X-Accel-Buffering': 'no',
+        }
+
+    @classmethod
+    def from_async_generator(cls, content_type: str, async_generator: Callable[[], AsyncGenerator[bytes]]) -> Self:
+        response = cls(status=200, response=async_generator(), headers={'Content-Type': content_type})
+        response.timeout = None  # Disable timeout for large chunks
         return response
 
 

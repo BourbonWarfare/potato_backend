@@ -1,5 +1,3 @@
-from bw.converters import make_json_safe
-import dataclasses
 import re
 import logging
 import shutil
@@ -236,7 +234,7 @@ class MissionsApi:
             iteration=iteration.iteration,
             changelog=iteration.changelog,
         )
-        return JsonResponse(make_json_safe(dataclasses.asdict(iteration_info)))
+        return JsonResponse(iteration_info)
 
     @define_api
     async def get_mission_information(self, state: State, mission_uuid: UUID) -> JsonResponse:
@@ -265,7 +263,7 @@ class MissionsApi:
             special_flags=mission.special_flags,
         )
 
-        return JsonResponse(make_json_safe(dataclasses.asdict(mission_info)))
+        return JsonResponse(mission_info)
 
 
 class TestApi:

@@ -1,4 +1,3 @@
-import dataclasses
 from bw.converters import make_json_safe
 from bw.session.orbat import Orbat
 from bw.models.session import Session
@@ -437,7 +436,7 @@ class MissionHistoryStore:
                 session_id=session.id,
                 iteration_id=iteration.id,
                 mission_id=mission.id,
-                orbat=make_json_safe(dataclasses.asdict(orbat)),
+                orbat=make_json_safe(orbat),
             )
             db_session.add(played)
             db_session.flush()
