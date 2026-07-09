@@ -3,7 +3,7 @@ from crons.cron import Cron
 import aiohttp
 
 
-class SessionReminder(Cron):
+class EndSession(Cron):
     @staticmethod
     def cron_str() -> str:
         """
