@@ -39,10 +39,6 @@ class ServerResult:
     startup_status: StartupStatus = StartupStatus.NOT_STARTED
 
 
-def sanitize_for_powershell(arg: str) -> str:
-    return arg.replace('@', '`@').replace(';', '`;')
-
-
 class ServerManage(Command):
     RUNNER: str = 'powershell'
     RUNNER_ARGUMENTS = ['-File']
@@ -58,7 +54,6 @@ class ServerManage(Command):
         'mods': str,
         'servermods': str,
     }
-    ARGUMENT_MAPPING = sanitize_for_powershell
     ALWAYS_REPORT_BOTH_STDOUT_STDERR = True
 
 
