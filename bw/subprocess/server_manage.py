@@ -40,7 +40,7 @@ class ServerResult:
 
 
 def sanitize_for_powershell(arg: str) -> str:
-    return f'"{arg.replace("@", "`@").replace(";", "`;")}"'
+    return f'"{arg}"'
 
 
 class ServerManage(Command):
