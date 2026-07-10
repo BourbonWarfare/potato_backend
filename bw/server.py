@@ -70,6 +70,7 @@ def production():
         port=ENVIRONMENT.port(),
         log_config=log_config(),
         log_level='info',
+        loop='asyncio',
         workers=int(os.getenv('WEB_CONCURRENCY', 6)),
         limit_max_requests=10000,  # Recycle workers to prevent memory leaks
     )
