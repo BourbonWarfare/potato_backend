@@ -46,6 +46,7 @@ def sanitize_for_powershell(arg: str) -> str:
 
 class ServerManage(Command):
     RUNNER: str = 'powershell'
+    RUNNER_ARGUMENTS = ['-File']
     COMMAND = GLOBAL_CONFIGURATION.require('server_manage_ps1_path').get()
     KEYWORD_PREFIX = '-'
     KEYWORD_ARGUMENTS = {
