@@ -333,7 +333,7 @@ def unwrap_headers(*headers: tuple[str, Any]):
     return decorator
 
 
-def chunk_text_response(to_stream: str, *, max_chunk_size: int = 2**15) -> ChunkedResponse:
+def chunk_text_response(to_stream: str, *, max_chunk_size: int = 2**10) -> ChunkedResponse:
     async def chunk_generator():
         to_stream_bin = to_stream.encode('utf-8')
         for idx in range(0, len(to_stream_bin), max_chunk_size):
@@ -342,7 +342,7 @@ def chunk_text_response(to_stream: str, *, max_chunk_size: int = 2**15) -> Chunk
     return ChunkedResponse.from_async_generator('text/plain', chunk_generator)
 
 
-def chunk_json_response(to_stream: Iterable[dict[str, Any]], *, max_chunk_size: int = 2**15) -> ChunkedResponse:
+def chunk_json_response(to_stream: Iterable[dict[str, Any]], *, max_chunk_size: int = 2**10) -> ChunkedResponse:
     async def chunk_generator():
         response_buffer: bytes = b''
 
@@ -367,7 +367,7 @@ def chunk_json_response(to_stream: Iterable[dict[str, Any]], *, max_chunk_size: 
     return ChunkedResponse.from_async_generator('application/x-ndjson', chunk_generator)
 
 
-def chunk_file_response(file_obj: IO, *, chunk_size: int = 2**15) -> ChunkedResponse:
+def chunk_file_response(file_obj: IO, *, chunk_size: int = 2**10) -> ChunkedResponse:
     async def chunk_generator():
         try:
             while chunk := file_obj.read(chunk_size):
