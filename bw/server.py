@@ -10,6 +10,7 @@ from bw.cron import runner
 import bw.response  # noqa: F401
 import multiprocessing
 import os
+import asyncio
 
 setup_log_config()
 
@@ -59,6 +60,9 @@ def run():
 
 def production():
     import uvicorn
+
+    loop = asyncio.ProactorEventLoop()
+    asyncio.set_event_loop(loop)
 
     print('Starting cron runner')
     cron_runner = multiprocessing.Process(target=runner.spawn, args=(ENVIRONMENT.cron_token(),))
