@@ -234,6 +234,7 @@ class ArmaApi:
         except ArmaServerUnresponsive as e:
             return JsonResponse({'result': 'unresponsive', 'reason': str(e)})
 
+        logger.info('Server responded, its at least alive')
         query = json.loads(query)
         status = ServerStatus(
             name=query['name'],
