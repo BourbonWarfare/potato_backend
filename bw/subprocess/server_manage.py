@@ -87,7 +87,8 @@ class Start(ServerManage):
 
     @staticmethod
     def _map_stderr(result: str) -> None:
-        raise ServerStartError(result.strip())
+        if result != '':
+            raise ServerStartError(result.strip())
 
 
 class Stop(ServerManage):
@@ -115,7 +116,8 @@ class Stop(ServerManage):
 
     @staticmethod
     def _map_stderr(result: str) -> None:
-        raise ServerStopError(result.strip())
+        if result != '':
+            raise ServerStopError(result.strip())
 
 
 class Restart(ServerManage):
@@ -145,7 +147,8 @@ class Restart(ServerManage):
 
     @staticmethod
     def _map_stderr(result: str) -> None:
-        raise ServerRestartError(result.strip())
+        if result != '':
+            raise ServerRestartError(result.strip())
 
 
 class Status(ServerManage):
