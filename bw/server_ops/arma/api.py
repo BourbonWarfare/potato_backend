@@ -743,7 +743,6 @@ class ArmaApi:
             download_command.extend(command)
         with tempfile.NamedTemporaryFile(mode='w') as file:
             command = Chain(
-                steam.locate(),
                 steam.login(
                     GLOBAL_CONFIGURATION.require('steam_username').get(),
                     GLOBAL_CONFIGURATION.require('steam_password').get(),
@@ -752,12 +751,11 @@ class ArmaApi:
                 *download_command,
                 steam.quit(),
             )
-            # we cut off the first line because its the path to invoke
-            command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))][1:]
+            command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
             file.writelines('\n'.join(command_split) + '\n')
             logger.info(f'Running generated script at {file.name}')
             logger.debug('\n'.join(command_split))
-            result = await Chain(steam.runscript(file.name)).acall()
+            result = await Chain(steam.locate(), steam.runscript(file.name)).acall()
             logger.debug(f'steam.runscript.acall({file.name}) = {result}')
 
         for server in affected_servers:
