@@ -709,8 +709,9 @@ class ArmaApi:
         try:
             stopped_servers = []
             for server in affected_servers:
+                if (await self.server_ping('localhost', server.server_port() + 1)).status == 200:
+                    stopped_servers.append(server)
                 (await self.stop_server(server.server_name())).raise_if_unsuccessful()
-                stopped_servers.append(server)
         except BwServerError as e:
             logger.error(f'Failed to stop servers before updating mods: {e}')
             for server in stopped_servers:
