@@ -38,7 +38,7 @@ tests = [
     "pytest-env>=1.2.0",
 ]
 prod = [
-    "uvicorn",
+    "hypercorn",
 ]
 
 [tool.setuptools.packages.find]

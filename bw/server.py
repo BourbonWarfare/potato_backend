@@ -9,11 +9,8 @@ from bw.endpoints import define as define_endpoints
 from bw.cron import runner
 import bw.response  # noqa: F401
 import multiprocessing
-import os
 import asyncio
-
-loop = asyncio.ProactorEventLoop()
-asyncio.set_event_loop(loop)
+import os
 
 setup_log_config()
 
@@ -62,21 +59,45 @@ def run():
 
 
 def production():
-    import uvicorn
+    from hypercorn.asyncio import serve
+    from hypercorn.config import Config
+
+    async def run_server():
+        config = Config()
+        config.bind = [f'0.0.0.0:{ENVIRONMENT.port()}']
+        config.logconfig_dict = log_config()
+        config.workers = int(os.getenv('WEB_CONCURRENCY', 6))
+        config.keep_alive_timeout = 15
+
+        if ENVIRONMENT.use_ssl():
+            (
+                ssl_ca_certs_path,
+                ssl_certfile_path,
+                ssl_keyfile_path,
+            ) = GLOBAL_CONFIGURATION.require(
+                'ssl_ca_certs_path',
+                'ssl_certfile_path',
+                'ssl_keyfile_path',
+            ).get()
+
+            config.ca_certs = ssl_ca_certs_path
+            config.certfile = ssl_certfile_path
+            config.keyfile = ssl_keyfile_path
+
+        await serve(app, config)
 
     print('Starting cron runner')
-    cron_runner = multiprocessing.Process(target=runner.spawn, args=(ENVIRONMENT.cron_token(),))
+    cron_runner = multiprocessing.Process(
+        target=runner.spawn,
+        args=(ENVIRONMENT.cron_token(),),
+    )
     cron_runner.start()
 
-    uvicorn.run(
-        'bw.server:app',
-        host='0.0.0.0',
-        port=ENVIRONMENT.port(),
-        log_config=log_config(),
-        log_level='info',
-        loop='asyncio',
-        workers=int(os.getenv('WEB_CONCURRENCY', 6)),
-        limit_max_requests=10000,  # Recycle workers to prevent memory leaks
-    )
-    cron_runner.kill()
-    print('thats all, folks')
+    print('Starting BW backend')
+
+    try:
+        asyncio.run(run_server())
+    finally:
+        cron_runner.kill()
+
+    print("that's all, folks")
