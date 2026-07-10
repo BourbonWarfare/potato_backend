@@ -761,6 +761,7 @@ class ArmaApi:
                     )
                     command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
                     file.writelines('\n'.join(command_split) + '\n')
+                    file.flush()
                     logger.info(f'Running generated script at {file.name}')
                     logger.debug('\n'.join(command_split))
                     result = await Chain(steam.locate(), steam.runscript(file.name)).acall()
