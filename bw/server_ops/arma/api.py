@@ -785,15 +785,15 @@ class ArmaApi:
                     if os.path.exists(temp_file_path):
                         os.remove(temp_file_path)
 
-        # if we succesfully update from workshop, we want to update asap
-        ModStore().bulk_update_mods(state, out_of_date_steam_mods)
-
         for server in affected_servers:
             (self.deploy_mods(server.server_name())).raise_if_unsuccessful()
             (self.deploy_keys(server.server_name())).raise_if_unsuccessful()
 
         for server in stopped_servers:
             (await self.start_server(server.server_name())).raise_if_unsuccessful()
+
+        # we compare mods against this record if they are out of date, so we need  to update once mods deployed successfully
+        ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
         response: list[tuple[str, dict[str, Any]]] = [
             (server.server_name(), (await self.server_pid_status(server.server_name())).contained_json)
