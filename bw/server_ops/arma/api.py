@@ -752,7 +752,8 @@ class ArmaApi:
                 *download_command,
                 steam.quit(),
             )
-            command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
+            # we cut off the first line because its the path to invoke
+            command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))][1:]
             file.writelines('\n'.join(command_split) + '\n')
             logger.info(f'Running generated script at {file.name}')
             logger.debug('\n'.join(command_split))
