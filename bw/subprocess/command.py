@@ -170,14 +170,12 @@ class Command:
 
     @classmethod
     def dryrun(cls, *args, **kwargs) -> str:
-        command = cls._get_command(*args, **kwargs)
-        logger.info(f'Dry-running `{" ".join(command)}` with args={args}, kwargs={kwargs}')
-        return ' '.join(command)
+        runner = Runner(cls._get_command(*args, **kwargs))
+        return runner.dryrun()
 
     @classmethod
     def call(cls, *args, **kwargs) -> Any:
         runner = Runner(cls._get_command(*args, **kwargs))
-        logger.info(f'Calling `{" ".join(runner.command)}` (synchronous) with args={args}, kwargs={kwargs}')
         try:
             stdout, stderr = runner.call()
         except SubprocessFailed as e:
@@ -188,7 +186,6 @@ class Command:
     @classmethod
     async def acall(cls, *args, **kwargs) -> Any:
         runner = Runner(cls._get_command(*args, **kwargs))
-        logger.info(f'Calling `{" ".join(runner.command)}` (asynchronous) with args={args}, kwargs={kwargs}')
         try:
             stdout, stderr = await runner.acall()
         except SubprocessFailed as e:
