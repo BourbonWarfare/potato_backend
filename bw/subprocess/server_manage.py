@@ -41,7 +41,7 @@ class ServerResult:
 
 
 def sanitize_for_powershell(arg: str) -> str:
-    return re.sub(r'@(\w+);', r'`@\1`;', arg)
+    return re.sub(r'@(\w+);?', r'`@\1`;', arg)
 
 
 class ServerManage(Command):
