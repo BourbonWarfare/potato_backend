@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -46,6 +47,9 @@ class State:
         load_server_config_directory(ENVIRONMENT.server_config_directory())
 
     def __init__(self):
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+
         State.broker = Broker()
         State.queue = Queue(State.broker, GLOBAL_CONFIGURATION.get('queue_delay', 5))
         State.cache = Cache()
