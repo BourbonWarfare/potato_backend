@@ -854,7 +854,7 @@ class ArmaApi:
         server = self.get_server_from_string(server_name)
 
         logger.info('Reloading mod config file')
-        load_mod_configs(ENVIRONMENT.arma_mod_config_path())
+        load_mod_configs(ENVIRONMENT.arma_mod_config_path(), ignore_already_defined_mods=True)
 
         logger.info('Reloading modlists')
         load_modlists(ENVIRONMENT.arma_modlist_config_path())

@@ -177,7 +177,7 @@ async def fetch_mod_details_from_workshop(
     return details
 
 
-def load_mod_configs(mods_file: Path):
+def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False):
     """
     ### Load mod definitions from a TOML configuration file
 
@@ -274,7 +274,7 @@ def load_mod_configs(mods_file: Path):
     for mod_name, mod_data in mod_list.items():
         # Check if mod already exists
         mod_name = mod_name.replace('-', ' ').strip()
-        if mod_name in MODS:
+        if mod_name in MODS and not ignore_already_defined_mods:
             raise ModAlreadyDefined(mod_name)
 
         # Check required fields
