@@ -39,7 +39,6 @@ tests = [
 ]
 prod = [
     "uvicorn",
-    "uvloop"
 ]
 
 [tool.setuptools.packages.find]

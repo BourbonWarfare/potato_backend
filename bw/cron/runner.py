@@ -138,14 +138,7 @@ class Runner:
                     logger.warning(f'Could not publish event: {err}')
 
     def run(self):
-        loop_factory = None
-        try:
-            import uvloop
-
-            loop_factory = uvloop.new_event_loop
-        except ModuleNotFoundError:
-            pass
-        with asyncio.Runner(loop_factory=loop_factory) as async_runner:
+        with asyncio.Runner() as async_runner:
 
             def refresh_session():
                 try:
