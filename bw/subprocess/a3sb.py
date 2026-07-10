@@ -43,7 +43,8 @@ class Info(A3sb):
 
     @staticmethod
     def _map_stderr(result: str):
-        raise ArmaServerUnresponsive()
+        if result != '':
+            raise ArmaServerUnresponsive()
 
 
 class Ping(A3sb):
