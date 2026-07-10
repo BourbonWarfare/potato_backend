@@ -485,12 +485,8 @@ class ArmaApi:
                     if existing_file.is_symlink():
                         logger.info(f'Removing existing mod symlink: {existing_file}')
                         os.unlink(existing_file)
-                    elif existing_file.is_dir():
-                        logger.info(f'Removing existing mod directory: {existing_file}')
-                        shutil.rmtree(existing_file)
                     else:
-                        logger.info(f'Removing existing mod file: {existing_file}')
-                        existing_file.unlink()
+                        logger.info(f'Keeping canoical mod: {existing_file}')
                 except OSError as e:
                     logger.warning(f'Failed to remove existing mod {existing_file}: {e}')
 
