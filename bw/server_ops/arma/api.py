@@ -601,7 +601,10 @@ class ArmaApi:
             raise ServerConfigNotFound(server_name)
         server = SERVER_MAP[server_name]
 
-        (await self.stop_server(server_name)).raise_if_unsuccessful()
+        is_running = (await self.server_ping('localhost', server.server_port() + 1)).status == 200
+
+        if is_running:
+            (await self.stop_server(server_name)).raise_if_unsuccessful()
 
         # update server via SteamCMD
         logger.info(f'Updating Arma server {server_name} via SteamCMD')
@@ -618,7 +621,9 @@ class ArmaApi:
 
         (self.deploy_mods(server_name)).raise_if_unsuccessful()
         (self.deploy_keys(server_name)).raise_if_unsuccessful()
-        (await self.start_server(server_name)).raise_if_unsuccessful()
+
+        if is_running:
+            (await self.start_server(server_name)).raise_if_unsuccessful()
 
         State.broker.publish(ServerUpdateEvent(server=server_name))
         return await self.server_pid_status(server_name)
@@ -815,7 +820,7 @@ class ArmaApi:
         )
 
     @define_api
-    async def update_server_mods(self, state: State, server_name: str) -> JsonResponse:
+    async def update_server_mods(self, state: State, server_name: str) -> ChunkedResponse:
         """
         ### Update mods for a specific Arma server
 
