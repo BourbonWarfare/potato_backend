@@ -610,11 +610,11 @@ class ArmaApi:
         logger.info(f'Updating Arma server {server_name} via SteamCMD')
         await Chain(
             steam.locate(),
+            steam.force_install_dir(str(server.server_path())),
             steam.login(
                 GLOBAL_CONFIGURATION.require('steam_username').get(),
                 GLOBAL_CONFIGURATION.require('steam_password').get(),
             ),
-            steam.force_install_dir(str(server.server_path())),
             steam.app_update(233780, beta='creatordlc', validate=True),
             steam.quit(),
         ).acall()
