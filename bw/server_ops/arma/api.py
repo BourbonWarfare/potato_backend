@@ -44,7 +44,7 @@ from bw.error import (
 )
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.response import WebResponse, Ok, JsonResponse, Created, ChunkedResponse
-from bw.web_utils import define_api, chunk_file_response
+from bw.web_utils import define_api, chunk_file_response, chunk_json_response
 from bw.state import State
 from bw.converters import make_json_safe, file_sha2
 from bw.web_event import (
@@ -669,7 +669,7 @@ class ArmaApi:
         return JsonResponse({'mods_to_update': [mod.to_json() for mod in mods_to_update]})
 
     @define_api
-    async def update_mods(self, state: State, mod_list: Iterable[Mod]) -> JsonResponse:
+    async def update_mods(self, state: State, mod_list: Iterable[Mod]) -> ChunkedResponse:
         """
         ### Update multiple mods and affected servers
 
@@ -807,11 +807,11 @@ class ArmaApi:
                 updated_mods=updated_mods,
             )
         )
-        return JsonResponse(
-            {
-                'affected_servers': {server_name: server_status for server_name, server_status in response},
-                'updated_mods': updated_mods,
-            }
+        return chunk_json_response(
+            [
+                {'affected_servers': {server_name: server_status for server_name, server_status in response}},
+                *updated_mods,
+            ]
         )
 
     @define_api
