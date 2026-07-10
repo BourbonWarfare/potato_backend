@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 from bw.settings import GLOBAL_CONFIGURATION
@@ -40,17 +41,7 @@ class ServerResult:
 
 
 def sanitize_for_powershell(arg: str) -> str:
-    if '@' in arg:
-        mods = arg.split(';')
-        adjusted_mods = []
-        for mod in mods:
-            if '@' in mod:
-                adjusted_mods.append(mod.replace('@', '`@') + '`;')
-            else:
-                adjusted_mods.append(mod)
-        return ''.join(mods)
-    else:
-        return arg
+    return re.sub('@\w+;', '`@\1`;', arg)
 
 
 class ServerManage(Command):
