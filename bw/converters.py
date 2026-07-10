@@ -7,6 +7,9 @@ from typing import Any
 def make_json_safe(json: Any):
     from bw.web_event.base import BaseEvent
 
+    if json is None:
+        return {}
+
     if dataclasses.is_dataclass(json):
         json = dataclasses.asdict(json)
 
