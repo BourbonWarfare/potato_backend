@@ -1,7 +1,9 @@
 import datetime
 import uuid
 import dataclasses
+import hashlib
 from typing import Any
+from pathlib import Path
 
 
 def make_json_safe(json: Any):
@@ -29,3 +31,14 @@ def make_json_safe(json: Any):
 
         json_safe[key] = safe_value
     return json_safe
+
+
+def file_sha2(file_path: Path, *, buffer_size=2**20) -> str:
+    sha2 = hashlib.sha256()
+    while True:
+        with open(file_path, 'rb') as f:
+            data = f.read(buffer_size)
+            if not data:
+                break
+            sha2.update(data)
+    return sha2.hexdigest()

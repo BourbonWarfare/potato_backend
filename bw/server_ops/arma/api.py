@@ -46,7 +46,7 @@ from bw.settings import GLOBAL_CONFIGURATION
 from bw.response import WebResponse, Ok, JsonResponse, Created, ChunkedResponse
 from bw.web_utils import define_api, chunk_file_response
 from bw.state import State
-from bw.converters import make_json_safe
+from bw.converters import make_json_safe, file_sha2
 from bw.web_event import (
     ReloadedServerConfig,
     ReloadedModlistConfig,
@@ -549,8 +549,16 @@ class ArmaApi:
         for key in keys:
             destination = key_path / key.name
             if destination.exists():
-                logger.warning(f'Key {key} already exists at {destination}')
-                continue
+                new_sha2 = file_sha2(key)
+                existing_sha2 = file_sha2(destination)
+                if new_sha2 == existing_sha2:
+                    logger.warning(f'Key {key} already exists at {destination}')
+                    continue
+                else:
+                    logger.warning(
+                        f'Key {key} already exists at {destination}, however it has different contents. Removing old key.'
+                    )
+                    destination.unlink()
 
             try:
                 shutil.copy(key, destination)
