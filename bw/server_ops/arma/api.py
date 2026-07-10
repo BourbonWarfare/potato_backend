@@ -1,10 +1,10 @@
-from math import ceil
 import os
 import logging
 import shutil
 import json
 import tempfile
 import itertools
+import math
 from pathlib import Path
 from typing import Any
 from collections.abc import Collection
@@ -733,36 +733,38 @@ class ArmaApi:
 
         # update mods via SteamCMD
         logger.info(f'Updating Arma mods for {", ".join([server.server_name() for server in affected_servers])} via SteamCMD')
-        batch_count = ceil(len(mod_install_directories.items()) / 10)
-        for batch_idx, install_batch in enumerate(itertools.batched(mod_install_directories.items(), n=10)):
-            logger.info(f'Updating mod batch {batch_idx + 1}/{batch_count}')
-            download_command = []
-            for install_path, mods in install_batch:
+        download_command = []
+        for install_path, mods in mod_install_directories.items():
+            batch_n = 10
+            batch_count = math.ceil(len(mods) / batch_n)
+            for batch_idx, mod_batch in enumerate(itertools.batched(mods, batch_count)):
+                logger.info(f'Updating mod batch {batch_idx + 1}/{batch_count}')
                 command = (
                     steam.force_install_dir(str(install_path)),
                     *[
                         steam.workshop_download_item('107410', str(mod.workshop_id), validate=True)
-                        for mod in mods
+                        for mod in mod_batch
                         if mod.workshop_id is not None
                     ],
                 )
                 download_command.extend(command)
-            with tempfile.NamedTemporaryFile(mode='w') as file:
-                command = Chain(
-                    steam.login(
-                        GLOBAL_CONFIGURATION.require('steam_username').get(),
-                        GLOBAL_CONFIGURATION.require('steam_password').get(),
-                    ),
-                    # Some mods may have different install paths, so we need to handle them separately
-                    *download_command,
-                    steam.quit(),
-                )
-                command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
-                file.writelines('\n'.join(command_split) + '\n')
-                logger.info(f'Running generated script at {file.name}')
-                logger.debug('\n'.join(command_split))
-                result = await Chain(steam.locate(), steam.runscript(file.name)).acall()
-                logger.debug(f'steam.runscript.acall({file.name}) = {result}')
+
+                with tempfile.NamedTemporaryFile(mode='w') as file:
+                    command = Chain(
+                        steam.login(
+                            GLOBAL_CONFIGURATION.require('steam_username').get(),
+                            GLOBAL_CONFIGURATION.require('steam_password').get(),
+                        ),
+                        # Some mods may have different install paths, so we need to handle them separately
+                        *download_command,
+                        steam.quit(),
+                    )
+                    command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
+                    file.writelines('\n'.join(command_split) + '\n')
+                    logger.info(f'Running generated script at {file.name}')
+                    logger.debug('\n'.join(command_split))
+                    result = await Chain(steam.locate(), steam.runscript(file.name)).acall()
+                    logger.debug(f'steam.runscript.acall({file.name}) = {result}')
 
         for server in affected_servers:
             (self.deploy_mods(server.server_name())).raise_if_unsuccessful()
