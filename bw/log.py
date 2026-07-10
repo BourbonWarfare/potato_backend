@@ -13,7 +13,7 @@ PRODUCTION_LOG_CONFIG = {
     'bw.missions': 'INFO',
     'bw.psm': 'INFO',
     'bw.server_ops': 'INFO',
-    'bw.server_ops.arma': 'INFO',
+    'bw.server_ops.arma': 'DEBUG',
     'bw.web_utils': 'INFO',
     'bw.cron': 'INFO',
     'bw.realtime': 'INFO',

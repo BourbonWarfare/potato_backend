@@ -753,7 +753,9 @@ class ArmaApi:
                 steam.quit(),
             )
             command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
-            file.writelines(command_split)
+            file.writelines('\n'.join(command_split) + '\n')
+            logger.info(f'Running generated script at {file.name}')
+            logger.debug('\n'.join(command_split))
             await steam.runscript.acall(file.name)
 
         for server in affected_servers:
