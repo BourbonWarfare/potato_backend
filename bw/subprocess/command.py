@@ -113,18 +113,12 @@ class Command:
     @classmethod
     def _interpret_results(cls, stdout: str, stderr: str) -> Any:
         try:
-            if stdout == '':
-                stdout_result = None
-            else:
-                stdout_result = cls._map_stdout(stdout)
+            stdout_result = cls._map_stdout(stdout)
         except NotImplementedError:
             stdout_result = None
 
         try:
-            if stderr == '':
-                stderr_result = None
-            else:
-                stderr_result = cls._map_stderr(stderr)
+            stderr_result = cls._map_stderr(stderr)
         except NotImplementedError:
             stderr_result = None
 
