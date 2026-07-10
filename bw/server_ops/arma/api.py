@@ -61,6 +61,7 @@ from bw.web_event import (
     ServerUpdateEvent,
     ServerModUpdateEvent,
 )
+from bw.environment import ENVIRONMENT
 
 
 logger = logging.getLogger('bw.server_ops.arma')
@@ -851,6 +852,12 @@ class ArmaApi:
         """
         logger.info(f'Updating Arma mods for: {server_name}')
         server = self.get_server_from_string(server_name)
+
+        logger.info('Reloading mod config file')
+        load_mod_configs(ENVIRONMENT.arma_mod_config_path())
+
+        logger.info('Reloading modlists')
+        load_modlists(ENVIRONMENT.arma_modlist_config_path())
 
         return await self.update_mods(state, server.modlist().mods)
 

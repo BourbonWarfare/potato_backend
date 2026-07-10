@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from enum import StrEnum
 from bw.settings import GLOBAL_CONFIGURATION
@@ -40,10 +39,6 @@ class ServerResult:
     startup_status: StartupStatus = StartupStatus.NOT_STARTED
 
 
-def sanitize_for_powershell(arg: str) -> str:
-    return re.sub(r'@(\w+);?', r'`@\1`;', arg)
-
-
 class ServerManage(Command):
     RUNNER: str = 'powershell'
     RUNNER_ARGUMENTS = ['-File']
@@ -59,7 +54,6 @@ class ServerManage(Command):
         'mods': str,
         'servermods': str,
     }
-    ARGUMENT_MAPPING = sanitize_for_powershell
     ALWAYS_REPORT_BOTH_STDOUT_STDERR = True
 
 
