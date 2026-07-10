@@ -749,19 +749,19 @@ class ArmaApi:
                 )
                 download_command.extend(command)
 
+                command = Chain(
+                    steam.login(
+                        GLOBAL_CONFIGURATION.require('steam_username').get(),
+                        GLOBAL_CONFIGURATION.require('steam_password').get(),
+                    ),
+                    # Some mods may have different install paths, so we need to handle them separately
+                    *download_command,
+                    steam.quit(),
+                )
+                command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
                 with tempfile.NamedTemporaryFile(mode='w') as file:
-                    command = Chain(
-                        steam.login(
-                            GLOBAL_CONFIGURATION.require('steam_username').get(),
-                            GLOBAL_CONFIGURATION.require('steam_password').get(),
-                        ),
-                        # Some mods may have different install paths, so we need to handle them separately
-                        *download_command,
-                        steam.quit(),
-                    )
-                    command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
-                    file.writelines('\n'.join(command_split) + '\n')
-                    file.flush()
+                    with file.file as file:
+                        file.writelines('\n'.join(command_split) + '\n')
                     logger.info(f'Running generated script at {file.name}')
                     logger.debug('\n'.join(command_split))
                     result = await Chain(steam.locate(), steam.runscript(file.name)).acall()
