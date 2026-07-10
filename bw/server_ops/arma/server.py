@@ -10,6 +10,9 @@ class Server:
         present_characters = set(name.lower()).intersection(set('abcdefghijklmnopqrstuvwxyz0123456789-_'))
         if len(present_characters) != len(set(name.lower())):
             raise ServerConfigNameNotPermitted(name)
+        self._load_from_config(config_directory, name)
+
+    def _load_from_config(self, config_directory: Path, name: str):
         self._config_path = config_directory
         self._config = Configuration.load_toml(self._config_path / f'{name}.toml')
 
@@ -59,6 +62,9 @@ class Server:
         if list_name not in MODLISTS:
             raise ModlistNotFound(list_name)
         return MODLISTS[list_name]
+
+    def reload_config(self):
+        self._load_from_config(self._config_path, self._name)
 
 
 SERVER_MAP: dict[str, Server] = {}

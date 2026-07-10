@@ -337,9 +337,9 @@ class ArmaApi:
         ```
         """
         logger.info(f'Starting Arma server: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-        response = await self._manage_server(server_manage.start.acall, SERVER_MAP[server_name])
+        server = self.get_server_from_string(server_name)
+        server.reload_config()
+        response = await self._manage_server(server_manage.start.acall, server)
         State.broker.publish(ServerStartEvent(server=server_name, result=response))
         return JsonResponse(response)
 
@@ -372,9 +372,8 @@ class ArmaApi:
         ```
         """
         logger.info(f'Stopping Arma server: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-        response = await self._manage_server(server_manage.stop.acall, SERVER_MAP[server_name])
+        server = self.get_server_from_string(server_name)
+        response = await self._manage_server(server_manage.stop.acall, server)
         State.broker.publish(ServerStopEvent(server=server_name, result=response))
         return JsonResponse(response)
 
@@ -410,9 +409,9 @@ class ArmaApi:
         ```
         """
         logger.info(f'Restarting Arma server: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-        response = await self._manage_server(server_manage.restart.acall, SERVER_MAP[server_name])
+        server = self.get_server_from_string(server_name)
+        server.reload_config()
+        response = await self._manage_server(server_manage.restart.acall, server)
         State.broker.publish(ServerRestartEvent(server=server_name, result=response))
         return JsonResponse(response)
 
@@ -445,9 +444,8 @@ class ArmaApi:
         ```
         """
         logger.info(f'Checking Arma server status: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-        response = await self._manage_server(server_manage.status.acall, SERVER_MAP[server_name])
+        server = self.get_server_from_string(server_name)
+        response = await self._manage_server(server_manage.status.acall, server)
         return JsonResponse(response)
 
     @define_api
@@ -476,9 +474,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Deploying mods to Arma server: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-        server = SERVER_MAP[server_name]
+        server = self.get_server_from_string(server_name)
         mod_path = server.mod_install_path()
 
         mod_path.mkdir(exist_ok=True)
@@ -534,9 +530,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Deploying keys to server {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-        server = SERVER_MAP[server_name]
+        server = self.get_server_from_string(server_name)
         key_path = server.key_install_path()
 
         key_path.mkdir(exist_ok=True)
@@ -598,10 +592,8 @@ class ArmaApi:
         ```
         """
         logger.info(f'Updating Arma server: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
         start = time.time()
-        server = SERVER_MAP[server_name]
+        server = self.get_server_from_string(server_name)
 
         is_running = (await self.server_ping('localhost', server.server_port() + 1)).status == 200
 
@@ -858,9 +850,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Updating Arma mods for: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-        server = SERVER_MAP[server_name]
+        server = self.get_server_from_string(server_name)
 
         return await self.update_mods(state, server.modlist().mods)
 
@@ -942,10 +932,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Retrieving mods for server: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-
-        server = SERVER_MAP[server_name]
+        server = self.get_server_from_string(server_name)
         mods = [mod.to_json() for mod in server.modlist().mods]
         return JsonResponse({'mods': mods})
 
@@ -1014,10 +1001,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Retrieving modlist for server: {server_name}')
-        if server_name not in SERVER_MAP:
-            raise ServerConfigNotFound(server_name)
-
-        server = SERVER_MAP[server_name]
+        server = self.get_server_from_string(server_name)
         modlist_name = server._config.require('modlist').get()
         mod_names = [mod.name for mod in server.modlist().mods]
         return JsonResponse({'modlist_name': modlist_name, 'mods': mod_names})
