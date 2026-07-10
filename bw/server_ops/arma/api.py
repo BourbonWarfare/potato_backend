@@ -548,6 +548,10 @@ class ArmaApi:
 
         for key in keys:
             destination = key_path / key.name
+            if destination.exists():
+                logger.warning(f'Key {key} already exists at {destination}')
+                continue
+
             try:
                 shutil.copy(key, destination)
             except shutil.SameFileError as e:
