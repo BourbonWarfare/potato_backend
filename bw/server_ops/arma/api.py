@@ -854,7 +854,7 @@ class ArmaApi:
         server = self.get_server_from_string(server_name)
 
         logger.info('Reloading mod config file')
-        load_mod_configs(ENVIRONMENT.arma_mod_config_path(), ignore_already_defined_mods=True)
+        await load_mod_configs(ENVIRONMENT.arma_mod_config_path(), ignore_already_defined_mods=True)
 
         logger.info('Reloading modlists')
         load_modlists(ENVIRONMENT.arma_modlist_config_path())
@@ -1014,7 +1014,7 @@ class ArmaApi:
         return JsonResponse({'modlist_name': modlist_name, 'mods': mod_names})
 
     @define_api
-    def reload_mod_configuration(self, config_path: Path) -> WebResponse:
+    async def reload_mod_configuration(self, config_path: Path) -> WebResponse:
         """
         ### Reload mod configuration from disk
 
@@ -1040,7 +1040,7 @@ class ArmaApi:
         ```
         """
         logger.info(f'Reloading mod configuration from: {config_path}')
-        load_mod_configs(config_path)
+        await load_mod_configs(config_path)
         State.broker.publish(ReloadedServerConfig())
         return Ok()
 

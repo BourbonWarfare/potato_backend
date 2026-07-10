@@ -583,7 +583,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         logger.info(f'User {session_user.id} is reloading mod configuration')
         mod_config_path = ENVIRONMENT.arma_mod_config_path()
-        return ArmaApi().reload_mod_configuration(mod_config_path)
+        return await ArmaApi().reload_mod_configuration(mod_config_path)
 
     @api.post('mods/lists/reload')
     @url_endpoint

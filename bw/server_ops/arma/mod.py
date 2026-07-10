@@ -6,7 +6,6 @@ import datetime
 from typing import Any, Self
 from collections.abc import Iterable
 from collections.abc import Collection
-import asyncio
 import aiohttp
 import tomllib
 import tomli_w
@@ -177,7 +176,7 @@ async def fetch_mod_details_from_workshop(
     return details
 
 
-def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False):
+async def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False):
     """
     ### Load mod definitions from a TOML configuration file
 
@@ -371,7 +370,7 @@ def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False):
                     except ModAlreadyExists:
                         logger.info(f'{mod.name} has already been defined!')
 
-    asyncio.run(update_mod_details())
+    await update_mod_details()
 
 
 def save_mod_configs(config_path: Path):

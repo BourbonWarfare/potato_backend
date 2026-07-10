@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -37,7 +38,7 @@ class State:
 
         logger.info('Loading ARMA server configurations')
         logger.info(f'Loading mods from {ENVIRONMENT.arma_mod_config_path()}')
-        load_mod_configs(ENVIRONMENT.arma_mod_config_path())
+        asyncio.run(load_mod_configs(ENVIRONMENT.arma_mod_config_path()))
 
         logger.info(f'Loading modlists from {ENVIRONMENT.arma_modlist_config_path()}')
         load_modlists(ENVIRONMENT.arma_modlist_config_path())
