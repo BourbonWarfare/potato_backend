@@ -69,21 +69,6 @@ def production():
         config.workers = int(os.getenv('WEB_CONCURRENCY', 6))
         config.keep_alive_timeout = 15
 
-        if ENVIRONMENT.use_ssl():
-            (
-                ssl_ca_certs_path,
-                ssl_certfile_path,
-                ssl_keyfile_path,
-            ) = GLOBAL_CONFIGURATION.require(
-                'ssl_ca_certs_path',
-                'ssl_certfile_path',
-                'ssl_keyfile_path',
-            ).get()
-
-            config.ca_certs = ssl_ca_certs_path
-            config.certfile = ssl_certfile_path
-            config.keyfile = ssl_keyfile_path
-
         await serve(app, config)
 
     print('Starting cron runner')
