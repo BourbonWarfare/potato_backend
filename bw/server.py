@@ -10,6 +10,10 @@ from bw.cron import runner
 import bw.response  # noqa: F401
 import multiprocessing
 import os
+import asyncio
+
+loop = asyncio.ProactorEventLoop()
+asyncio.set_event_loop(loop)
 
 setup_log_config()
 
