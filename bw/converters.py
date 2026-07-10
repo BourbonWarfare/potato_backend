@@ -34,11 +34,5 @@ def make_json_safe(json: Any):
 
 
 def file_sha2(file_path: Path, *, buffer_size=2**20) -> str:
-    sha2 = hashlib.sha256()
-    while True:
-        with open(file_path, 'rb') as f:
-            data = f.read(buffer_size)
-            if not data:
-                break
-            sha2.update(data)
-    return sha2.hexdigest()
+    with open(file_path, 'rb') as f:
+        return hashlib.file_digest(f, 'sha256').hexdigest()
