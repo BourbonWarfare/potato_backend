@@ -755,7 +755,7 @@ class ArmaApi:
             file.writelines('\n'.join(command_split) + '\n')
             logger.info(f'Running generated script at {file.name}')
             logger.debug('\n'.join(command_split))
-            result = Chain(steam.locate(), steam.runscript(file.name)).call()
+            result = await Chain(steam.locate(), steam.runscript(file.name)).acall()
             logger.debug(f'steam.runscript.acall({file.name}) = {result}')
 
         for server in affected_servers:
