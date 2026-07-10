@@ -2,6 +2,7 @@ import os
 import logging
 import shutil
 import json
+import tempfile
 from pathlib import Path
 from typing import Any
 from collections.abc import Collection
@@ -740,16 +741,20 @@ class ArmaApi:
                 ],
             )
             download_command.extend(command)
-        await Chain(
-            steam.locate(),
-            steam.login(
-                GLOBAL_CONFIGURATION.require('steam_username').get(),
-                GLOBAL_CONFIGURATION.require('steam_password').get(),
-            ),
-            # Some mods may have different install paths, so we need to handle them separately
-            *download_command,
-            steam.quit(),
-        ).acall()
+        with tempfile.NamedTemporaryFile(mode='w') as file:
+            command = Chain(
+                steam.locate(),
+                steam.login(
+                    GLOBAL_CONFIGURATION.require('steam_username').get(),
+                    GLOBAL_CONFIGURATION.require('steam_password').get(),
+                ),
+                # Some mods may have different install paths, so we need to handle them separately
+                *download_command,
+                steam.quit(),
+            )
+            command_split = [line.replace('+', '') for line in (' '.join(command.command).split('+'))]
+            file.writelines(command_split)
+            await steam.runscript.acall(file.name)
 
         for server in affected_servers:
             (self.deploy_mods(server.server_name())).raise_if_unsuccessful()

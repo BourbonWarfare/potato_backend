@@ -10,6 +10,11 @@ class Steam(DryCommand):
     POSITIONAL_ARGUMENTS_FIRST = True
 
 
+class RunScript(Steam):
+    COMMAND = 'runscript'
+    POSITIONAL_ARGUMENTS = (str,)
+
+
 class Login(Steam):
     COMMAND = 'login'
     POSITIONAL_ARGUMENTS = (str, str)
