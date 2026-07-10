@@ -67,6 +67,7 @@ def production():
     uvicorn.run(
         'bw.server:app',
         host='0.0.0.0',
+        loop='asyncio',
         port=ENVIRONMENT.port(),
         log_config=log_config(),
         log_level='info',

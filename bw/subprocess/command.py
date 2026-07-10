@@ -253,7 +253,6 @@ class Runner:
         return stdout, stderr
 
     async def acall(self) -> Any:
-        print(self.command)
         logger.info(f'Calling `{" ".join(self.command)}` (asynchronous)')
         process = await asyncio.create_subprocess_exec(
             *self.command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
