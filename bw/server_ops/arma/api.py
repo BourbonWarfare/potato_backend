@@ -717,8 +717,6 @@ class ArmaApi:
             for server in stopped_servers:
                 (await self.start_server(server.server_name())).raise_if_unsuccessful()
             raise e
-        finally:
-            del stopped_servers
 
         mod_install_directories: dict[Path, list[Mod]] = {}
         for mod in mods_to_update:
@@ -756,6 +754,8 @@ class ArmaApi:
         for server in affected_servers:
             (self.deploy_mods(server.server_name())).raise_if_unsuccessful()
             (self.deploy_keys(server.server_name())).raise_if_unsuccessful()
+
+        for server in stopped_servers:
             (await self.start_server(server.server_name())).raise_if_unsuccessful()
 
         ModStore().bulk_update_mods(state, out_of_date_steam_mods)
