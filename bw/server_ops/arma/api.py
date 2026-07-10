@@ -757,7 +757,7 @@ class ArmaApi:
             file.writelines('\n'.join(command_split) + '\n')
             logger.info(f'Running generated script at {file.name}')
             logger.debug('\n'.join(command_split))
-            await steam.runscript.acall(file.name)
+            (await steam.runscript.acall(file.name)).raise_if_unsuccessful()
 
         for server in affected_servers:
             (self.deploy_mods(server.server_name())).raise_if_unsuccessful()
