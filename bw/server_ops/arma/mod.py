@@ -240,7 +240,11 @@ def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False):
     ```
     """
     mods_added: dict[str, Mod] = {}
+
+    seen_mod_workshop_ids: set[WorkshopId] = set()
     mod_workshop_ids: dict[WorkshopId, str] = {mod.workshop_id: mod.name for mod in MODS.values() if mod.workshop_id is not None}
+
+    seen_mod_filenames = set()
     mod_filenames: dict[str, str] = {mod.filename: mod.name for mod in MODS.values()}
 
     if not mods_file.exists():
@@ -289,13 +293,24 @@ def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False):
             raise ModFieldInvalid(mod_name, 'workshop_id', 'must be an integer')
 
         workshop_id = WorkshopId(mod_data['workshop_id'])
-        if workshop_id in mod_workshop_ids:
-            raise DuplicateModWorkshopID(mod_data['workshop_id'], mod_name, mod_workshop_ids[workshop_id])
+
+        if not ignore_already_defined_mods:
+            if workshop_id in mod_workshop_ids:
+                raise DuplicateModWorkshopID(mod_data['workshop_id'], mod_name, mod_workshop_ids[workshop_id])
+        else:
+            if workshop_id in seen_mod_workshop_ids:
+                raise DuplicateModWorkshopID(mod_data['workshop_id'], mod_name, mod_workshop_ids[workshop_id])
+        seen_mod_workshop_ids.add(workshop_id)
         mod_workshop_ids[workshop_id] = mod_name
 
         filename = mod_data['filename']
-        if filename in mod_filenames:
-            raise DuplicateModPath(mod_name, mod_filenames[filename], filename)
+        if not ignore_already_defined_mods:
+            if filename in mod_filenames:
+                raise DuplicateModPath(mod_name, mod_filenames[filename], filename)
+        else:
+            if filename in seen_mod_filenames:
+                raise DuplicateModPath(mod_name, mod_filenames[filename], filename)
+        seen_mod_filenames.add(filename)
         mod_filenames[filename] = mod_name
 
         if 'manual_install' in mod_data and not isinstance(mod_data['manual_install'], bool):
