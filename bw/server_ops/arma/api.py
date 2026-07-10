@@ -1,3 +1,4 @@
+import time
 import os
 import logging
 import shutil
@@ -599,6 +600,7 @@ class ArmaApi:
         logger.info(f'Updating Arma server: {server_name}')
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
+        start = time.time()
         server = SERVER_MAP[server_name]
 
         is_running = (await self.server_ping('localhost', server.server_port() + 1)).status == 200
@@ -626,6 +628,7 @@ class ArmaApi:
             (await self.start_server(server_name)).raise_if_unsuccessful()
 
         State.broker.publish(ServerUpdateEvent(server=server_name))
+        logger.info(f'Server updated in {time.time() - start:.2f} seconds')
         return await self.server_pid_status(server_name)
 
     @define_api

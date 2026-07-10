@@ -40,7 +40,17 @@ class ServerResult:
 
 
 def sanitize_for_powershell(arg: str) -> str:
-    return arg.replace('@', '`@').replace(';', '`;')
+    if '@' in arg:
+        mods = arg.split(';')
+        adjusted_mods = []
+        for mod in mods:
+            if '@' in mod:
+                adjusted_mods.append(mod.replace('@', '`@') + '`;')
+            else:
+                adjusted_mods.append(mod)
+        return ''.join(mods)
+    else:
+        return arg
 
 
 class ServerManage(Command):
