@@ -133,7 +133,7 @@ class ArmaApi:
         ```
         """
         logger.info('Retrieving all configured servers')
-        server_names = list(SERVER_MAP.keys())
+        server_names = [server.server_name() for server in sorted(SERVER_MAP.values(), key=lambda server: server.priority())]
         return JsonResponse({'servers': server_names})
 
     @define_api

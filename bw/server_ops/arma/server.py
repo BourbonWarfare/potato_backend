@@ -51,6 +51,9 @@ class Server:
     def cdlc(self) -> list[str]:
         return list(self._server.require('cdlc').get())
 
+    def priority(self) -> int:
+        return -int(self._server.get('priority', 0))
+
     def modlist(self) -> Modlist:
         list_name = str(self._server.require('modlist').get())
         if list_name not in MODLISTS:
