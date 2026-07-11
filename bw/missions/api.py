@@ -217,6 +217,7 @@ class MissionsApi:
             author_uuid=author_uuid,
             author_name=mission.author_name,
             title=mission.title,
+            map=mission.map,
             mission_type=mission_tag_info,
             special_flags=mission.special_flags,
         )
@@ -233,6 +234,7 @@ class MissionsApi:
             bwmf_version=iteration.bwmf_version,
             iteration=iteration.iteration,
             changelog=iteration.changelog,
+            filename=iteration.file_name,
         )
         return JsonResponse(iteration_info)
 
@@ -259,6 +261,7 @@ class MissionsApi:
             author_uuid=author_uuid,
             author_name=mission.author_name,
             title=mission.title,
+            map=mission.map,
             mission_type=mission_tag_info,
             special_flags=mission.special_flags,
         )
