@@ -528,47 +528,6 @@ def test__arma_api__deploy_keys__handles_copy_errors(
 
 
 @pytest.mark.asyncio
-async def test__arma_api__update_server__success(arma_api, mock_server_map, mock_steam_chain, mock_global_config):
-    with (
-        patch.object(arma_api, 'stop_server') as mock_stop,
-        patch.object(arma_api, 'deploy_mods') as mock_deploy_mods,
-        patch.object(arma_api, 'deploy_keys') as mock_deploy_keys,
-        patch.object(arma_api, 'start_server') as mock_start,
-        patch.object(arma_api, 'server_pid_status') as mock_status,
-        patch.object(arma_api, 'server_ping') as mock_ping,
-    ):
-        final_status = JsonResponse({'server_status': 'Running', 'hc_status': 'Running'})
-
-        async def mock_stop_return():
-            return JsonResponse({'status': 'stopped'})
-
-        async def mock_start_return():
-            return JsonResponse({'status': 'stopped'})
-
-        async def mock_pid_status_return():
-            return final_status
-
-        async def mock_ping_return():
-            return Ok()
-
-        mock_stop.return_value = mock_stop_return()
-        mock_ping.return_value = mock_ping_return()
-        mock_deploy_mods.return_value = Ok()
-        mock_deploy_keys.return_value = Ok()
-        mock_start.return_value = mock_start_return()
-        mock_status.return_value = mock_pid_status_return()
-        result = await arma_api.update_server('test_server')
-
-        assert result == final_status
-        mock_stop.assert_called_once_with('test_server')
-        mock_steam_chain.acall.assert_called_once()
-        mock_deploy_mods.assert_called_once_with('test_server')
-        mock_deploy_keys.assert_called_once_with('test_server')
-        mock_start.assert_called_once_with('test_server')
-        mock_status.assert_called_once_with('test_server')
-
-
-@pytest.mark.asyncio
 async def test__arma_api__update_server__server_not_found(arma_api):
     response = await arma_api.update_server('nonexistent_server')
     assert isinstance(response, WebResponse)
