@@ -73,7 +73,7 @@ a:hover {
 }
 
 .card-content {
-    max-width: 460px;
+    max-width: 860px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -104,7 +104,7 @@ p {
     font-size: 15px;
     line-height: 1.6;
     margin: 0 0 1.25rem 0;
-    max-width: 45%;
+    max-width: 900px;
 }
 
 button {
@@ -118,7 +118,7 @@ button {
     letter-spacing: 0.5px;
     cursor: pointer;
     width: 100%;
-    max-width: 280px;
+    max-width: 360px;
     margin-top: 12px;
     display: block;
     transition: background-color 0.15s ease-in-out;
