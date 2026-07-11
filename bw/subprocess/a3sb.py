@@ -65,7 +65,8 @@ class Ping(A3sb):
 
     @staticmethod
     def _map_stderr(result: str):
-        raise ArmaServerUnresponsive()
+        if result != '':
+            raise ArmaServerUnresponsive()
 
 
 a3sb = define_process(A3sb)  # ty: ignore[invalid-argument-type]
