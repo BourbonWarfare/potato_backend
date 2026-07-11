@@ -19,7 +19,7 @@ class RestartServer(Cron):
 
         print(f'Found {len(servers)} to restart')
         for server in servers:
-            async with session.get(f'{ENVIRONMENT.server_url()}/api/v1/server_ops/arma/{server}/status') as request:
+            async with session.get(f'{ENVIRONMENT.server_url()}/api/v1/server_ops/arma/{server}/healthcheck') as request:
                 try:
                     request.raise_for_status()
                 except Exception as e:
