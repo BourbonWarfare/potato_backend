@@ -47,7 +47,8 @@ class Attribute:
 
 
 class MissionFile:
-    def __init__(self, mission_as_json: dict, bwmf_version: str):
+    def __init__(self, mission_filename: str, mission_as_json: dict, bwmf_version: str):
+        self.file_name = mission_filename
         self.json = mission_as_json
         self.custom_attributes = {}
         self.author = self.json['ScenarioData'].get('author', '')
@@ -113,4 +114,4 @@ class MissionLoader:
                     bwmf_version = line.split('=')[1]
                     break
 
-        return MissionFile(json.load(open(mission_path / 'mission.json')), bwmf_version=bwmf_version)
+        return MissionFile(mission_name, json.load(open(mission_path / 'mission.json')), bwmf_version=bwmf_version)
