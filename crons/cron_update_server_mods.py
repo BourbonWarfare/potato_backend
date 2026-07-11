@@ -15,7 +15,7 @@ class UpdateMods(Cron):
         print('Updating ARMA server mods')
         async with session.get(f'{ENVIRONMENT.server_url()}/api/v1/server_ops/arma/servers') as request:
             request.raise_for_status()
-            servers: list[str] = await request.json()['servers']
+            servers: list[str] = (await request.json())['servers']
 
         print(f'Found {len(servers)} to update')
         for server in servers:
