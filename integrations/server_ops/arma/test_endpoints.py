@@ -46,6 +46,9 @@ from integrations.server_ops.arma.fixtures import (
     endpoint_reload_modlists_url,
     endpoint_arma_base_url,
     endpoint_servers_url,
+    mock_server_1,
+    mock_server_2,
+    mock_server_3,
 )
 from bw.server_ops.arma.mod import MODS, MODLISTS, Mod, Modlist, WorkshopId
 from bw.auth.user import UserStore
@@ -655,17 +658,24 @@ async def test__add_new_modlist__creates_empty_modlist(
 
 @pytest.mark.asyncio
 async def test__get_all_servers__returns_servers(
-    mocker, state, session, test_app, endpoint_servers_url, server_name_1, server_name_3, server_name_4
+    mocker,
+    state,
+    session,
+    test_app,
+    endpoint_servers_url,
+    server_name_1,
+    server_name_2,
+    server_name_3,
+    mock_server_1,
+    mock_server_2,
+    mock_server_3,
 ):
     """Test that GET /servers returns all configured servers"""
     # Not yet reviewed
-    mock_server_1 = mocker.Mock()
-    mock_server_2 = mocker.Mock()
-    mock_server_3 = mocker.Mock()
     mock_server_map = {
         server_name_1: mock_server_1,
-        server_name_3: mock_server_2,
-        server_name_4: mock_server_3,
+        server_name_2: mock_server_2,
+        server_name_3: mock_server_3,
     }
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', mock_server_map)
 
@@ -675,9 +685,9 @@ async def test__get_all_servers__returns_servers(
     data = await response.get_json()
     assert 'servers' in data
     assert len(data['servers']) == 3
-    assert server_name_1 in data['servers']
-    assert server_name_3 in data['servers']
-    assert server_name_4 in data['servers']
+    assert server_name_1 == data['servers'][0]
+    assert server_name_2 in data['servers'][2]
+    assert server_name_3 in data['servers'][1]
 
 
 @pytest.mark.asyncio

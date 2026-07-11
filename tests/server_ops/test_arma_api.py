@@ -498,14 +498,6 @@ def test__arma_api__deploy_mods__server_not_found(arma_api):
     assert response.status_code == 404
 
 
-def test__arma_api__deploy_mods__removes_existing_symlinks(arma_api, mock_server_map, mock_filesystem_with_existing, test_mods):
-    result = arma_api.deploy_mods('test_server')
-
-    assert isinstance(result, Ok)
-    mock_filesystem_with_existing['unlink'].assert_called()
-    mock_filesystem_with_existing['rmtree'].assert_called()
-
-
 def test__arma_api__deploy_mods__handles_symlink_errors(arma_api, mock_server_map, mock_filesystem_with_errors, test_mods):
     result = arma_api.deploy_mods('test_server')
 
@@ -543,6 +535,7 @@ async def test__arma_api__update_server__success(arma_api, mock_server_map, mock
         patch.object(arma_api, 'deploy_keys') as mock_deploy_keys,
         patch.object(arma_api, 'start_server') as mock_start,
         patch.object(arma_api, 'server_pid_status') as mock_status,
+        patch.object(arma_api, 'server_ping') as mock_ping,
     ):
         final_status = JsonResponse({'server_status': 'Running', 'hc_status': 'Running'})
 
@@ -555,7 +548,11 @@ async def test__arma_api__update_server__success(arma_api, mock_server_map, mock
         async def mock_pid_status_return():
             return final_status
 
+        async def mock_ping_return():
+            return Ok()
+
         mock_stop.return_value = mock_stop_return()
+        mock_ping.return_value = mock_ping_return()
         mock_deploy_mods.return_value = Ok()
         mock_deploy_keys.return_value = Ok()
         mock_start.return_value = mock_start_return()

@@ -6,6 +6,7 @@ import datetime
 from sqlalchemy import insert
 
 from bw.server_ops.arma.mod import Mod, SteamWorkshopDetails, WorkshopId, Modlist
+from bw.server_ops.arma.server import Server
 from bw.models.arma import Mod as DbMod
 from integrations.fixtures import session, state
 
@@ -338,3 +339,27 @@ def server_name_4():
 @pytest.fixture(scope='session')
 def endpoint_servers_url(endpoint_arma_base_url):
     return f'{endpoint_arma_base_url}/servers'
+
+
+@pytest.fixture
+def mock_server_1(mocker, server_name_1):
+    mock_server = mocker.Mock(spec=Server)
+    mock_server.priority.return_value = 1
+    mock_server.server_name.return_value = server_name_1
+    yield mock_server
+
+
+@pytest.fixture
+def mock_server_2(mocker, server_name_2):
+    mock_server = mocker.Mock(spec=Server)
+    mock_server.priority.return_value = 3
+    mock_server.server_name.return_value = server_name_2
+    yield mock_server
+
+
+@pytest.fixture
+def mock_server_3(mocker, server_name_3):
+    mock_server = mocker.Mock(spec=Server)
+    mock_server.priority.return_value = 2
+    mock_server.server_name.return_value = server_name_3
+    yield mock_server

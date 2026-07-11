@@ -33,6 +33,11 @@ def mission_name_with_v() -> str:
 
 
 @pytest.fixture
+def mission_name_camel_case() -> str:
+    return 'bailey_co40_testVerbose_v'
+
+
+@pytest.fixture
 def mission_with_v_and_version(mission_name_with_v, basic_version) -> str:
     return f'{mission_name_with_v}_{basic_version}'
 
@@ -55,6 +60,11 @@ def mission_with_long_version(mission_name, long_version) -> str:
 @pytest.fixture
 def mission_with_long_lower_version(mission_name, long_lower_version) -> str:
     return f'{mission_name}_{long_lower_version}'
+
+
+@pytest.fixture
+def mission_with_camel_case_version(mission_name_camel_case, basic_version) -> str:
+    return f'{mission_name_camel_case}_{basic_version}'
 
 
 def test__name_and_version_from_name__strips_version(basic_version, mission_name, mission_with_version):
@@ -93,3 +103,15 @@ def test__name_and_version_from_name__returns_name_no_version(mission_name):
     mission, version = name_and_version_from_name(mission_name)
     assert mission == mission_name
     assert version == ''
+
+
+def test__name_and_version_from_name__camel_case_handled(mission_name_camel_case, basic_version, mission_with_camel_case_version):
+    mission, version = name_and_version_from_name(mission_with_camel_case_version)
+    assert mission == mission_name_camel_case
+    assert version == basic_version
+
+
+def test__name_and_version_from_name__lambda_regression():
+    mission, version = name_and_version_from_name('lmd_co40_sliceOfBiela_v4')
+    assert mission == 'lmd_co40_sliceOfBiela'
+    assert version == 'v4'

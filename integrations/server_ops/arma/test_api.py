@@ -39,6 +39,9 @@ from integrations.server_ops.arma.fixtures import (
     test_config_path,
     invalid_kind,
     duplicate_workshop_id,
+    mock_server_1,
+    mock_server_2,
+    mock_server_3,
 )
 from bw.server_ops.arma.api import ArmaApi
 from bw.server_ops.arma.mod import MODS, MODLISTS, Mod, Modlist, Kind, WorkshopId
@@ -400,15 +403,14 @@ def test__add_modlist__validates_all_mods_before_adding(
     assert mock_modlist_name_4 not in MODLISTS
 
 
-def test__get_all_servers__returns_all_servers(mocker, state, session, server_name_1, server_name_3, server_name_4):
+def test__get_all_servers__returns_all_servers(
+    mocker, state, session, server_name_1, server_name_2, server_name_3, mock_server_1, mock_server_2, mock_server_3
+):
     """Test that get_all_servers returns all configured servers"""
-    mock_server_1 = mocker.Mock()
-    mock_server_2 = mocker.Mock()
-    mock_server_3 = mocker.Mock()
     mock_server_map = {
         server_name_1: mock_server_1,
-        server_name_3: mock_server_2,
-        server_name_4: mock_server_3,
+        server_name_2: mock_server_2,
+        server_name_3: mock_server_3,
     }
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', mock_server_map)
 
@@ -417,9 +419,9 @@ def test__get_all_servers__returns_all_servers(mocker, state, session, server_na
     assert response.status_code == 200
     assert 'servers' in response.contained_json
     assert len(response.contained_json['servers']) == 3
-    assert server_name_1 in response.contained_json['servers']
-    assert server_name_3 in response.contained_json['servers']
-    assert server_name_4 in response.contained_json['servers']
+    assert server_name_1 == response.contained_json['servers'][0]
+    assert server_name_2 == response.contained_json['servers'][2]
+    assert server_name_3 == response.contained_json['servers'][1]
 
 
 def test__get_all_servers__returns_empty_when_no_servers(mocker, state, session):

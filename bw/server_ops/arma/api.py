@@ -598,6 +598,11 @@ class ArmaApi:
 
         is_running = (await self.server_ping('localhost', server.server_port() + 1)).status == 200
 
+        print(
+            is_running,
+            await self.server_ping('localhost', server.server_port() + 1),
+            (await self.server_ping('localhost', server.server_port() + 1)).status,
+        )
         if is_running:
             (await self.stop_server(server_name)).raise_if_unsuccessful()
 
