@@ -130,7 +130,7 @@ class Runner:
         auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
         async with aiohttp.ClientSession(headers=auth_headers) as session:
             event = CronRun(cron=cron.path.stem)
-            payload = {'event': event.encoded_string(), 'arguments': event}
+            payload = {'event': event.encoded_string(), 'arguments': {'cron': event.cron}}
             async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/realtime/', json=make_json_safe(payload)) as request:
                 try:
                     request.raise_for_status()
@@ -198,7 +198,8 @@ class Runner:
                 async def run_requests():
                     assert isinstance(self.session_token_.session, str)
                     auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
-                    async with aiohttp.ClientSession(headers=auth_headers) as session:
+                    timeout = aiohttp.ClientTimeout(total=300, connect=300, sock_read=300, sock_connect=300)
+                    async with aiohttp.ClientSession(headers=auth_headers, timeout=timeout) as session:
                         for cron in async_requests:
                             with OutCapture():
                                 await cron(session)
