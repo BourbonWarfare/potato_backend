@@ -13,6 +13,6 @@ class EndSession(Cron):
 
     async def request(self, session: aiohttp.ClientSession) -> None:
         print('Ending session!')
-        async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/session/finish/') as request:
+        async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/session/finish') as request:
             request.raise_for_status()
             print('finished session')

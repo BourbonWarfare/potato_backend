@@ -13,6 +13,6 @@ class SessionReminder(Cron):
 
     async def request(self, session: aiohttp.ClientSession) -> None:
         print('Start a new session (1 hour from now)!')
-        async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/session/register/') as request:
+        async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/session/register') as request:
             request.raise_for_status()
             print('Started session')
