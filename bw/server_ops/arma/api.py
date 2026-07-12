@@ -755,7 +755,6 @@ class ArmaApi:
             for batch_idx, mod_batch in enumerate(itertools.batched(mods, batch_count)):
                 logger.info(f'Updating mod batch {batch_idx + 1}/{batch_count}')
                 download_command = (
-                    steam.force_install_dir(str(install_path)),
                     *[
                         steam.workshop_download_item('107410', str(mod.workshop_id), validate=True)
                         for mod in mod_batch
@@ -764,6 +763,7 @@ class ArmaApi:
                 )
 
                 command = Chain(
+                    steam.force_install_dir(str(install_path)),
                     steam.login(
                         GLOBAL_CONFIGURATION.require('steam_username').get(),
                         GLOBAL_CONFIGURATION.require('steam_password').get(),
