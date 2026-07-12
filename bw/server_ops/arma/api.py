@@ -721,6 +721,7 @@ class ArmaApi:
 
         mods_to_update = [mod_workshop_id_map[workshop_detail.workshop_id] for workshop_detail in out_of_date_steam_mods]
         logger.info(f'Found {len(mods_to_update)} mod(s) out of date with the Steam Workshop')
+        logger.info('\n'.join([f'{mod.name} ({mod.workshop_id})' for mod in mods_to_update]))
 
         affected_servers = [s for s in SERVER_MAP.values() if s.modlist().has_mods_from(mods_to_update)]
         try:
@@ -734,6 +735,8 @@ class ArmaApi:
             for server in stopped_servers:
                 (await self.start_server(server.server_name())).raise_if_unsuccessful()
             raise e
+
+        logging.info(f'Stopped {len(stopped_servers)} for mod update')
 
         mod_install_directories: dict[Path, list[Mod]] = {}
         for mod in mods_to_update:
