@@ -1,3 +1,4 @@
+import logging
 from bw.session.orbat import Orbat
 from bw.environment import ENVIRONMENT
 from bw.missions.api import uuid_from_name_and_map, name_and_version_from_name
@@ -9,6 +10,8 @@ from bw.response import JsonResponse, Created, BadRequest, Ok
 from bw.missions.missions import MissionStore, MissionHistoryStore
 from bw.web_utils import define_api
 from bw.web_event.session import SessionStartedEvent, MissionEndedEvent, SafeStartOffEvent
+
+logger = logging.getLogger('bw.session')
 
 
 class SessionApi:
@@ -59,7 +62,8 @@ class SessionApi:
                     orbat=orbat,
                 )
             )
-        except:
+        except Exception as err:
+            logger.warning(f'Failed to fetch mission information for {mission_id}: {err}')
             State.broker.publish(
                 MissionEndedEvent(
                     session=session.uuid,
@@ -100,7 +104,8 @@ class SessionApi:
                     orbat=orbat,
                 )
             )
-        except:
+        except Exception as err:
+            logger.warning(f'Failed to fetch mission information for {mission_id}: {err}')
             State.broker.publish(
                 SafeStartOffEvent(
                     session=session.uuid,
