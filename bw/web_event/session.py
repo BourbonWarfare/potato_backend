@@ -30,14 +30,16 @@ class MissionEndedEvent(SessionEvent, event='finished mission'):
     session: uuid.UUID
     mission: uuid.UUID
     iteration: uuid.UUID
-    orbat: Orbat
+    starting_orbat: Orbat
+    final_orbat: Orbat
 
     def data(self) -> dict[str, Any]:
         return {
             'session': self.session,
             'mission': self.mission,
             'iteration': self.iteration,
-            'orbat': self.orbat,
+            'starting_orbat': self.starting_orbat,
+            'final_orbat': self.final_orbat,
         }
 
 

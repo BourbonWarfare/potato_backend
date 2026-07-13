@@ -49,11 +49,15 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         session_id: UUID,
         mission_name_with_version: str,
         mission_map: str,
-        orbat: dict,
+        starting_orbat: dict,
+        final_orbat: dict,
     ) -> Ok:
         logger.info(f'Mission finished for session {session_id}')
-        orbat_casted = from_dict(data_class=Orbat, data=orbat)
-        return await SessionApi().finish_mission(session_id, mission_name_with_version, mission_map, orbat_casted)
+        starting_orbat_casted = from_dict(data_class=Orbat, data=starting_orbat)
+        final_orbat_casted = from_dict(data_class=Orbat, data=final_orbat)
+        return await SessionApi().finish_mission(
+            session_id, mission_name_with_version, mission_map, starting_orbat_casted, final_orbat_casted
+        )
 
     @api.post('/mission/safeStart/disabled')
     @json_endpoint

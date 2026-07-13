@@ -37,9 +37,10 @@ class SessionApi:
         session_id: UUID,
         mission_name_with_version: str,
         mission_map: str,
-        orbat: Orbat,
+        starting_orbat: Orbat,
+        final_orbat: Orbat,
     ) -> Created | BadRequest:
-        if orbat.player_count() < ENVIRONMENT.session_playercount_cutoff():
+        if starting_orbat.player_count() < ENVIRONMENT.session_playercount_cutoff():
             return BadRequest()
 
         mission_name, _ = name_and_version_from_name(mission_name_with_version)
@@ -51,14 +52,15 @@ class SessionApi:
                 State.state, mission, f'{mission_name_with_version}.{mission_map}'
             )
 
-            MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, orbat)
+            MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, starting_orbat)
 
             State.broker.publish(
                 MissionEndedEvent(
                     session=session.uuid,
                     mission=mission_id,
                     iteration=iteration.uuid,
-                    orbat=orbat,
+                    starting_orbat=starting_orbat,
+                    final_orbat=final_orbat,
                 )
             )
         except Exception as err:
@@ -68,7 +70,8 @@ class SessionApi:
                     session=session.uuid,
                     mission=mission_id,
                     iteration=UUID(int=0),
-                    orbat=orbat,
+                    starting_orbat=starting_orbat,
+                    final_orbat=final_orbat,
                 )
             )
             raise
