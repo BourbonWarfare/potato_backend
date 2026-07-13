@@ -19,7 +19,7 @@ class SessionApi:
     async def register(self) -> JsonResponse:
         session = SessionStore().create_session(State.state)
         State.broker.publish(SessionStartedEvent(session=session.uuid))
-        return JsonResponse({'id': session.id})
+        return JsonResponse({'id': session.uuid})
 
     @define_api
     async def finish(self, session_id: UUID) -> Ok:
