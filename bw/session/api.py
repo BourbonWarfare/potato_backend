@@ -41,23 +41,34 @@ class SessionApi:
 
         mission_name, _ = name_and_version_from_name(mission_name_with_version)
         mission_id = uuid_from_name_and_map(mission_name, mission_map)
-        mission = MissionStore().mission_with_uuid(State.state, mission_id)
-        iteration = MissionStore().iteration_with_mission_and_name(
-            State.state, mission, f'{mission_name_with_version}.{mission_map}'
-        )
-
-        session = SessionStore().session_with_uuid(State.state, session_id)
-
-        MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, orbat)
-
-        State.broker.publish(
-            MissionEndedEvent(
-                session=session.uuid,
-                mission=mission_id,
-                iteration=iteration.uuid,
-                orbat=orbat,
+        try:
+            mission = MissionStore().mission_with_uuid(State.state, mission_id)
+            iteration = MissionStore().iteration_with_mission_and_name(
+                State.state, mission, f'{mission_name_with_version}.{mission_map}'
             )
-        )
+
+            session = SessionStore().session_with_uuid(State.state, session_id)
+
+            MissionHistoryStore().add_played_mission(State.state, mission, iteration, session, orbat)
+
+            State.broker.publish(
+                MissionEndedEvent(
+                    session=session.uuid,
+                    mission=mission_id,
+                    iteration=iteration.uuid,
+                    orbat=orbat,
+                )
+            )
+        except:
+            State.broker.publish(
+                MissionEndedEvent(
+                    session=session.uuid,
+                    mission=mission_id,
+                    iteration=UUID(int=0),
+                    orbat=orbat,
+                )
+            )
+            raise
         return Created()
 
     @define_api
@@ -73,19 +84,30 @@ class SessionApi:
 
         mission_name, _ = name_and_version_from_name(mission_name_with_version)
         mission_id = uuid_from_name_and_map(mission_name, mission_map)
-        mission = MissionStore().mission_with_uuid(State.state, mission_id)
-        iteration = MissionStore().iteration_with_mission_and_name(
-            State.state, mission, f'{mission_name_with_version}.{mission_map}'
-        )
-
-        session = SessionStore().session_with_uuid(State.state, session_id)
-
-        State.broker.publish(
-            SafeStartOffEvent(
-                session=session.uuid,
-                mission=mission_id,
-                iteration=iteration.uuid,
-                orbat=orbat,
+        try:
+            mission = MissionStore().mission_with_uuid(State.state, mission_id)
+            iteration = MissionStore().iteration_with_mission_and_name(
+                State.state, mission, f'{mission_name_with_version}.{mission_map}'
             )
-        )
+
+            session = SessionStore().session_with_uuid(State.state, session_id)
+
+            State.broker.publish(
+                SafeStartOffEvent(
+                    session=session.uuid,
+                    mission=mission_id,
+                    iteration=iteration.uuid,
+                    orbat=orbat,
+                )
+            )
+        except:
+            State.broker.publish(
+                SafeStartOffEvent(
+                    session=session.uuid,
+                    mission=mission_id,
+                    iteration=UUID(int=0),
+                    orbat=orbat,
+                )
+            )
+            raise
         return Created()
