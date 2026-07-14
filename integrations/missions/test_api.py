@@ -9,7 +9,7 @@ import csv
 import shutil
 from bw.response import JsonResponse, Created, WebResponse
 from bw.missions.api import MissionsApi, TestApi
-from bw.error import CouldNotCreateIteration
+from bw.error import CouldNotCreateIteration, HemttError
 from bw.missions.missions import MissionStore
 from bw.missions.pbo import MissionLoader
 from bw.missions.test_status import TestStatus
@@ -69,6 +69,20 @@ class TestMissionsApi:
         resp = await MissionsApi().upload_mission(state, arma_server, db_user_1, 'fake_path', fake_changelog)
         assert not isinstance(resp, JsonResponse)
         assert resp.status_code == 409
+
+    @pytest.mark.asyncio
+    async def test__upload_mission__not_binarized(
+        self, mocker, state, session, fake_mission, fake_changelog, db_user_1, arma_server
+    ):
+        fake_mission.custom_attributes = {}
+        mocker.patch.object(
+            MissionLoader,
+            'load_pbo_from_directory',
+            side_effect=HemttError('ERROR Failed to execute command: IO Error: Invalid rapified config'),
+        )
+        resp = await MissionsApi().upload_mission(state, arma_server, db_user_1, 'fake_path', fake_changelog)
+        assert not isinstance(resp, JsonResponse)
+        assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test__upload_mission__missing_metadata(
