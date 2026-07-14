@@ -119,7 +119,15 @@ def url_endpoint(func: Callable[..., Awaitable[WebResponse]]):
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         try:
-            return await func(*args, **kwargs)
+            result = func(*args, **kwargs)
+        except TypeError as e:
+            logger.warning(e)
+            logger.warning(f'Request passed args: {args}')
+            logger.warning(f'Request payload: {kwargs}')
+            return BadArguments().as_response_code()
+
+        try:
+            return await result
         except BwServerError as e:
             logger.warning(f'Error in URL API: {e}')
             return e.as_response_code()
@@ -172,12 +180,15 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
 
             kwargs.update(converted_json)
             try:
-                return await func(*args, **kwargs)
+                result = func(*args, **kwargs)
             except TypeError as e:
                 logger.warning(e)
                 logger.warning(f'Request passed args: {args}')
                 logger.warning(f'Request payload: {kwargs}')
                 return BadArguments().as_response_code()
+
+            try:
+                return await result
             except BwServerError as e:
                 logger.warning(e)
                 return e.as_response_code()
