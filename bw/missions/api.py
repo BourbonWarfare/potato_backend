@@ -107,7 +107,7 @@ class MissionsApi:
             raise
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
-            raise MissionDoesNotHaveMetadata()
+            raise MissionDoesNotHaveMetadata('not saved with POTATO')
 
         info = mission.custom_attributes['potato_missiontesting_missionTestingInfo']
         if 'potato_missiontesting_missionType' not in info:
