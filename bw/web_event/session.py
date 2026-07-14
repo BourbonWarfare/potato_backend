@@ -29,6 +29,7 @@ class SessionEndedEvent(SessionEvent, event='ended'):
 class MissionEndedEvent(SessionEvent, event='finished mission'):
     session: uuid.UUID
     mission: uuid.UUID
+    mission_name_with_version: str
     iteration: uuid.UUID
     starting_orbat: Orbat
     final_orbat: Orbat
@@ -37,6 +38,7 @@ class MissionEndedEvent(SessionEvent, event='finished mission'):
         return {
             'session': self.session,
             'mission': self.mission,
+            'mission_name_with_version': self.mission_name_with_version,
             'iteration': self.iteration,
             'starting_orbat': self.starting_orbat,
             'final_orbat': self.final_orbat,

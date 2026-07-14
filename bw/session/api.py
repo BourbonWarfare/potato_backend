@@ -58,6 +58,7 @@ class SessionApi:
                 MissionEndedEvent(
                     session=session.uuid,
                     mission=mission_id,
+                    mission_name_with_version=mission_name_with_version,
                     iteration=iteration.uuid,
                     starting_orbat=starting_orbat,
                     final_orbat=final_orbat,
@@ -69,6 +70,7 @@ class SessionApi:
                 MissionEndedEvent(
                     session=session.uuid,
                     mission=mission_id,
+                    mission_name_with_version=mission_name_with_version,
                     iteration=UUID(int=0),
                     starting_orbat=starting_orbat,
                     final_orbat=final_orbat,
