@@ -150,6 +150,26 @@ async def test__url_endpoint__catches_bw_server_error(mock_error):
     assert isinstance(response, MockErrorResponse)
 
 
+@pytest.mark.asyncio
+async def test__url_endpoint__type_error_in_function_is_not_caught(mock_request):
+    @url_endpoint
+    async def endpoint():
+        raise TypeError()
+
+    with pytest.raises(TypeError):
+        await endpoint()
+
+
+@pytest.mark.asyncio
+async def test__url_endpoint__bad_arguments_return_bad_request(mock_request, mock_error):
+    @url_endpoint
+    async def endpoint(my_arg: int):
+        return 'blah'
+
+    response = await endpoint(**{'fake': 400})
+    assert response.status == '400 BAD REQUEST'
+
+
 # ==============================================================================
 # UNIT UNDER TEST: json_endpoint
 # ==============================================================================
@@ -217,6 +237,30 @@ async def test__json_endpoint__catches_bw_server_error(mock_request, mock_error)
         raise mock_error
 
     assert await endpoint() is mock_error.as_response_code()
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__type_error_in_function_is_not_caught(mock_request):
+    mock_request.get_json.return_value = {}
+
+    @json_endpoint
+    async def endpoint():
+        raise TypeError()
+
+    with pytest.raises(TypeError):
+        await endpoint()
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__bad_arguments_return_bad_request(mock_request, mock_error):
+    mock_request.get_json.return_value = {'not_real_arg': 'blah'}
+
+    @json_endpoint
+    async def endpoint(my_arg: int):
+        return {}
+
+    response = await endpoint()
+    assert response.status == '400 BAD REQUEST'
 
 
 # ==============================================================================
