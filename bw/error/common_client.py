@@ -46,13 +46,6 @@ class UploadError(ClientError):
         super().__init__(f'Something went wrong with the upload: {reason}')
 
 
-class MissionDoesNotHaveMetadata(UploadError):
-    def __init__(self, metadata_kind: str = ''):
-        super().__init__(
-            'mission does not have attached mission testing attributes' + (f' (missing {metadata_kind})' if metadata_kind else '')
-        )
-
-
 class WrongAccept(ClientError):
     def status(self) -> int:
         return 406

@@ -1,3 +1,4 @@
+from bw.error import HemttError
 import re
 from typing import Any
 from bw.subprocess.semver import Semver
@@ -54,6 +55,11 @@ class Derapify(Config):
     COMMAND = 'derapify'
     POSITIONAL_ARGUMENTS = [str, str | None]
     KEYWORD_ARGUMENTS = {'format': str}
+
+    @staticmethod
+    def _map_stdout(result):
+        if 'ERROR' in result:
+            raise HemttError(result)
 
 
 hemtt = define_process(Hemtt)  # ty: ignore[invalid-argument-type]

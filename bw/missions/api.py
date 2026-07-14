@@ -14,6 +14,8 @@ from bw.error import (
     AlreadyReviewedMission,
     MissionAlreadyExists,
     MissionHasNoMap,
+    HemttError,
+    MissionIsNotBinarized,
 )
 from bw.auth.user import UserStore
 from bw.missions.pbo import MissionLoader
@@ -96,7 +98,13 @@ class MissionsApi:
 
         logger.info(f'uploading mission: {stored_pbo_path} to database')
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
-        mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
+        try:
+            mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)
+        except HemttError as err:
+            error = str(err)
+            if 'Invalid rapified config' in error:
+                raise MissionIsNotBinarized()
+            raise
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
             raise MissionDoesNotHaveMetadata()
