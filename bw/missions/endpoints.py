@@ -24,7 +24,7 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
     @require_session
     @require_group_permission(Permissions.can_upload_mission)
     async def upload(
-        server_name: str, session_user: User, pbo_path: str, changelog: dict[str, str], play_in_session: bool | None = None
+        server_name: str, session_user: User, pbo_path: str, changelog: dict[str, str], play_in_session: bool = True
     ) -> JsonResponse:
         """
         ### Upload a mission to a specific server
