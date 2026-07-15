@@ -126,3 +126,8 @@ class MissionDoesNotHaveMetadata(UploadError):
 class MissionIsNotBinarized(UploadError):
     def __init__(self):
         super().__init__('mission needs to be binarized to upload')
+
+
+class FailedToParseMissionSqm(UploadError):
+    def __init__(self):
+        super().__init__('mission.sqm contains invalid characters which we cannot parse')

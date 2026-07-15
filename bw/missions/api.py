@@ -16,6 +16,7 @@ from bw.error import (
     MissionHasNoMap,
     HemttError,
     MissionIsNotBinarized,
+    FailedToParseMissionSqm,
 )
 from bw.auth.user import UserStore
 from bw.missions.pbo import MissionLoader
@@ -105,6 +106,16 @@ class MissionsApi:
             if 'Invalid rapified config' in error:
                 raise MissionIsNotBinarized()
             raise
+        except UnicodeDecodeError as err:
+            logger.warning(f'Failed to decode `mission.sqm`: {err}')
+
+            context_window = 10
+            snippet_start = max(0, err.start - context_window)
+            snippet_end = min(len(err.object), err.end + context_window)
+
+            context_snippet = err.object[snippet_start:snippet_end]
+            logger.warning(f'Context: {context_snippet}')
+            raise FailedToParseMissionSqm()
 
         if 'potato_missiontesting_missionTestingInfo' not in mission.custom_attributes:
             raise MissionDoesNotHaveMetadata('not saved with POTATO')
