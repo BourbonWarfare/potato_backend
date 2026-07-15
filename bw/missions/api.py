@@ -57,15 +57,18 @@ def uuid_from_name_and_map(mission_name: str, mission_map: str) -> UUID:
 
 
 class MissionsApi:
-    @define_api
-    def copy_mission_to_server(self, server: Server, stored_pbo_path: Path) -> JsonResponse:
+    def _copy_mission_to_server(self, server: Server, stored_pbo_path: Path) -> JsonResponse:
         working_pbo_path = server.mission_path() / stored_pbo_path.name
         logger.info(f'moving mission {stored_pbo_path} to server mission folder')
         if working_pbo_path.exists():
             logger.warning('Cannot upload mission due to file already been uploaded')
             raise MissionAlreadyExists()
         shutil.copyfile(stored_pbo_path, working_pbo_path)
-        return JsonResponse({})
+        return JsonResponse({}, status=201)
+
+    @define_api
+    def copy_mission_to_server(self, server: Server, stored_pbo_path: Path) -> JsonResponse:
+        return self._copy_mission_to_server(server, stored_pbo_path)
 
     @define_api
     async def upload_mission(
@@ -189,7 +192,7 @@ class MissionsApi:
         if 'potato_missiontesting_missionTimeLength' in info:
             mission_length = int(info['potato_missiontesting_missionTimeLength']['data']['value'])
 
-        self.copy_mission_to_server(server, stored_pbo_path)
+        self._copy_mission_to_server(server, stored_pbo_path)
 
         iteration = MissionStore().add_iteration(
             state,
