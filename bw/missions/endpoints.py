@@ -23,7 +23,9 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
     @json_endpoint
     @require_session
     @require_group_permission(Permissions.can_upload_mission)
-    async def upload(server_name: str, session_user: User, pbo_path: str, changelog: dict[str, str]) -> JsonResponse:
+    async def upload(
+        server_name: str, session_user: User, pbo_path: str, changelog: dict[str, str], play_in_session: bool | None = None
+    ) -> JsonResponse:
         """
         ### Upload a mission to a specific server
 
@@ -37,6 +39,7 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         - `session_user` (`User`): The authenticated user (automatically injected by `@require_session`).
         - `pbo_path` (`str`): The file path to the PBO file to upload.
         - `changelog` (`dict[str, str]`): A dictionary containing changelog entries for this upload.
+        - `play_in_session` (`bool | None`): If this mission is intended to be played in session.
 
         **Returns:**
         - `JsonResponse`:
@@ -62,13 +65,17 @@ def define(api: Blueprint, local: Blueprint, html: Blueprint):
         if server_name not in SERVER_MAP:
             raise ServerConfigNotFound(server_name)
         logger.info(f'User {session_user.id} is uploading mission from {pbo_path} to {server_name} with changelog: {changelog}')
-        return await MissionsApi().upload_mission(
-            state=State.state,
-            server=SERVER_MAP[server_name],
-            user=session_user,
-            stored_pbo_path=Path(pbo_path),
-            changelog=changelog,
-        )
+        server = SERVER_MAP[server_name]
+        if play_in_session:
+            return await MissionsApi().upload_mission(
+                state=State.state,
+                server=server,
+                user=session_user,
+                stored_pbo_path=Path(pbo_path),
+                changelog=changelog,
+            )
+        else:
+            return MissionsApi().copy_mission_to_server(server=server, stored_pbo_path=Path(pbo_path))
 
     @api.get('/iteration/<uuid:iteration_uuid>')
     @url_endpoint
