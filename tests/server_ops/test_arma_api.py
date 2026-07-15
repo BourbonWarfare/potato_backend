@@ -544,11 +544,11 @@ async def test__arma_api___manage_server__formats_mods_correctly(arma_api, test_
     mock_command.assert_called_once()
     call_kwargs = mock_command.call_args[1]
 
-    assert 'mods' in call_kwargs
-    assert '@mod1;@mod2;' in call_kwargs['mods']
+    assert 'mod' in call_kwargs
+    assert '@mod1;@mod2;' in call_kwargs['mod']
 
-    assert 'servermods' in call_kwargs
-    assert '@servermod1;' in call_kwargs['servermods']
+    assert 'servermod' in call_kwargs
+    assert '@servermod1;' in call_kwargs['servermod']
 
     assert call_kwargs['name'] == test_server_with_mixed_mods.server_name()
     assert str(call_kwargs['path']) == str(test_server_with_mixed_mods.server_path())
