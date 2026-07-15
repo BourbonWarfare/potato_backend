@@ -114,4 +114,4 @@ class MissionLoader:
                     bwmf_version = line.split('=')[1]
                     break
 
-        return MissionFile(mission_name, json.load(open(mission_path / 'mission.json')), bwmf_version=bwmf_version)
+        return MissionFile(mission_name, json.load(open(mission_path / 'mission.json', 'rb')), bwmf_version=bwmf_version)
