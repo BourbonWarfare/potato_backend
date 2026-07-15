@@ -1,3 +1,4 @@
+from bw.error import MissionDoesNotHaveMetadata
 import dataclasses
 import shutil
 import tempfile
@@ -76,6 +77,9 @@ class MissionFile:
             is_waves_forced=(1 == intel.get('wavesForced', 0)),
             is_wind_forced=(1 == intel.get('windForced', 0)),
         )
+
+        if 'CustomAttributes' not in self.json:
+            raise MissionDoesNotHaveMetadata('CustomAttributes')
 
         for categories in self.json['CustomAttributes'].values():
             category_name = categories['name']
