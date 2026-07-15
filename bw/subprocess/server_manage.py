@@ -51,8 +51,8 @@ class ServerManage(Command):
         'port': int,
         'hc_count': int,
         'pass': str,
-        'mods': str,
-        'servermods': str,
+        'mod': str,
+        'servermod': str,
     }
     ALWAYS_REPORT_BOTH_STDOUT_STDERR = True
 
