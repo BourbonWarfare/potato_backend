@@ -55,9 +55,6 @@ from bw.web_event import (
     ModlistAdded,
     ModsDeployed,
     KeysDeployed,
-    ServerStartEvent,
-    ServerStopEvent,
-    ServerRestartEvent,
     ServerUpdateEvent,
     ServerModUpdateEvent,
 )
@@ -341,7 +338,6 @@ class ArmaApi:
         server = self.get_server_from_string(server_name)
         server.reload_config()
         response = await self._manage_server(server_manage.start.acall, server)
-        State.broker.publish(ServerStartEvent(server=server_name, result=response))
         return JsonResponse(response)
 
     @define_api
@@ -375,7 +371,6 @@ class ArmaApi:
         logger.info(f'Stopping Arma server: {server_name}')
         server = self.get_server_from_string(server_name)
         response = await self._manage_server(server_manage.stop.acall, server)
-        State.broker.publish(ServerStopEvent(server=server_name, result=response))
         return JsonResponse(response)
 
     @define_api
@@ -413,7 +408,6 @@ class ArmaApi:
         server = self.get_server_from_string(server_name)
         server.reload_config()
         response = await self._manage_server(server_manage.restart.acall, server)
-        State.broker.publish(ServerRestartEvent(server=server_name, result=response))
         return JsonResponse(response)
 
     @define_api

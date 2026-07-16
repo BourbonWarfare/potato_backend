@@ -14,6 +14,7 @@ PRODUCTION_LOG_CONFIG = {
     'bw.psm': 'INFO',
     'bw.server_ops': 'DEBUG',
     'bw.server_ops.arma': 'DEBUG',
+    'bw.server_ops.process': 'DEBUG',
     'bw.web_utils': 'INFO',
     'bw.cron': 'INFO',
     'bw.realtime': 'INFO',

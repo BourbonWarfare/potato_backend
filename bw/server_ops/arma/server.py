@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from bw.configuration import Configuration
-from bw.server_ops.arma.mod import Modlist, MODLISTS
+from bw.server_ops.arma.mod import Modlist, MODLISTS, Kind
 from bw.error import ModlistNotFound, ServerConfigNameNotPermitted
 
 
@@ -41,6 +41,54 @@ class Server:
 
     def mission_path(self) -> Path:
         return self.server_path() / 'mpmissions'
+
+    def exe_path(self) -> Path:
+        return self.server_path() / 'arma3server_x64.exe'
+
+    def arma_config_path(self) -> Path:
+        return Path('configs') / self.server_name()
+
+    def server_profile_path(self) -> Path:
+        return self.arma_config_path() / 'server' / 'serverProfile'
+
+    def defined_server_launch_options(self) -> list[str]:
+        return list(self._server.require('server_launch_options').get())
+
+    def headless_client_profile_path(self) -> Path:
+        return self.arma_config_path() / 'hc' / 'hcProfile'
+
+    def defined_headless_launch_options(self) -> list[str]:
+        return list(self._server.require('server_launch_options').get())
+
+    def mod_launch_options(self) -> list[str]:
+        return [mod.as_launch_parameter() for mod in self.modlist().mods if mod.kind != Kind.SERVER_MOD]
+
+    def server_mod_launch_options(self) -> list[str]:
+        return [mod.as_launch_parameter() for mod in self.modlist().mods if mod.kind == Kind.SERVER_MOD]
+
+    def server_launch_options(self) -> list[str]:
+        return [
+            str(self.exe_path()),
+            f'-port={self.server_port()}',
+            *self.defined_server_launch_options(),
+            f'-config={self.arma_config_path() / "server.cfg"}',
+            f'-cfg={self.arma_config_path() / "basic.cfg"}',
+            f'-profiles={self.server_profile_path()}',
+            f'-name={self.server_name()}',
+            f'-mod={";".join(self.mod_launch_options())}',
+            f'-servermod={";".join(self.server_mod_launch_options())}',
+        ]
+
+    def headless_launch_options(self) -> list[str]:
+        return [
+            str(self.exe_path()),
+            *self.defined_headless_launch_options(),
+            f'-port={self.server_port()}',
+            f'-profiles={self.headless_client_profile_path()}',
+            f'-name=hc_{self.server_name()}',
+            f'-password={self.server_password()}',
+            f'-mod={";".join(self.mod_launch_options())}',
+        ]
 
     def mod_install_path(self) -> Path:
         return Path(self._server.require('mod_install_path').get())  # ty: ignore[invalid-argument-type]

@@ -1,7 +1,7 @@
 from bw.web_event import BaseEvent
 from dataclasses import dataclass
 from typing import Any
-from bw.subprocess.server_manage import ServerResult
+from bw.server_ops.process.status import Arma3ServerStatus
 
 
 class ArmaServerManagementEvent(BaseEvent, namespace='arma_server', abstract=True):
@@ -58,7 +58,7 @@ class KeysDeployed(ArmaServerManagementEvent, event='deployed_keys'):
 @dataclass
 class ServerStartEvent(ArmaServerManagementEvent, event='started'):
     server: str
-    result: ServerResult
+    result: Arma3ServerStatus
 
     def data(self) -> dict[str, Any]:
         return {'server': self.server, 'result': self.result}
@@ -67,7 +67,7 @@ class ServerStartEvent(ArmaServerManagementEvent, event='started'):
 @dataclass
 class ServerStopEvent(ArmaServerManagementEvent, event='stopped'):
     server: str
-    result: ServerResult
+    result: Arma3ServerStatus
 
     def data(self) -> dict[str, Any]:
         return {'server': self.server, 'result': self.result}
@@ -76,7 +76,7 @@ class ServerStopEvent(ArmaServerManagementEvent, event='stopped'):
 @dataclass
 class ServerRestartEvent(ArmaServerManagementEvent, event='restarted'):
     server: str
-    result: ServerResult
+    result: Arma3ServerStatus
 
     def data(self) -> dict[str, Any]:
         return {'server': self.server, 'result': self.result}
@@ -92,7 +92,7 @@ class ServerUpdateEvent(ArmaServerManagementEvent, event='updated'):
 
 @dataclass
 class ServerModUpdateEvent(ArmaServerManagementEvent, event='updated_mods'):
-    servers_with_results: list[dict[str, ServerResult]]
+    servers_with_results: list[dict[str, Arma3ServerStatus]]
     servers: list[str]
     updated_mods: list[dict]
 
