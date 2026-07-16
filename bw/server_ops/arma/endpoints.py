@@ -149,7 +149,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to start {server}')
-        return await ArmaApi().start_server(server)
+        return await ArmaApi().start_server(State.state, server)
 
     @api.post('/<string:server>/stop')
     @url_endpoint
@@ -188,7 +188,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to stop {server}')
-        return await ArmaApi().stop_server(server)
+        return await ArmaApi().stop_server(State.state, server)
 
     @api.post('/<string:server>/restart')
     @url_endpoint
@@ -228,7 +228,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to restart {server}')
-        return await ArmaApi().restart_server(server)
+        return await ArmaApi().restart_server(State.state, server)
 
     @api.post('/<string:server>/update')
     @url_endpoint
@@ -268,7 +268,7 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to update {server}')
-        return await ArmaApi().update_server(server)
+        return await ArmaApi().update_server(State.state, server)
 
     @api.post('/<string:server>/update_mods')
     @url_endpoint

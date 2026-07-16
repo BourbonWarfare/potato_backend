@@ -75,7 +75,7 @@ class Server:
             f'-cfg={self.arma_config_path() / "basic.cfg"}',
             f'-profiles={self.server_profile_path()}',
             f'-name={self.server_name()}',
-            f'-mod={";".join(self.mod_launch_options())}',
+            f'-mod={";".join(self.mod_launch_options() + self.cdlc())}',
             f'-servermod={";".join(self.server_mod_launch_options())}',
         ]
 
@@ -87,7 +87,7 @@ class Server:
             f'-profiles={self.headless_client_profile_path()}',
             f'-name=hc_{self.server_name()}',
             f'-password={self.server_password()}',
-            f'-mod={";".join(self.mod_launch_options())}',
+            f'-mod={";".join(self.mod_launch_options() + self.cdlc())}',
         ]
 
     def mod_install_path(self) -> Path:

@@ -21,7 +21,7 @@ class Process(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[UUID] = mapped_column(Uuid, unique=True, default=uuid.uuid4)
-    parent: Mapped[int | None] = mapped_column(ForeignKey('Process.id', name='parent_process_id'))
+    parent: Mapped[int | None] = mapped_column(ForeignKey('processes.id', name='parent_process_id'))
 
     pid: Mapped[int | None] = mapped_column(BigInteger, unique=True, default=None)
     namespace: Mapped[str] = mapped_column(String(NAMESPACE_LENGTH))

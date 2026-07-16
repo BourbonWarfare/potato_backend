@@ -1,5 +1,5 @@
 from bw.error import NoProcessWithNameAndNamespace, NoProcessWithUuid, DeletingProcessWithAliveChild
-from sqlalchemy.exc import NoResultFound, IntegrityError
+from sqlalchemy.exc import NoResultFound, ProgrammingError
 from uuid import UUID
 import datetime
 from bw.state import State
@@ -29,25 +29,31 @@ class ProcessStore:
     def manage_process(
         self, state: State, process: Process, *, state_on_success=ProcessState.IDLE, state_on_error=ProcessState.ERROR
     ) -> Generator[ProcessStateManager]:
-        with state.Session.begin() as session:
-            session.add(process)
-            try:
+        try:
+            with state.Session.begin() as session:
+                session.add(process)
                 yield ProcessStateManager(process)
                 process.state = state_on_success
                 process.state_updated = datetime.datetime.now()
-            except:
+                session.flush()
+                session.expunge(process)
+        except Exception:
+            with state.Session.begin() as session:
+                session.add(process)
                 process.state = state_on_error
                 process.state_updated = datetime.datetime.now()
-                raise
-            session.flush()
-            session.expunge(process)
+                session.flush()
+                session.expunge(process)
+            raise
 
     def delete_process(self, state: State, process: Process):
+        namespace = process.namespace
+        name = process.name
         try:
             with state.Session.begin() as session:
                 session.delete(process)
-        except IntegrityError:
-            raise DeletingProcessWithAliveChild(process_namespace=process.namespace, process_name=process.name)
+        except ProgrammingError:
+            raise DeletingProcessWithAliveChild(process_namespace=namespace, process_name=name)
 
     def create_managed_process(self, state: State, namespace: str, name: str) -> Process:
         with state.Session.begin() as session:
@@ -79,9 +85,8 @@ class ProcessStore:
         with state.Session.begin() as session:
             alias = aliased(Process)
             query = select(Process).where(alias.uuid == uuid, or_(Process.parent == alias.id, Process.id == alias.id))
-            try:
-                processes = tuple(session.execute(query).scalars().all())
-            except NoResultFound:
+            processes = tuple(session.execute(query).scalars().all())
+            if not processes:
                 raise NoProcessWithUuid(uuid)
             session.expunge_all()
         return processes
@@ -92,9 +97,8 @@ class ProcessStore:
             query = select(Process).where(
                 alias.namespace == namespace, alias.name == name, or_(Process.parent == alias.id, Process.id == alias.id)
             )
-            try:
-                processes = tuple(session.execute(query).scalars().all())
-            except NoResultFound:
+            processes = tuple(session.execute(query).scalars().all())
+            if not processes:
                 raise NoProcessWithNameAndNamespace(namespace, name)
             session.expunge_all()
         return processes

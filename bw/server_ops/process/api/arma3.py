@@ -11,7 +11,7 @@ from bw.state import State
 from bw.web_event.arma_ops import ServerStartEvent, ServerStopEvent, ServerRestartEvent
 
 NAMESPACE: str = 'arma3'
-logger = logging.getLogger('bw.missions')
+logger = logging.getLogger('bw.server_ops.process')
 
 
 class Arma3Api:
@@ -40,7 +40,7 @@ class Arma3Api:
         to_delete = len(headless_clients) - server.headless_client_count()
         logger.info(f'Found {to_delete} (out of {len(headless_clients)} spawned) headless clients to kill')
 
-        headless_clients_to_delete = headless_clients[:-to_delete]
+        headless_clients_to_delete = headless_clients[-to_delete:]
         for idx, headless_client in enumerate(headless_clients_to_delete):
             logger.info(f'Killing headless client {idx + 1}/{len(headless_clients_to_delete)}')
             try:
@@ -50,7 +50,7 @@ class Arma3Api:
                     process_manager.update_state(ProcessState.DELETING)
                     subprocess = headless_client.into_process()
                     subprocess.kill()
-                    psutil.wait_procs(subprocess, timeout=timeout)
+                    subprocess.wait(timeout=timeout)
 
                     headless_client.parent = None
                     headless_client.pid = None
@@ -134,6 +134,12 @@ class Arma3Api:
             processes = self.create_processes_for_server(state, server)
 
         all_processes = [(process.into_process(), process) for process in processes if process.pid is not None]
+        if not all_processes:
+            return Arma3ServerStatus(
+                running=False,
+                headless_clients=[Arma3HeadlessClientStatus(running=False)] * server.headless_client_count(),
+            )
+
         for idx, (subprocess, process) in enumerate(all_processes):
             logger.info(f'Stopping {idx + 1}/{len(all_processes)}')
             try:
@@ -160,12 +166,13 @@ class Arma3Api:
         return response
 
     def restart_server(self, state: State, server: Server) -> Arma3ServerStatus:
+        logger.info(f'Restarting server {server.server_name()}')
         self.stop_server(state, server)
         response = self.start_server(state, server)
         State.broker.publish(ServerRestartEvent(server=server.server_name(), result=response))
         return response
 
-    def status(self, state: State, server: Server) -> Arma3ServerStatus:
+    def server_status(self, state: State, server: Server) -> Arma3ServerStatus:
         logger.info(f'Getting server process information for {server.server_name()}')
         try:
             self.prune_server_processes(state, server)
@@ -175,6 +182,7 @@ class Arma3Api:
         processes = [
             process.into_process()
             for process in ProcessStore().get_process_and_children_by_namespace(state, NAMESPACE, server.server_name())
+            if process.pid is not None
         ]
 
         headless_client_statuses = [Arma3HeadlessClientStatus(running=process.is_running()) for process in processes[1:]]

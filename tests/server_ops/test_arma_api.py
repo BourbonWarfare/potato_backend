@@ -11,7 +11,6 @@ from bw.server_ops.arma.server_status import ServerStatus, ServerState
 from bw.server_ops.arma.mod import Mod, Kind, Modlist
 from bw.error import ArmaServerUnresponsive
 from bw.response import WebResponse, Ok, JsonResponse
-from bw.subprocess.server_manage import ServerResult
 from bw.state import State
 from bw.events import Broker
 
@@ -404,86 +403,6 @@ async def test__arma_api__server_steam_status__failure(arma_api, mock_a3sb_info)
     assert response['result'] == 'unresponsive'
 
 
-@pytest.mark.asyncio
-async def test__arma_api__start_server__success(arma_api, mock_server_manage, mock_server_map):
-    server_result = ServerResult(
-        message='Server started', server_status='Running', hc_status='Running', startup_status='Completed'
-    )
-    mock_server_manage.start.acall.return_value = server_result, None
-
-    result = await arma_api.start_server('test_server')
-
-    assert isinstance(result, JsonResponse)
-    assert result.contained_json == dataclasses.asdict(server_result)
-    mock_server_manage.start.acall.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test__arma_api__start_server__server_not_found(arma_api):
-    response = await arma_api.start_server('nonexistent_server')
-    assert isinstance(response, WebResponse)
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test__arma_api__stop_server__success(arma_api, mock_server_manage, mock_server_map):
-    server_result = ServerResult(message='Server stopped', server_status='Stopped', hc_status='Stopped')
-    mock_server_manage.stop.acall.return_value = server_result, None
-
-    result = await arma_api.stop_server('test_server')
-
-    assert isinstance(result, JsonResponse)
-    assert result.contained_json == dataclasses.asdict(server_result)
-    mock_server_manage.stop.acall.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test__arma_api__stop_server__server_not_found(arma_api):
-    response = await arma_api.stop_server('nonexistent_server')
-    assert isinstance(response, WebResponse)
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test__arma_api__restart_server__success(arma_api, mock_server_manage, mock_server_map):
-    server_result = ServerResult(
-        message='Server restarted', server_status='Running', hc_status='Running', startup_status='Completed'
-    )
-    mock_server_manage.restart.acall.return_value = server_result, None
-
-    result = await arma_api.restart_server('test_server')
-
-    assert isinstance(result, JsonResponse)
-    assert result.contained_json == dataclasses.asdict(server_result)
-    mock_server_manage.restart.acall.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test__arma_api__restart_server__server_not_found(arma_api):
-    response = await arma_api.restart_server('nonexistent_server')
-    assert isinstance(response, WebResponse)
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test__arma_api__server_pid_status__success(arma_api, mock_server_manage, mock_server_map):
-    server_result = ServerResult(message='Server status checked', server_status='Running', hc_status='Running')
-    mock_server_manage.status.acall.return_value = server_result, None
-
-    result = await arma_api.server_pid_status('test_server')
-
-    assert isinstance(result, JsonResponse)
-    assert result.contained_json == dataclasses.asdict(server_result)
-    mock_server_manage.status.acall.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test__arma_api__server_pid_status__server_not_found(arma_api):
-    response = await arma_api.server_pid_status('nonexistent_server')
-    assert isinstance(response, WebResponse)
-    assert response.status_code == 404
-
-
 def test__arma_api__deploy_mods__success(arma_api, mock_server_map, mock_filesystem, test_mods):
     result = arma_api.deploy_mods('test_server')
 
@@ -525,33 +444,3 @@ def test__arma_api__deploy_keys__handles_copy_errors(
 
     assert isinstance(result, Ok)
     assert mock_filesystem['copy'].call_count == len(test_mods_with_keys) * 2  # 2 keys per mod
-
-
-@pytest.mark.asyncio
-async def test__arma_api__update_server__server_not_found(arma_api):
-    response = await arma_api.update_server('nonexistent_server')
-    assert isinstance(response, WebResponse)
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test__arma_api___manage_server__formats_mods_correctly(arma_api, test_server_with_mixed_mods):
-    mock_command = AsyncMock()
-    mock_command.return_value = (ServerResult(message='Success'), None)
-
-    await arma_api._manage_server(mock_command, test_server_with_mixed_mods)
-
-    mock_command.assert_called_once()
-    call_kwargs = mock_command.call_args[1]
-
-    assert 'mods' in call_kwargs
-    assert '@mod1;@mod2;' in call_kwargs['mods']
-
-    assert 'servermods' in call_kwargs
-    assert '@servermod1;' in call_kwargs['servermods']
-
-    assert call_kwargs['name'] == test_server_with_mixed_mods.server_name()
-    assert str(call_kwargs['path']) == str(test_server_with_mixed_mods.server_path())
-    assert call_kwargs['port'] == test_server_with_mixed_mods.server_port()
-    assert call_kwargs['hc_count'] == test_server_with_mixed_mods.headless_client_count()
-    assert call_kwargs['pass'] == test_server_with_mixed_mods.server_password()
