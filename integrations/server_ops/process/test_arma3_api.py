@@ -281,6 +281,23 @@ def test__arma3_api__start_server__headless_client_os_error_handling(state, sess
     assert response.headless_clients[0].running is False
 
 
+def test__arma3_api__start_server__increased_hc_allocates_new(state, session, mocker, mock_subprocess_factory, mock_psutil):
+    server = MockServer(name='server_start', headless_count=0)
+    api = Arma3Api()
+    response = api.start_server(state, server)
+
+    assert len(response.headless_clients) == 0
+    db_processes = ProcessStore().get_process_and_children_by_namespace(state, 'arma3', 'server_start')
+    assert len(db_processes) == 1
+
+    server._headless_count = 3
+    response = api.start_server(state, server)
+
+    assert len(response.headless_clients) == 3
+    db_processes = ProcessStore().get_process_and_children_by_namespace(state, 'arma3', 'server_start')
+    assert len(db_processes) == 4
+
+
 def test__arma3_api__stop_server__success(state, session, mock_subprocess_factory, mock_psutil):
     server = MockServer(name='server_stop', headless_count=2)
     api = Arma3Api()
