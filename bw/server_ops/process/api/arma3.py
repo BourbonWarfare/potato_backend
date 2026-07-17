@@ -274,7 +274,7 @@ class Arma3Api:
                     subprocess.kill()
                     subprocess.wait(timeout=timeout)
                     process.pid = None
-                    process_manager.update_status(subprocess.status())
+                    process_manager.update_status(psutil.STATUS_STOPPED)
             except psutil.TimeoutExpired:
                 logger.warning(f'Failed to stop process #{idx} as timeout has expired')
 
