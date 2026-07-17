@@ -378,10 +378,9 @@ class MissionStore:
                 session.execute(query).one()
             except NoResultFound as e:
                 raise MissionDoesNotExist(mission.id) from e
-            query = select(Iteration.iteration).where(Iteration.mission_id == mission.id).order_by(Iteration.iteration)
-            try:
-                previous_iteration = session.scalars(query).one()
-            except NoResultFound:
+            query = select(Iteration.iteration).where(Iteration.mission_id == mission.id).order_by(Iteration.iteration.desc())
+            previous_iteration = session.scalars(query).first()
+            if not previous_iteration:
                 previous_iteration = 0
 
             iteration = Iteration(

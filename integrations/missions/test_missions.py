@@ -180,6 +180,26 @@ class TestMissionStore:
                 changelog={},
             )
 
+    def test__add_iteration__can_add_more_than_two(self, state, session, db_iteration_1, db_iteration_2, db_mission_1):
+        iteration = MissionStore().add_iteration(
+            state,
+            mission=db_mission_1,
+            mission_file='mission_v4.pbo',
+            min_players=6,
+            desired_players=12,
+            max_players=18,
+            safe_start_length=10,
+            mission_length=30,
+            bwmf_version='1.1.0',
+            changelog={},
+        )
+        assert iteration.iteration == db_iteration_2.iteration + 1
+        assert iteration.file_name == 'mission_v4.pbo'
+        with state.Session.begin() as session:
+            query = select(Iteration).where(Iteration.id == iteration.id)
+            row = session.execute(query).first()
+            assert row is not None
+
     def test__create_mission__invalid_args_raises(self, state, session, db_user_1, db_mission_type_1):
         with pytest.raises(Exception):
             MissionStore().create_mission(
