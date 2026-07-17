@@ -58,7 +58,7 @@ class Server:
         return self.arma_config_path() / 'hc' / 'hcProfile'
 
     def defined_headless_launch_options(self) -> list[str]:
-        return list(self._server.require('server_launch_options').get())
+        return list(self._server.require('headless_launch_options').get())
 
     def mod_launch_options(self) -> list[str]:
         return [mod.as_launch_parameter() for mod in self.modlist().mods if mod.kind != Kind.SERVER_MOD]
@@ -71,8 +71,8 @@ class Server:
             str(self.exe_path()),
             f'-port={self.server_port()}',
             *self.defined_server_launch_options(),
-            f'-config={self.arma_config_path() / "server" / "server.cfg"}',
-            f'-cfg={self.arma_config_path() / "server" / "basic.cfg"}',
+            f'-config={self.arma_config_path() / "server.cfg"}',
+            f'-cfg={self.arma_config_path() / "basic.cfg"}',
             f'-profiles={self.server_profile_path()}',
             f'-name={self.server_name()}',
             f'-mod={";".join(self.mod_launch_options() + self.cdlc())}',
