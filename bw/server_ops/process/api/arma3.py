@@ -259,7 +259,16 @@ class Arma3Api:
         except NoProcessWithNameAndNamespace:
             processes = self.create_processes_for_server(state, server)
 
-        all_processes = [(process.into_process(), process) for process in processes if process.pid is not None]
+        all_processes: list[tuple[psutil.Process, Process]] = []
+        for process in processes:
+            if process.pid is None:
+                continue
+
+            try:
+                all_processes.append((process.into_process(), process))
+            except psutil.NoSuchProcess as err:
+                logger.warning(f'Cannot find process: {err}')
+
         if not all_processes:
             return Arma3ServerStatus(
                 running=False,
