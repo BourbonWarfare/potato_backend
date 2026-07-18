@@ -358,15 +358,26 @@ class Arma3Api:
         except NoProcessWithNameAndNamespace:
             pass
 
-        processes = [
-            process.into_process()
-            for process in ProcessStore().get_process_and_children_by_namespace(state, NAMESPACE, server.server_name())
-            if process.pid is not None
-        ]
+        processes = ProcessStore().get_process_and_children_by_namespace(state, NAMESPACE, server.server_name())
+        all_processes: list[tuple[psutil.Process, Process]] = []
+        for process in processes:
+            if process.pid is None:
+                continue
 
-        headless_client_statuses = [Arma3HeadlessClientStatus(running=process.is_running()) for process in processes[1:]]
+            try:
+                all_processes.append((process.into_process(), process))
+            except psutil.NoSuchProcess as err:
+                logger.warning(f'Cannot find process: {err}')
+
+        if not all_processes:
+            return Arma3ServerStatus(
+                running=False,
+                headless_clients=[Arma3HeadlessClientStatus(running=False)] * server.headless_client_count(),
+            )
+
+        headless_client_statuses = [Arma3HeadlessClientStatus(running=process.is_running()) for process, _ in all_processes[1:]]
         if len(headless_client_statuses) < server.headless_client_count():
             needed = server.headless_client_count() - len(headless_client_statuses)
             headless_client_statuses.extend([Arma3HeadlessClientStatus(running=False)] * needed)
 
-        return Arma3ServerStatus(running=processes[0].is_running(), headless_clients=headless_client_statuses)
+        return Arma3ServerStatus(running=all_processes[0][0].is_running(), headless_clients=headless_client_statuses)
