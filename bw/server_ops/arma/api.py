@@ -557,7 +557,7 @@ class ArmaApi:
 
         State.broker.publish(ServerUpdateEvent(server=server_name))
         logger.info(f'Server updated in {time.time() - start:.2f} seconds')
-        return await self.server_pid_status(server_name)
+        return await self.server_pid_status(state, server_name)
 
     @define_api
     async def get_out_of_date_workshop_mods(self, state: State, mods: Collection[Mod]) -> JsonResponse:
@@ -736,7 +736,7 @@ class ArmaApi:
         ModStore().bulk_update_mods(state, out_of_date_steam_mods)
 
         response: list[tuple[str, dict[str, Any]]] = [
-            (server.server_name(), (await self.server_pid_status(server.server_name())).contained_json)
+            (server.server_name(), (await self.server_pid_status(state, server.server_name())).contained_json)
             for server in affected_servers
         ]
         updated_mods = [mod.to_json() for mod in out_of_date_steam_mods]
