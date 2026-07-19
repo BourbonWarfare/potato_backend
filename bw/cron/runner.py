@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from crons.cron import Cron
 from types import ModuleType
+from typing import Any
 import cron_converter
 import datetime
 
@@ -127,10 +128,14 @@ class Runner:
                 heappush(self.cron_queue_, new_cron)
 
     async def push_cron_run_event(self, cron: ScheduledCron):
+        event = CronRun(cron=cron.path.stem)
+        await self.push_event(event.encoded_string(), {'cron': event.cron})
+
+    async def push_event(self, event: str, arguments: dict[str, Any]):
         auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
+        payload = {'event': event, 'arguments': arguments}
+
         async with aiohttp.ClientSession(headers=auth_headers) as session:
-            event = CronRun(cron=cron.path.stem)
-            payload = {'event': event.encoded_string(), 'arguments': {'cron': event.cron}}
             async with session.post(f'{ENVIRONMENT.server_url()}/api/v1/realtime/', json=make_json_safe(payload)) as request:
                 try:
                     request.raise_for_status()
@@ -184,7 +189,7 @@ class Runner:
 
                     async_runner.run(self.push_cron_run_event(front))
 
-                    cron = front.cron_class()
+                    cron = front.cron_class(self.push_event)
                     with OutCapture():
                         cron.run()
 

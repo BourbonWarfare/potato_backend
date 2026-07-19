@@ -1,3 +1,4 @@
+from bw.server_ops.arma.mod import MODS, Mod
 import logging
 import urllib.parse
 from quart import Blueprint
@@ -790,3 +791,44 @@ def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
         """
         logger.info(f'User {session_user.id} is adding new modlist: {name}')
         return ArmaApi().add_modlist(name=name, mod_names=mods)
+
+    @api.get('mods/out_of_date')
+    @json_endpoint
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def get_out_of_date_workshop_mods(session_user: User, mods: list[str]) -> JsonResponse:
+        """
+        ### Return mods which are out of date with the Steam workshop
+
+        Given a list of mods, check against the database and Steam workshop to see which ones are out of date
+
+        **Args:**
+        - `mods` (`list[str]`): A list of mod names that should be checked against the workshop.
+
+        **Returns:**
+        - `WebResponse`:
+          - **Success (201)**: Modlist created successfully
+          - **Error (400)**: HTTP 400 response if validation fails
+          - **Error (403)**: HTTP 403 response if user lacks required role
+
+        **Example:**
+        ```
+        GET /api/v1/server_ops/arma/mods/out_of_date
+        {
+            "mods": ["ACE3", "CBA_A3", "TFAR"]
+        }
+
+        Success response (200):
+        {
+            "mods_to_update": [
+                {
+                    'name': 'ACE3',
+                    'workshop_id': '463939057',
+                    'filename': 'ace',
+                    'last_updated': '2023-01-15T10:30:00'
+                }
+            ]
+        }
+        """
+        arma_mods: list[Mod] = [MODS[mod_name] for mod_name in mods if mod_name in MODS]
+        return await ArmaApi().get_out_of_date_workshop_mods(State.state, arma_mods)

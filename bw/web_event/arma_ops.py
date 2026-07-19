@@ -30,6 +30,14 @@ class ModAdded(ArmaServerManagementEvent, event='mod_added'):
 
 
 @dataclass
+class FoundOutOfDateMods(ArmaServerManagementEvent, event='found out of date mods'):
+    mods: list[dict[str, Any]]
+
+    def data(self) -> dict[str, Any]:
+        return {'mods': self.mods}
+
+
+@dataclass
 class ModlistAdded(ArmaServerManagementEvent, event='modlist_added'):
     modlist_name: str
 

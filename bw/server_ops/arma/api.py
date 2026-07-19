@@ -596,7 +596,6 @@ class ArmaApi:
         ```
         """
         logger.info(f'Getting {len(mods)} out of date mod(s) on the Workshop')
-        mods_to_update = []
         steam_details = await fetch_mod_details_from_workshop([mod for mod in mods if not mod.manual_install])
         steam_mods = list(steam_details.values())
         mods_to_update: list[SteamWorkshopDetails] = [
