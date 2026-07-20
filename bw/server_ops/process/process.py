@@ -27,21 +27,32 @@ class ProcessStateManager:
 class ProcessStore:
     @contextmanager
     def manage_process(
-        self, state: State, process: Process, *, state_on_success=ProcessState.IDLE, state_on_error=ProcessState.ERROR
+        self,
+        state: State,
+        process: Process,
+        *,
+        state_on_success=ProcessState.IDLE,
+        state_on_error=ProcessState.ERROR,
+        update_state: bool = True,
     ) -> Generator[ProcessStateManager]:
         try:
+            print('try')
             with state.Session.begin() as session:
                 session.add(process)
                 yield ProcessStateManager(process)
-                process.state = state_on_success
-                process.state_updated = datetime.datetime.now()
+                if update_state:
+                    process.state = state_on_success
+                    process.state_updated = datetime.datetime.now()
                 session.flush()
                 session.expunge(process)
-        except Exception:
+            print('succ')
+        except:
+            print('error')
             with state.Session.begin() as session:
                 session.add(process)
-                process.state = state_on_error
-                process.state_updated = datetime.datetime.now()
+                if update_state:
+                    process.state = state_on_error
+                    process.state_updated = datetime.datetime.now()
                 session.flush()
                 session.expunge(process)
             raise

@@ -18,6 +18,7 @@ def workshop_details_1():
         title='ACE3',
         file_size_bytes=1024000,
         last_update=datetime.datetime(2023, 1, 1, 12, 0, 0),
+        preview_url='image1',
     )
 
 
@@ -28,6 +29,7 @@ def workshop_details_2():
         title='CBA_A3',
         file_size_bytes=512000,
         last_update=datetime.datetime(2023, 2, 1, 12, 0, 0),
+        preview_url='image2',
     )
 
 
@@ -38,6 +40,7 @@ def workshop_details_3():
         title='Potato',
         file_size_bytes=512000,
         last_update=datetime.datetime(2023, 6, 10, 15, 33, 0),
+        preview_url='image3',
     )
 
 
@@ -48,6 +51,7 @@ def workshop_details_4():
         title='TCVMs Theatre Threats',
         file_size_bytes=1024,
         last_update=datetime.datetime(1999, 12, 23, 3, 0, 0),
+        preview_url='image4',
     )
 
 
@@ -58,6 +62,7 @@ def updated_workshop_details_1(workshop_details_1):
         title=workshop_details_1.title,
         file_size_bytes=workshop_details_1.file_size_bytes + 12344,
         last_update=datetime.datetime(2023, 6, 1, 12, 0, 0),
+        preview_url='image1',
     )
 
 
@@ -68,6 +73,7 @@ def updated_workshop_details_2(workshop_details_2):
         title=workshop_details_2.title,
         file_size_bytes=workshop_details_2.file_size_bytes + 1244,
         last_update=datetime.datetime(2024, 6, 1, 12, 0, 0),
+        preview_url='image2',
     )
 
 
@@ -78,6 +84,7 @@ def updated_workshop_details_4(workshop_details_4):
         title=workshop_details_4.title,
         file_size_bytes=workshop_details_4.file_size_bytes + 1244,
         last_update=datetime.datetime(2024, 6, 1, 12, 0, 0),
+        preview_url='image4',
     )
 
 

@@ -40,6 +40,7 @@ class SteamWorkshopDetails:
     title: str
     file_size_bytes: int
     last_update: datetime.datetime
+    preview_url: str
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -47,6 +48,7 @@ class SteamWorkshopDetails:
             'title': self.title,
             'file_size_bytes': self.file_size_bytes,
             'last_update': self.last_update.isoformat(),
+            'preview_url': self.preview_url,
         }
 
     @classmethod
@@ -56,6 +58,7 @@ class SteamWorkshopDetails:
             title=json.get('title', 'Unknown'),
             file_size_bytes=json.get('file_size_bytes', 0),
             last_update=datetime.datetime.fromisoformat(json.get('last_update', '19991223')),
+            preview_url=json.get('preview_url', ''),
         )
 
     @classmethod
@@ -93,6 +96,7 @@ class SteamWorkshopDetails:
             title=json.get('title', 'Unknown Title'),
             file_size_bytes=json.get('file_size', 0),
             last_update=datetime.datetime.fromtimestamp(json.get('time_updated', 0)),
+            preview_url=json.get('preview_url', ''),
         )
 
 

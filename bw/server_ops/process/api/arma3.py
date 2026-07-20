@@ -277,17 +277,17 @@ class Arma3Api:
 
         for idx, (subprocess, process) in enumerate(all_processes):
             logger.info(f'Stopping {idx + 1}/{len(all_processes)}')
-            with ProcessStore().manage_process(state, process) as process_manager:
-                try:
+            try:
+                with ProcessStore().manage_process(state, process) as process_manager:
                     process_manager.update_state(ProcessState.STOPPING)
                     subprocess.kill()
                     subprocess.wait(timeout=timeout)
                     process.pid = None
                     process_manager.update_status(psutil.STATUS_STOPPED)
-                except psutil.TimeoutExpired:
-                    logger.warning(f'Failed to stop process #{idx} as timeout has expired')
+            except psutil.TimeoutExpired:
+                logger.warning(f'Failed to stop process #{idx} as timeout has expired')
+                with ProcessStore().manage_process(state, process, update_state=False) as process_manager:
                     process_manager.update_status(subprocess.status())
-                    process_manager.update_state(ProcessState.ERROR)
 
         headless_client_statuses = [Arma3HeadlessClientStatus(running=process.is_running()) for process, _ in all_processes[1:]]
         if len(headless_client_statuses) < server.headless_client_count():
