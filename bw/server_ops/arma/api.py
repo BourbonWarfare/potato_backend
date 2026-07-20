@@ -103,7 +103,7 @@ class ArmaApi:
         if latest_rpt is None:
             raise NotFoundError(f'No RPT found for {server} at {rpt_path}')
 
-        return chunk_file_response(open(latest_rpt))
+        return chunk_file_response(open(latest_rpt), headers={'Content-Disposition': f'attachment; filename="{latest_rpt.name}"'})
 
     @define_api
     def get_all_servers(self) -> JsonResponse:

@@ -167,8 +167,10 @@ class ChunkedResponse(WebResponse):
         }
 
     @classmethod
-    def from_async_generator(cls, content_type: str, async_generator: Callable[[], AsyncGenerator[bytes]]) -> Self:
-        response = cls(status=200, response=async_generator(), headers={'Content-Type': content_type})
+    def from_async_generator(
+        cls, content_type: str, async_generator: Callable[[], AsyncGenerator[bytes]], headers: dict[str, Any] = {}
+    ) -> Self:
+        response = cls(status=200, response=async_generator(), headers={'Content-Type': content_type} | headers)
         response.timeout = None  # Disable timeout for large chunks
         return response
 
