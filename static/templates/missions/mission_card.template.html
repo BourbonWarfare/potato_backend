@@ -1,0 +1,6 @@
+<div class="mission-card">
+    <h3>[{{ mission_type }}] <b>{{ mission_name }}</b> by <i>{{ mission_author }}</i></h3>
+    <p>Map: <i>{{ mission_map }}</i></p>
+    <p>Iterations: {{ iteration_count }}</p>
+    <p>Signed Off: {% if signed_off %}✅{% else %}❌ ({{ current_signoffs }}/{{ needed_signoffs }})</p>
+</div>

@@ -1,0 +1,6 @@
+{% for card in mission_cards[:-1] %}
+{{ card }}
+{% endfor }
+<div hx-get="/missions/list?page={{ page_number }}" hx-trigger="revealed" hx-swap="afterend">
+    {{ mission_cards[-1] }}
+</div>

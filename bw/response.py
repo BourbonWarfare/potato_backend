@@ -50,7 +50,7 @@ class WebResponse(Response):
             response=response,
             status=status,
             headers=Headers([(k, v) for k, v in lower_headers.items()]),
-            mimetype=self.content_type(),
+            mimetype=lower_headers['content-type'],
             **kwargs,
         )
 
@@ -170,7 +170,8 @@ class ChunkedResponse(WebResponse):
     def from_async_generator(
         cls, content_type: str, async_generator: Callable[[], AsyncGenerator[bytes]], headers: dict[str, Any] = {}
     ) -> Self:
-        response = cls(status=200, response=async_generator(), headers={'Content-Type': content_type} | headers)
+        headers |= {'Content-Type': content_type}
+        response = cls(status=200, response=async_generator(), headers=headers)
         response.timeout = None  # Disable timeout for large chunks
         return response
 

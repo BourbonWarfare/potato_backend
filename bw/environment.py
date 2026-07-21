@@ -9,6 +9,9 @@ class Environment:
     def use_ssl(self) -> bool:
         raise NotImplementedError()
 
+    def has_nginx(self) -> bool:
+        raise NotImplementedError()
+
     def db_connection(self) -> str:
         GC.require('db_driver', 'db_username', 'db_password', 'db_address', 'db_name')
         return f'{GC["db_driver"]}://{GC["db_username"]}:{GC["db_password"]}@{GC["db_address"]}'
@@ -68,6 +71,9 @@ class Local(Environment):
     def port(self) -> int:
         return 8080
 
+    def has_nginx(self) -> bool:
+        return False
+
     def use_ssl(self) -> bool:
         return False
 
@@ -81,6 +87,9 @@ class Local(Environment):
 class Test(Environment):
     def port(self) -> int:
         return 8080
+
+    def has_nginx(self) -> bool:
+        return False
 
     def use_ssl(self) -> bool:
         return False
@@ -96,6 +105,9 @@ class Staging(Environment):
     def port(self) -> int:
         return 8500
 
+    def has_nginx(self) -> bool:
+        return True
+
     def use_ssl(self) -> bool:
         return False
 
@@ -109,6 +121,9 @@ class Staging(Environment):
 class Production(Environment):
     def port(self) -> int:
         return 12239
+
+    def has_nginx(self) -> bool:
+        return True
 
     def use_ssl(self) -> bool:
         return True

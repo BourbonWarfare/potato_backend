@@ -350,13 +350,15 @@ def unwrap_headers(*headers: tuple[str, Any]):
     return decorator
 
 
-def chunk_text_response(to_stream: str, *, max_chunk_size: int = 2**10, headers: dict[str, Any] = {}) -> ChunkedResponse:
+def chunk_text_response(
+    to_stream: str, *, max_chunk_size: int = 2**10, headers: dict[str, Any] = {}, mimetype: str | None = None
+) -> ChunkedResponse:
     async def chunk_generator():
         to_stream_bin = to_stream.encode('utf-8')
         for idx in range(0, len(to_stream_bin), max_chunk_size):
             yield to_stream_bin[idx : idx + max_chunk_size]
 
-    return ChunkedResponse.from_async_generator('text/plain', chunk_generator, headers=headers)
+    return ChunkedResponse.from_async_generator(mimetype if mimetype else 'text/plain', chunk_generator, headers=headers)
 
 
 def chunk_json_response(
@@ -386,7 +388,9 @@ def chunk_json_response(
     return ChunkedResponse.from_async_generator('application/x-ndjson', chunk_generator, headers=headers)
 
 
-def chunk_file_response(file_obj: IO, *, chunk_size: int = 2**10, headers: dict[str, Any] = {}) -> ChunkedResponse:
+def chunk_file_response(
+    file_obj: IO, *, chunk_size: int = 2**10, headers: dict[str, Any] = {}, mimetype: str | None = None
+) -> ChunkedResponse:
     async def chunk_generator():
         try:
             while chunk := file_obj.read(chunk_size):
@@ -398,4 +402,4 @@ def chunk_file_response(file_obj: IO, *, chunk_size: int = 2**10, headers: dict[
             if not file_obj.closed:
                 file_obj.close()  # Safely closes the file when the stream ends or aborts
 
-    return ChunkedResponse.from_async_generator('text/plain', chunk_generator, headers=headers)
+    return ChunkedResponse.from_async_generator(mimetype if mimetype else 'text/plain', chunk_generator, headers=headers)
