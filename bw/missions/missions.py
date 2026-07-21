@@ -2,7 +2,7 @@ from bw.converters import make_json_safe
 from bw.session.orbat import Orbat
 from bw.models.session import Session
 from uuid import UUID
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, func
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from bw.state import State
@@ -424,6 +424,46 @@ class MissionStore:
                 session.expunge(iteration[0])
                 iterations.append(iteration[0])
         return iterations
+
+    def mission_count(self, state: State) -> int:
+        """
+        ### Return how many missions are uploaded in the database
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+
+        **Returns:**
+        - `int`: Count of all uploaded missions.
+        """
+        with state.Session.begin() as session:
+            query = select(func.count()).select_from(Mission)
+            result: int = session.execute(query).scalar()
+            return result
+
+    def get_missions_by_page(self, state: State, page: int, items_per_page: int) -> list[tuple[Mission, MissionType, User]]:
+        """
+        ### Return page of mission containing at most `items_per_page`
+
+        **Args:**
+        - `state` (`State`): The application state containing the database connection.
+        - `page` (`int`): The page which to get from.
+        - `items_per_page` (`int`): How many items to retrieve at most.
+
+        **Returns:**
+        - `list[Mission]`: List of missions for this page.
+        """
+        with state.Session.begin() as session:
+            query = (
+                select(Mission, MissionType, User)
+                .offset((page - 1) * items_per_page)
+                .limit(items_per_page)
+                .join(MissionType, Mission.mission_type == MissionType.id)
+                .join(User, Mission.author == User.id)
+                .order_by(Mission.creation_date.desc())
+            )
+            results = session.execute(query).tuples().all()
+            session.expunge_all()
+            return list(results)
 
 
 class MissionHistoryStore:

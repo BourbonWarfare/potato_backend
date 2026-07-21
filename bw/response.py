@@ -79,6 +79,11 @@ class DoesNotExist(Exists):
         super().__init__(False)
 
 
+class NotFound(WebResponse):
+    def __init__(self, data: str = ''):
+        super().__init__(404, response=data)
+
+
 class BadRequest(WebResponse):
     def __init__(self, data: str = ''):
         super().__init__(400, response=data)

@@ -1,15 +1,17 @@
+from bw.missions.test_status import TestStatus
+from typing import Any
 from uuid import UUID
 import logging
 import urllib.parse
-from quart import Blueprint
+from quart import Blueprint, render_template_string, request
 from pathlib import Path
 
-from bw.web_utils import json_endpoint, url_endpoint
-from bw.response import JsonResponse
+from bw.web_utils import json_endpoint, url_endpoint, html_endpoint, html_part_endpoint, load_template_from_disk
+from bw.response import JsonResponse, WebResponse, NotFound
 from bw.models.auth import User
 from bw.auth.decorators import require_session, require_group_permission
 from bw.auth.permissions import Permissions
-from bw.missions.api import MissionsApi
+from bw.missions.api import MissionsApi, TestApi
 from bw.state import State
 from bw.error import ServerConfigNotFound
 from bw.server_ops.arma.server import SERVER_MAP
@@ -164,3 +166,59 @@ def define(api: Blueprint):
         ```
         """
         return await MissionsApi().get_mission_information(State.state, mission_uuid)
+
+
+def define_html(frontend: Blueprint, parts: Blueprint):
+    @frontend.get('/')
+    @html_endpoint(template_path='missions/index.html', title='BW Missions')
+    async def homepage(html: str) -> str:
+        mission_count = MissionsApi().mission_count(State.state)
+        return await render_template_string(html, mission_count=mission_count)
+
+    @parts.get('/list')
+    @html_part_endpoint(template_path='missions/mission_card.bundle.html')
+    async def list(html: str) -> str | WebResponse:
+        current_page = int(request.args.get('page', '1'))
+        current_page = max(1, current_page)
+        items_per_page = int(request.args.get('count_per_page', '10'))
+        items_per_page = max(10, items_per_page)
+
+        if (current_page - 1) * items_per_page > MissionsApi().mission_count(State.state):
+            return NotFound()
+
+        card_template = load_template_from_disk(template_path='missions/mission_card.template.html')
+        mission_cards = []
+
+        for mission in MissionsApi().get_missions_by_page(State.state, page=current_page, items_per_page=items_per_page):
+            iterations_for_mission = sorted(
+                MissionsApi().iterations_for_mission(State.state, mission.uuid),
+                key=lambda iteration: iteration.upload_date,
+                reverse=True,
+            )
+            if iterations_for_mission:
+                latest_iteration = iterations_for_mission[0]
+                reviews: list[dict[str, Any]] = (await TestApi().reviews(State.state, latest_iteration.uuid, viewer=None))[
+                    'reviews'
+                ]
+                passes = sum([(1 + review['cosigns']) for review in reviews if TestStatus(review['status']) == TestStatus.PASSED])
+                fails = sum([(1 + review['cosigns']) for review in reviews if TestStatus(review['status']) == TestStatus.FAILED])
+            else:
+                passes = 0
+                fails = 0
+            mission_cards.append(
+                await render_template_string(
+                    card_template,
+                    mission_type=mission.mission_type.name,
+                    mission_name=mission.title,
+                    mission_author=mission.author_name,
+                    mission_map=mission.map,
+                    mission_uuid=mission.uuid,
+                    iteration_count=len(iterations_for_mission),
+                    signed_off=(passes - 2 * fails) == mission.mission_type.signoffs_required,
+                    passed_signoffs=passes,
+                    failed_signoffs=fails,
+                    needed_signoffs=mission.mission_type.signoffs_required,
+                )
+            )
+
+        return await render_template_string(html, mission_cards=mission_cards, page_number=current_page + 1)

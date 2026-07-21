@@ -1,3 +1,5 @@
-<h1>Uploaded Missions</h1>
-<p>{{ mission_count }} uploaded missions</p>
-<div class="mission-list" hx-get="/missions/list"></div>
+<div class="section-header">
+    <h1>Arma Missions</h1>
+    <i>{{ mission_count }} uploaded</i>
+</div>
+<div class="mission-list" hx-get="/api/v1/html/missions/list" hx-trigger="load"></div>

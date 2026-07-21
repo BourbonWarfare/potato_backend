@@ -2,7 +2,7 @@ from bw.environment import ENVIRONMENT
 from quart import Blueprint, Quart
 
 from bw.auth.endpoints import define_auth, define_user, define_group, define_html as define_auth_html
-from bw.missions.endpoints import define as missions_define
+from bw.missions.endpoints import define as missions_define, define_html as missions_define_html
 from bw.server_ops.endpoints import define as server_ops_define
 from bw.realtime.endpoints import define as realtime_define
 from bw.session.endpoints import define as sessions_define
@@ -34,10 +34,20 @@ def define(app: Quart):
 
     html_parts_blueprint = Blueprint('bw_frontend_parts', __name__, url_prefix='/html')
 
+    auth_parts_blueprint = Blueprint('auth_frontend_parts', __name__, url_prefix='/auth')
     auth_html_blueprint = Blueprint('auth_frontend', __name__, url_prefix='/auth')
-    define_auth_html(auth_html_blueprint, html_parts_blueprint)
+
+    missions_parts_blueprint = Blueprint('missions_frontend_parts', __name__, url_prefix='/missions')
+    missions_html_blueprint = Blueprint('missions_frontend', __name__, url_prefix='/missions')
+
+    define_auth_html(auth_html_blueprint, auth_parts_blueprint)
+    missions_define_html(missions_html_blueprint, missions_parts_blueprint)
 
     html_blueprint.register_blueprint(auth_html_blueprint)
+    html_blueprint.register_blueprint(missions_html_blueprint)
+
+    html_parts_blueprint.register_blueprint(auth_parts_blueprint)
+    html_parts_blueprint.register_blueprint(missions_parts_blueprint)
 
     auth_blueprint = Blueprint('auth', __name__, url_prefix='/auth')
     user_blueprint = Blueprint('user', __name__, url_prefix='/user')

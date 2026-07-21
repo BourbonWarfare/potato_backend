@@ -27,6 +27,7 @@ from bw.missions.response import (
     MissionIterationResponse,
     MissionResponse,
     MissionTypeResponse,
+    IterationResponse,
 )
 from bw.models.auth import User
 from bw.settings import BW_UUID_NAMESPACE
@@ -295,6 +296,50 @@ class MissionsApi:
 
         return JsonResponse(mission_info)
 
+    def mission_count(self, state: State) -> int:
+        return MissionStore().mission_count(state)
+
+    def get_missions_by_page(self, state: State, page: int, items_per_page: int) -> list[MissionResponse]:
+        missions = MissionStore().get_missions_by_page(state, page, items_per_page)
+        return [
+            MissionResponse(
+                uuid=mission.uuid,
+                server=mission.server,
+                creation_date=mission.creation_date,
+                author_uuid=author.uuid,
+                author_name=mission.author_name,
+                title=mission.title,
+                map=mission.map,
+                mission_type=MissionTypeResponse(
+                    name=mission_tag.name,
+                    signoffs_required=mission_tag.signoffs_required,
+                    tag=mission_tag.numeric_tag,
+                ),
+                special_flags=mission.special_flags,
+            )
+            for mission, mission_tag, author in missions
+        ]
+
+    def iterations_for_mission(self, state: State, mission_uuid: UUID) -> list[IterationResponse]:
+        mission = MissionStore().mission_with_uuid(state, mission_uuid)
+        all_iterations = MissionStore().all_mission_iterations(state, mission)
+        return [
+            IterationResponse(
+                uuid=iteration.uuid,
+                min_player_count=iteration.min_player_count,
+                max_player_count=iteration.max_player_count,
+                desired_player_count=iteration.desired_player_count,
+                safe_start_length=iteration.safe_start_length,
+                mission_length=iteration.mission_length,
+                upload_date=iteration.upload_date,
+                bwmf_version=iteration.bwmf_version,
+                iteration=iteration.iteration,
+                changelog=iteration.changelog,
+                filename=iteration.file_name,
+            )
+            for iteration in all_iterations
+        ]
+
 
 class TestApi:
     @define_api
@@ -412,6 +457,7 @@ class TestApi:
         #             'notes': {'note': '...'},
         #             'is_viewer_reviewer': False,
         #             'is_viewer_cosigner': False,
+        #             'cosigns': 3
         #         },
         #         ...
         #     ]
@@ -431,6 +477,7 @@ class TestApi:
                         'notes': review.notes,
                         'is_viewer_reviewer': viewer is not None and viewer.id == review.original_tester_id,
                         'is_viewer_cosigner': viewer is not None and viewer.id in review.cosign_ids,
+                        'cosigns': len(review.cosign_ids),
                     }
                     for review in reviews
                 ]

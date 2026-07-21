@@ -37,3 +37,18 @@ class MissionIterationResponse:
     bwmf_version: str
     iteration: int
     changelog: str
+
+
+@dataclass
+class IterationResponse:
+    uuid: uuid.UUID
+    min_player_count: int
+    max_player_count: int
+    desired_player_count: int
+    safe_start_length: int
+    mission_length: int
+    upload_date: datetime.datetime
+    filename: str
+    bwmf_version: str
+    iteration: int
+    changelog: str

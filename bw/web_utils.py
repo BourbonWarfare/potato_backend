@@ -205,6 +205,15 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
     return wrapper
 
 
+def load_template_from_disk(*, template_path: Path | str) -> str:
+    if isinstance(template_path, str):
+        template_path = Path(template_path)
+    templates_path = Path('./static') / 'templates'
+    template_path = templates_path / template_path
+    with open(template_path, encoding='utf-8') as file:
+        return file.read()
+
+
 def html_endpoint(*, template_path: Path | str, title: str | None = None):
     """
     ### Decorator for HTML endpoint functions with template caching and rendering
@@ -234,18 +243,68 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
     if isinstance(template_path, str):
         template_path = Path(template_path)
 
-    templates_path = Path('./static') / 'templates'
+    def decorator(func: Callable[..., Awaitable[str | WebResponse]]):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            html = load_template_from_disk(template_path=template_path)
+            page = load_template_from_disk(template_path='page.html')
 
-    page_path = templates_path / 'page.html'
+            try:
+                inner_html = await func(html=html, *args, **kwargs)
+            except BwServerError as e:
+                logger.warning(e)
+                inner_html = load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
+
+            full_page = await render_template_string(
+                page,
+                inner_html=inner_html,
+                title=title if title is not None else 'Bourbon Warfare',
+            )
+
+            if isinstance(inner_html, str):
+                return chunk_text_response(full_page, mimetype='text/html')
+            else:
+                return inner_html
+
+        return wrapper
+
+    return decorator
+
+
+def html_part_endpoint(*, template_path: Path | str):
+    """
+    ### Decorator for HTML endpoint functions which return partial DOMs
+
+    Wraps HTML endpoint functions to provide automatic template loading and caching.
+    Inserts loaded HTML into the `html` named argument
+
+    **Async:** No (decorator function itself is synchronous)
+
+    **Args:**
+    - `template_path` (`Path | str`): The path to the HTML template file relative to the templates directory.
+
+    **Returns:**
+    - `Callable`: A decorator function that wraps HTML endpoint functions with template rendering capabilities.
+
+    **Example:**
+    ```python
+    @html_part_endpoint(template_path='dashboard.container.html')
+    async def dashboard_page(html: str) -> str:
+        return render_template_string(html, data={'status': 'active'})
+    # Callable[..., Awaitable[str]]
+    ```
+    """
+    if isinstance(template_path, str):
+        template_path = Path(template_path)
+
+    templates_path = Path('./static') / 'templates'
     template_path = templates_path / template_path
 
-    def decorator(func: Callable[..., Awaitable[str]]):
+    def decorator(func: Callable[..., Awaitable[str | WebResponse]]):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             with open(template_path, encoding='utf-8') as file:
                 html = file.read()
-            with open(page_path, encoding='utf-8') as file:
-                page = file.read()
 
             try:
                 inner_html = await func(html=html, *args, **kwargs)
@@ -253,13 +312,11 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
                 logger.warning(e)
                 with open(templates_path / 'error' / f'{e.status()}.html', encoding='utf-8') as file:
                     inner_html = file.read()
-            full_page = await render_template_string(
-                page,
-                inner_html=inner_html,
-                title=title if title is not None else 'Bourbon Warfare',
-            )
 
-            return full_page
+            if isinstance(inner_html, str):
+                return chunk_text_response(inner_html, mimetype='text/html')
+            else:
+                return inner_html
 
         return wrapper
 
