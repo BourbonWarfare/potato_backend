@@ -7,6 +7,7 @@ from sqlalchemy.types import Text, JSON, Enum
 from uuid import UUID
 
 from bw.models import Base
+from bw.models.types import HtmlSafeString
 from bw.missions.test_status import TestStatus
 
 NAME_LENGTH = 256
@@ -16,7 +17,7 @@ class MissionType(Base):
     __tablename__ = 'mission_types'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(NAME_LENGTH), unique=True)
+    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), unique=True)
     signoffs_required: Mapped[int] = mapped_column(default=1)
     numeric_tag: Mapped[int] = mapped_column(unique=True)
 
@@ -29,9 +30,9 @@ class Mission(Base):
     server: Mapped[str] = mapped_column(String(length=NAME_LENGTH))
     creation_date: Mapped[datetime.datetime] = mapped_column(server_default=func.current_timestamp())
     author: Mapped[int | None] = mapped_column(ForeignKey('users.id', name='user_who_uploaded_mission'))
-    author_name: Mapped[str] = mapped_column(String(NAME_LENGTH))
-    title: Mapped[str] = mapped_column(String(NAME_LENGTH))
-    map: Mapped[str] = mapped_column(String(NAME_LENGTH))
+    author_name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH))
+    title: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH))
+    map: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH))
     mission_type: Mapped[int] = mapped_column(ForeignKey(MissionType.id, name='associated_mission_type'))
     special_flags: Mapped[dict] = mapped_column(JSON)
 
@@ -43,7 +44,7 @@ class Iteration(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[UUID] = mapped_column(Uuid, unique=True, default=uuid.uuid4)
-    file_name: Mapped[str] = mapped_column(String(NAME_LENGTH))
+    file_name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH))
     mission_id: Mapped[int] = mapped_column(ForeignKey('missions.id'))
     min_player_count: Mapped[int]
     max_player_count: Mapped[int]

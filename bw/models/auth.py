@@ -5,6 +5,7 @@ from sqlalchemy import ForeignKey, String, func, DateTime, Boolean, UniqueConstr
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.models import Base
+from bw.models.types import HtmlSafeString
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
@@ -21,7 +22,7 @@ class Role(Base):
     __tablename__ = 'user_roles'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(NAME_LENGTH), unique=True)
+    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), unique=True)
 
     can_create_role: Mapped[bool]
     can_create_group: Mapped[bool]
@@ -89,7 +90,7 @@ class GroupPermission(Base):
     __tablename__ = 'group_permissions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), nullable=False, unique=True)
 
     can_upload_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
     can_test_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
@@ -105,7 +106,7 @@ class Group(Base):
     permissions: Mapped[int] = mapped_column(
         ForeignKey(GroupPermission.id, name='linked_group_permission_for_group'), nullable=False
     )
-    name: Mapped[str] = mapped_column(String(NAME_LENGTH), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), nullable=False, unique=True)
 
 
 class UserGroup(Base):

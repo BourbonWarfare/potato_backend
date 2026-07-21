@@ -12,7 +12,7 @@ dependencies = [
     "objsize",
     "python-dotenv",
     "aiohttp",
-    "aiodns",
+    "nh3",
     "tomli-w",
     "pytz",
     "cron-converter",
