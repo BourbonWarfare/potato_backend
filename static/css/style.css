@@ -240,11 +240,32 @@ button:hover {
 
 .mission-info>p {
     line-height: inherit;
-    color: var(--text-primary);
+    color: var(--text-secondary);
 }
 
 .mission-info>h4 {
     padding-top: 0.15rem;
+    font-weight: 400;
+}
+
+.mission-test-info {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 900px;
+    line-height: 1.2;
+}
+
+.mission-test-info>p {
+    line-height: inherit;
+    color: var(--text-secondary);
+}
+
+.mission-test-info>h4 {
+    width: 100%;
+    line-height: inherit;
     font-weight: 400;
 }
 

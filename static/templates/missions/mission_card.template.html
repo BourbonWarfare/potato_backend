@@ -7,9 +7,11 @@
         </div>
     </div>
     <div class="mission-info">
-        <h4>{% if signed_off %}Signed Off{% else %}Needs Testing {% endif %}</h4>
-        <p>Iteration #{{ iteration_count }}</p>
-        <p>({{ passed_signoffs }} passed, {{ failed_signoffs }} failed)</p>
+        <div class="mission-test-info">
+            <h4>{% if signed_off %}Signed Off{% else %}Needs Testing {% endif %}</h4>
+            <p>({{ passed_signoffs }} passed, {{ failed_signoffs }} failed)</p>
+            <p>Iteration #{{ iteration_count }}</p>
+        </div>
         <p>Map: <i>{{ mission_map }}</i></p>
         <p>Made by <i>{{ mission_author }}</i></p>
     </div>
