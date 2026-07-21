@@ -48,6 +48,12 @@ a {
     transition: color 0.15s ease-in-out;
 }
 
+a.disabled {
+    pointer-events: none;
+    cursor: default;
+    color: var(--text-secondary);
+}
+
 a:hover {
     color: var(--accent);
 }
@@ -195,6 +201,17 @@ button:hover {
     background: var(--accent);
     color: var(--text-primary);
     padding: 8px;
+}
+
+.mission-header>a:hover {
+    background: var(--accent-hover);
+}
+
+.mission-header>a.disabled {
+    pointer-events: none;
+    cursor: default;
+    color: var(--text-secondary);
+    background: var(--accent-hover);
 }
 
 .mission-header>.mission-tag {
