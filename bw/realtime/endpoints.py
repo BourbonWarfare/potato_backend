@@ -16,7 +16,7 @@ from bw.state import State
 logger = logging.getLogger('bw.realtime')
 
 
-def define(api: Blueprint, local: Blueprint):
+def define(api: Blueprint):
     @api.post('/')
     @json_endpoint
     @require_session

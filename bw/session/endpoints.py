@@ -15,7 +15,7 @@ from bw.auth.decorators import require_session, require_user_role
 logger = logging.getLogger('bw.session')
 
 
-def define(api: Blueprint, local: Blueprint, html: Blueprint):
+def define(api: Blueprint):
     @api.post('/register')
     @url_endpoint
     @require_session

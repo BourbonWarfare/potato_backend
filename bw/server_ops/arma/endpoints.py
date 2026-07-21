@@ -17,7 +17,7 @@ from bw.state import State
 logger = logging.getLogger('bw.server_ops.arma')
 
 
-def define_arma(api: Blueprint, local: Blueprint, html: Blueprint):
+def define_arma(api: Blueprint):
     @api.get('servers')
     @url_endpoint
     async def get_all_servers() -> JsonResponse:

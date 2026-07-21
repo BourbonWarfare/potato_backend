@@ -5,7 +5,7 @@ from bw.server_ops.arma.endpoints import define_arma
 logger = logging.getLogger('bw.server_ops')
 
 
-def define(api: Blueprint, local: Blueprint, html: Blueprint):
+def define(api: Blueprint):
     arma_blueprint = Blueprint('arma', __name__, url_prefix='/arma')
-    define_arma(arma_blueprint, local, html)
+    define_arma(arma_blueprint)
     api.register_blueprint(arma_blueprint)
