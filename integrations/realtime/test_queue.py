@@ -1,6 +1,5 @@
 # ruff: noqa: F811, F401
 
-from cffi.pkgconfig import call
 import asyncio
 
 import pytest

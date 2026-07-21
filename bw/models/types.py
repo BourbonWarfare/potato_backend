@@ -5,6 +5,7 @@ import nh3
 
 class HtmlSafeString(types.TypeDecorator):
     impl = types.String
+    cache_ok = True
 
     def process_bind_param(self, value: str | None, dialect: engine.Dialect) -> str | None:
         if value is None:

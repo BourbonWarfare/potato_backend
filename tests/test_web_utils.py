@@ -370,9 +370,10 @@ async def test__unwrap_headers__raises_bad_header_if_missing(mock_request, mocke
 
 
 class CapturedResponse:
-    def __init__(self, media_type: str, generator):
+    def __init__(self, media_type: str, generator, headers):
         self.media_type = media_type
         self.generator = generator
+        self.headers = headers
 
 
 @pytest.fixture(autouse=True)
@@ -424,6 +425,13 @@ async def test__chunk_text_response__splits_large_string_into_chunks():
     chunks = await consume_generator(response)
 
     assert chunks == [b'abc', b'def', b'ghi', b'j']
+
+
+@pytest.mark.asyncio
+async def test__chunk_text_response__passes_headers():
+    test_headers = {'X-Test-Headers': 'true'}
+    response = chunk_text_response('', headers=test_headers)
+    assert response.headers == test_headers
 
 
 # ==============================================================================
@@ -492,6 +500,14 @@ async def test__chunk_json_response__yields_oversized_row_immediately_if_buffer_
     assert chunks == [b'{"huge": "xxxxxxxxxxxxxxxxxxxx"}\n']
 
 
+@pytest.mark.asyncio
+async def test__chunk_json_response__passes_headers():
+    data = [{'blah': '1234'}]
+    test_headers = {'X-Test-Headers': 'true'}
+    response = chunk_json_response(data, headers=test_headers)
+    assert response.headers == test_headers
+
+
 # ==============================================================================
 # UNIT UNDER TEST: chunk_file_response
 # ==============================================================================
@@ -555,3 +571,11 @@ async def test__chunk_file_response__closes_file_on_error():
 
     # Asserting observed lifecycle behavior: file must be closed even if streaming raises an exception
     assert file_obj.closed
+
+
+@pytest.mark.asyncio
+async def test__chunk_file_response__passes_headers():
+    file_obj = io.BytesIO(b'data')
+    test_headers = {'X-Test-Headers': 'true'}
+    response = chunk_file_response(file_obj, headers=test_headers)
+    assert response.headers == test_headers

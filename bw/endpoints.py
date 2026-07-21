@@ -18,9 +18,9 @@ def define(app: Quart):
     local_blueprint = Blueprint('bw_api_local', __name__, url_prefix='/api/local')
     html_blueprint = Blueprint('bw_frontend', __name__, url_prefix='/')
 
-    html_parts_blueprint = Blueprint('bw_frontend_parts', __name__, url='/html')
+    html_parts_blueprint = Blueprint('bw_frontend_parts', __name__, url_prefix='/html')
 
-    auth_html_blueprint = Blueprint('auth_frontend', __name__, urlprefix='/auth')
+    auth_html_blueprint = Blueprint('auth_frontend', __name__, url_prefix='/auth')
     define_auth_html(auth_html_blueprint, html_parts_blueprint)
 
     html_blueprint.register_blueprint(auth_html_blueprint)
