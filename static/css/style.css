@@ -201,6 +201,8 @@ button:hover {
     background: var(--accent);
     color: var(--text-primary);
     padding: 8px;
+    border: 4px var(--surface) double;
+    text-shadow: 2px 2px 2px var(--surface);
 }
 
 .mission-header>a:hover {

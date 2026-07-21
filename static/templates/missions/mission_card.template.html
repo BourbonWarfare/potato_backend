@@ -1,6 +1,6 @@
 <div class="mission-card">
     <div class="mission-header">
-        <a href="/missions/{{ mission_uuid }}" class="disabled">View</a>
+        <a href="/missions/{{ mission_uuid }}">View</a>
         <h2 title="{{ mission_name }}">{{ mission_name }}</h2>
         <div class="mission-tag">
             <b>[{{ mission_type }}]</b>
@@ -8,8 +8,8 @@
     </div>
     <div class="mission-info">
         <h4>{% if signed_off %}Signed Off{% else %}Needs Testing {% endif %}</h4>
-        ({{ passed_signoffs }} passed, {{ failed_signoffs }} failed)</p>
         <p>Iteration #{{ iteration_count }}</p>
+        <p>({{ passed_signoffs }} passed, {{ failed_signoffs }} failed)</p>
         <p>Map: <i>{{ mission_map }}</i></p>
         <p>Made by <i>{{ mission_author }}</i></p>
     </div>
