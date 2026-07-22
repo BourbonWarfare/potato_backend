@@ -179,6 +179,7 @@ class Arma3Api:
                 process_kwargs.update({'close_fds': True, 'creationflags': flags})
             else:
                 process_kwargs.update({'start_new_session': True})
+
             all_processes: list[psutil.Popen] = []
             try:
                 logger.info('Starting server')
