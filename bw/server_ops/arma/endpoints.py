@@ -830,5 +830,6 @@ def define_arma(api: Blueprint):
             ]
         }
         """
+        logger.info(f'User {session_user.id} is looking at {len(mods)} mods to see if they are out of date')
         arma_mods: list[Mod] = [MODS[mod_name] for mod_name in mods if mod_name in MODS]
         return await ArmaApi().get_out_of_date_workshop_mods(State.state, arma_mods)

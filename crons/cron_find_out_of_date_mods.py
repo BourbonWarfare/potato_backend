@@ -25,9 +25,9 @@ class FindOutOfDateMods(Cron):
                 print(f'Failed to get configured mods: {e}')
             mods_to_check = [mod['name'] for mod in response['mods']]
 
-        print(f'Found {mods_to_check} mods to check')
+        print(f'Found {len(mods_to_check)} mods to check')
 
-        out_of_date_mods = list[dict[str, Any]] = {}
+        out_of_date_mods: list[dict[str, Any]] = []
         payload = {'mods': mods_to_check}
         async with session.get(f'{ENVIRONMENT.server_url()}/api/v1/server_ops/arma/mods/out_of_date', json=payload) as request:
             try:
@@ -35,8 +35,9 @@ class FindOutOfDateMods(Cron):
                 response = await request.json()
             except Exception as e:
                 print(f'Failed to get out of date mods: {e}')
+                raise
 
-            out_of_date_mods = response['mods_to_update']
+            out_of_date_mods: list[dict[str, Any]] = response['mods_to_update']
 
         print(f'Found {len(out_of_date_mods)} out-of-date mods')
         if out_of_date_mods:
