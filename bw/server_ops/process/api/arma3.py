@@ -1,3 +1,4 @@
+import os
 import logging
 import psutil
 from collections.abc import Sequence
@@ -169,12 +170,21 @@ class Arma3Api:
         """
 
         def start(processes: Sequence[Process]) -> Arma3ServerStatus:
+            process_kwargs = {}
+            if os.name == 'nt':
+                flags = 0
+                flags |= 0x00000008  # DETACHED_PROCESS
+                flags |= 0x00000200  # CREATE_NEW_PROCESS_GROUP
+                flags |= 0x08000000  # CREATE_NO_WINDOW
+                process_kwargs.update({'close_fds': True, 'creationflags': flags})
+            else:
+                process_kwargs.update({'start_new_session': True})
             all_processes: list[psutil.Popen] = []
             try:
                 logger.info('Starting server')
                 with ProcessStore().manage_process(state, processes[0]) as process_manager:
                     process_manager.update_state(ProcessState.STARTING)
-                    subprocess = psutil.Popen(server.server_launch_options())
+                    subprocess = psutil.Popen(server.server_launch_options(), **process_kwargs)
                     processes[0].pid = subprocess.pid
                     process_manager.update_status(subprocess.status())
                     all_processes.append(subprocess)
@@ -190,7 +200,7 @@ class Arma3Api:
                     logger.info(f'Starting headless client {idx + 1}/{server.headless_client_count()}')
                     with ProcessStore().manage_process(state, process) as process_manager:
                         process_manager.update_state(ProcessState.STARTING)
-                        subprocess = psutil.Popen(server.headless_launch_options())
+                        subprocess = psutil.Popen(server.headless_launch_options(), **process_kwargs)
 
                         process.pid = subprocess.pid
                         process_manager.update_status(subprocess.status())
