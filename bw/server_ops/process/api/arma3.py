@@ -1,6 +1,7 @@
 import os
 import logging
 import psutil
+import subprocess as sp
 from collections.abc import Sequence
 from bw.models.process import Process
 from bw.server_ops.process.status import Arma3ServerStatus, Arma3HeadlessClientStatus
@@ -172,13 +173,11 @@ class Arma3Api:
         def start(processes: Sequence[Process]) -> Arma3ServerStatus:
             process_kwargs = {}
             if os.name == 'nt':
-                flags = 0
-                flags |= 0x00000008  # DETACHED_PROCESS
-                flags |= 0x00000200  # CREATE_NEW_PROCESS_GROUP
-                flags |= 0x08000000  # CREATE_NO_WINDOW
+                flags = sp.DETACHED_PROCESS | sp.CREATE_NEW_PROCESS_GROUP | sp.CREATE_NO_WINDOW
                 process_kwargs.update({'close_fds': True, 'creationflags': flags})
             else:
                 process_kwargs.update({'start_new_session': True})
+            logger.debug(f'Process starting with process_kwargs={process_kwargs}')
 
             all_processes: list[psutil.Popen] = []
             try:
