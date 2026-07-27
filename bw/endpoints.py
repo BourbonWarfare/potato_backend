@@ -5,7 +5,7 @@ from bw.auth.endpoints import define_auth, define_user, define_group, define_htm
 from bw.missions.endpoints import define as missions_define, define_html as missions_define_html
 from bw.server_ops.endpoints import define as server_ops_define
 from bw.realtime.endpoints import define as realtime_define
-from bw.session.endpoints import define as sessions_define
+from bw.session.endpoints import define as sessions_define, define_html as session_define_html
 
 from bw.response import Ok, WebResponse
 from bw.web_utils import html_endpoint, url_endpoint, chunk_file_response
@@ -40,8 +40,12 @@ def define(app: Quart):
     missions_parts_blueprint = Blueprint('missions_frontend_parts', __name__, url_prefix='/missions')
     missions_html_blueprint = Blueprint('missions_frontend', __name__, url_prefix='/missions')
 
+    session_parts_blueprint = Blueprint('session_frontend_parts', __name__, url_prefix='/session')
+    session_html_blueprint = Blueprint('session_frontend', __name__, url_prefix='/session')
+
     define_auth_html(auth_html_blueprint, auth_parts_blueprint)
     missions_define_html(missions_html_blueprint, missions_parts_blueprint)
+    session_define_html(session_html_blueprint, session_parts_blueprint)
 
     html_blueprint.register_blueprint(auth_html_blueprint)
     html_blueprint.register_blueprint(missions_html_blueprint)

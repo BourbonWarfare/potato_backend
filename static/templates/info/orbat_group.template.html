@@ -1,0 +1,12 @@
+<div class="orbat-group">
+    <details>
+        <summary>
+            <h2>{{ group_leader }} [<i>{{ group_name }}</i>]</h2>
+        </summary>
+        <ul>
+            {% for member, is_leader, is_recruit in group_members %}
+            <li>{{ member }}{% if is_leader %} (LEADER){% endif %}{% if is_recruit %} [RECRUIT]{% endif %}</li>
+            {% endfor %}
+        </ul>
+    </details>
+</div>

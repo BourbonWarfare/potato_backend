@@ -73,3 +73,7 @@ def define(api: Blueprint):
         logger.info(f'Safe start ended for session {session_id}')
         orbat_casted = from_dict(data_class=Orbat, data=orbat)
         return await SessionApi().safe_start_ended(session_id, mission_name_with_version, mission_map, orbat_casted)
+
+
+def define_html(frontend: Blueprint, parts: Blueprint):
+    pass
