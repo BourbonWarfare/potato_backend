@@ -26,7 +26,7 @@ from integrations.auth.fixtures import (
 class MockRealtimeEvent(BaseEvent, event='test_event', namespace='test'):
     """Minimal concrete BaseEvent used across realtime integration tests."""
 
-    def __init__(self, id: uuid.UUID | None, message: str = 'hello'):
+    def __init__(self, id: uuid.UUID | None = None, message: str = 'hello'):
         if not id:
             id = uuid.uuid4()
         self.id = id

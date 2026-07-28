@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import asyncio
+import uuid
 
 import pytest
 
@@ -29,7 +30,7 @@ from integrations.realtime.fixtures import (
 
 def test__process__sets_alive_true_while_inside_context():
     """Test that Worker.alive is True for the duration of the process context."""
-    worker = Worker(messages=[], alive=False)
+    worker = Worker(messages=[], alive=False, id=uuid.uuid4())
 
     with worker.process():
         assert worker.alive is True
@@ -37,7 +38,7 @@ def test__process__sets_alive_true_while_inside_context():
 
 def test__process__sets_alive_false_after_context_exits():
     """Test that Worker.alive is False once the process context manager exits normally."""
-    worker = Worker(messages=[], alive=False)
+    worker = Worker(messages=[], alive=False, id=uuid.uuid4())
 
     with worker.process():
         pass
@@ -47,7 +48,7 @@ def test__process__sets_alive_false_after_context_exits():
 
 def test__process__sets_alive_false_even_when_exception_raised():
     """Test that Worker.alive is False after the process context exits via an exception."""
-    worker = Worker(messages=[], alive=False)
+    worker = Worker(messages=[], alive=False, id=uuid.uuid4())
 
     with pytest.raises(RuntimeError), worker.process():
         raise RuntimeError('unexpected error')
@@ -64,7 +65,7 @@ def test__process__sets_alive_false_even_when_exception_raised():
 async def test__pop_event__returns_first_message_immediately_when_available():
     """Test that pop_event returns the first message without waiting when messages is non-empty."""
     event = MockRealtimeEvent()
-    worker = Worker(messages=[event], alive=True)
+    worker = Worker(messages=[event], alive=True, id=uuid.uuid4())
 
     result = await worker.pop_event()
 
@@ -75,7 +76,7 @@ async def test__pop_event__returns_first_message_immediately_when_available():
 async def test__pop_event__removes_returned_message_from_queue():
     """Test that pop_event removes the returned message from the worker's message list."""
     event = MockRealtimeEvent()
-    worker = Worker(messages=[event], alive=True)
+    worker = Worker(messages=[event], alive=True, id=uuid.uuid4())
 
     await worker.pop_event()
 
@@ -85,7 +86,7 @@ async def test__pop_event__removes_returned_message_from_queue():
 @pytest.mark.asyncio
 async def test__pop_event__preserves_fifo_order(mock_event_1, mock_event_2):
     """Test that pop_event returns messages in the order they were added."""
-    worker = Worker(messages=[mock_event_1, mock_event_2], alive=True)
+    worker = Worker(messages=[mock_event_1, mock_event_2], alive=True, id=uuid.uuid4())
 
     first = await worker.pop_event()
     second = await worker.pop_event()
@@ -97,7 +98,7 @@ async def test__pop_event__preserves_fifo_order(mock_event_1, mock_event_2):
 @pytest.mark.asyncio
 async def test__pop_event__waits_until_message_is_available(mocker):
     """Test that pop_event suspends until a message appears, then returns it."""
-    worker = Worker(messages=[], alive=True)
+    worker = Worker(messages=[], alive=True, id=uuid.uuid4())
     event = MockRealtimeEvent()
 
     sleep_call_count = 0

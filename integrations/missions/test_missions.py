@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 import sqlalchemy
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from bw.error import CouldNotCreateIteration, CouldNotCreateMissionType, MissionDoesNotExist, NoMissionTypeWithName
 from bw.missions.missions import MissionStore, MissionTypeStore
@@ -202,9 +202,17 @@ class TestMissionStore:
             assert row is not None
 
     def test__create_mission__invalid_args_raises(self, state, db_user_1, db_mission_type_1):
-        with pytest.raises(IntegrityError):
+        with pytest.raises(ProgrammingError):
             MissionStore().create_mission(
-                state, creator=db_user_1, author=None, title=None, map='blah', type=db_mission_type_1, flags=None, uuid=uuid4()
+                state,
+                server='',
+                creator=db_user_1,
+                author=None,
+                title=None,
+                map='blah',
+                type=db_mission_type_1,
+                flags=None,
+                uuid=uuid4(),
             )
 
     def test__get_missions_by_author__returns_missions(self, state, db_user_1, db_mission_1, db_mission_1_1, db_mission_1_2):
