@@ -1,11 +1,13 @@
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy import select
-from uuid import UUID
 import datetime
+from uuid import UUID
 
+from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
+
+from bw.error import NoSessionsRegistered, SessionAlreadyEnded, SessionDoesNotExist
 from bw.models.session import Session
+from bw.settings import TIMEZONE
 from bw.state import State
-from bw.error import SessionDoesNotExist, NoSessionsRegistered, SessionAlreadyEnded
 
 
 class SessionStore:
@@ -28,7 +30,7 @@ class SessionStore:
             if arma_session.finish_date is not None:
                 raise SessionAlreadyEnded()
 
-            arma_session.finish_date = datetime.datetime.now()
+            arma_session.finish_date = datetime.datetime.now(tz=TIMEZONE)
 
     def get_latest_session(self, state: State) -> Session:
         with state.Session.begin() as session:

@@ -1,19 +1,16 @@
-# ruff: noqa: F811, F401
-
-import pytest
-import uuid
-import tempfile
 import csv
+import tempfile
+import uuid
 from pathlib import Path
 
+import pytest
 from sqlalchemy import insert
 
-from bw.models.auth import User
-from bw.models.missions import Mission, MissionType, Iteration, Review, TestResult, TestCosign
-from bw.missions.test_status import TestStatus
-from bw.server_ops.arma.server import Server
 from bw.configuration import Configuration
-from integrations.fixtures import session, state
+from bw.missions.test_status import TestStatus
+from bw.models.auth import User
+from bw.models.missions import Iteration, Mission, MissionType, Review, TestCosign, TestResult
+from bw.server_ops.arma.server import Server
 
 
 @pytest.fixture
@@ -49,7 +46,7 @@ def fake_iteration_2():
 
 
 @pytest.fixture(scope='function')
-def db_user_1(state, session):
+def db_user_1(state):
     with state.Session.begin() as session:
         query = insert(User).values(id=1).returning(User)
         user = session.execute(query).first()[0]
@@ -58,7 +55,7 @@ def db_user_1(state, session):
 
 
 @pytest.fixture(scope='function')
-def db_user_2(state, session):
+def db_user_2(state):
     with state.Session.begin() as session:
         query = insert(User).values(id=2).returning(User)
         user = session.execute(query).first()[0]
@@ -67,7 +64,7 @@ def db_user_2(state, session):
 
 
 @pytest.fixture(scope='function')
-def db_user_3(state, session):
+def db_user_3(state):
     with state.Session.begin() as session:
         query = insert(User).values(id=3).returning(User)
         user = session.execute(query).first()[0]
@@ -76,7 +73,7 @@ def db_user_3(state, session):
 
 
 @pytest.fixture(scope='function')
-def db_mission_type_1(state, session):
+def db_mission_type_1(state):
     with state.Session.begin() as session:
         mission_type = MissionType(name='TVT', signoffs_required=1, numeric_tag=1)
         session.add(mission_type)
@@ -86,7 +83,7 @@ def db_mission_type_1(state, session):
 
 
 @pytest.fixture(scope='function')
-def db_mission_type_2(state, session):
+def db_mission_type_2(state):
     with state.Session.begin() as session:
         mission_type = MissionType(name='LONG COOP', signoffs_required=2, numeric_tag=3)
         session.add(mission_type)
@@ -96,7 +93,7 @@ def db_mission_type_2(state, session):
 
 
 @pytest.fixture(scope='function')
-def db_mission_1(state, session, db_user_1, db_mission_type_1):
+def db_mission_1(state, db_user_1, db_mission_type_1):
     with state.Session.begin() as session:
         mission = Mission(
             id=1,
@@ -116,7 +113,7 @@ def db_mission_1(state, session, db_user_1, db_mission_type_1):
 
 
 @pytest.fixture(scope='function')
-def db_mission_1_1(state, session, db_user_1, db_mission_type_2):
+def db_mission_1_1(state, db_user_1, db_mission_type_2):
     with state.Session.begin() as session:
         mission = Mission(
             id=2,
@@ -136,7 +133,7 @@ def db_mission_1_1(state, session, db_user_1, db_mission_type_2):
 
 
 @pytest.fixture(scope='function')
-def db_mission_1_2(state, session, db_user_1, db_mission_type_1):
+def db_mission_1_2(state, db_user_1, db_mission_type_1):
     with state.Session.begin() as session:
         mission = Mission(
             id=3,
@@ -156,7 +153,7 @@ def db_mission_1_2(state, session, db_user_1, db_mission_type_1):
 
 
 @pytest.fixture(scope='function')
-def db_iteration_1(state, session, db_mission_1):
+def db_iteration_1(state, db_mission_1):
     with state.Session.begin() as session:
         iteration = Iteration(
             file_name='iteration.pbo',
@@ -176,7 +173,7 @@ def db_iteration_1(state, session, db_mission_1):
 
 
 @pytest.fixture(scope='function')
-def db_iteration_2(state, session, db_mission_1):
+def db_iteration_2(state, db_mission_1):
     with state.Session.begin() as session:
         iteration = Iteration(
             file_name='iteration_1.pbo',
@@ -196,7 +193,7 @@ def db_iteration_2(state, session, db_mission_1):
 
 
 @pytest.fixture(scope='function')
-def db_review_1(state, session, db_user_1):
+def db_review_1(state, db_user_1):
     with state.Session.begin() as session:
         review = Review(tester_id=db_user_1.id, status=TestStatus.PASSED, notes={'briefing': 'i understand now'})
         session.add(review)
@@ -206,7 +203,7 @@ def db_review_1(state, session, db_user_1):
 
 
 @pytest.fixture(scope='function')
-def db_review_2(state, session, db_user_2):
+def db_review_2(state, db_user_2):
     with state.Session.begin() as session:
         review = Review(tester_id=db_user_2.id, status=TestStatus.FAILED, notes={'briefing': 'i dont understand now'})
         session.add(review)
@@ -216,7 +213,7 @@ def db_review_2(state, session, db_user_2):
 
 
 @pytest.fixture(scope='function')
-def db_test_result_1(state, session, db_review_1, db_iteration_1):
+def db_test_result_1(state, db_review_1, db_iteration_1):
     with state.Session.begin() as session:
         test_result = TestResult(review_id=db_review_1.id, iteration_id=db_iteration_1.id)
         session.add(test_result)
@@ -226,7 +223,7 @@ def db_test_result_1(state, session, db_review_1, db_iteration_1):
 
 
 @pytest.fixture(scope='function')
-def db_test_result_1_2(state, session, db_review_2, db_iteration_1):
+def db_test_result_1_2(state, db_review_2, db_iteration_1):
     with state.Session.begin() as session:
         test_result = TestResult(review_id=db_review_2.id, iteration_id=db_iteration_1.id)
         session.add(test_result)
@@ -236,7 +233,7 @@ def db_test_result_1_2(state, session, db_review_2, db_iteration_1):
 
 
 @pytest.fixture(scope='function')
-def db_test_result_2(state, session, db_review_2, db_iteration_2):
+def db_test_result_2(state, db_review_2, db_iteration_2):
     with state.Session.begin() as session:
         test_result = TestResult(review_id=db_review_2.id, iteration_id=db_iteration_2.id)
         session.add(test_result)
@@ -246,7 +243,7 @@ def db_test_result_2(state, session, db_review_2, db_iteration_2):
 
 
 @pytest.fixture(scope='function')
-def db_test_cosign_1(state, session, db_test_result_1, db_user_2):
+def db_test_cosign_1(state, db_test_result_1, db_user_2):
     with state.Session.begin() as session:
         test_cosign = TestCosign(test_result_id=db_test_result_1.id, tester_id=db_user_2.id)
         session.add(test_cosign)

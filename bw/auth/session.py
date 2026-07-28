@@ -1,12 +1,11 @@
-import secrets
 import logging
+import secrets
 
-from sqlalchemy import insert, delete, select
+from sqlalchemy import delete, insert, select
 
+from bw.error import NoAccessCodeFound, SessionExpired
+from bw.models.auth import TOKEN_LENGTH, DiscordOAuthCode, Session, User
 from bw.state import State
-from bw.models.auth import Session, User, DiscordOAuthCode, TOKEN_LENGTH
-from bw.error import SessionExpired, NoAccessCodeFound
-
 
 logger = logging.getLogger('bw.auth')
 

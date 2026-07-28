@@ -1,16 +1,18 @@
-from bw.realtime.queue import Queue
+import asyncio
+import multiprocessing
+import os
+
 from quart import Quart
 
-from bw.log import setup_config as setup_log_config, log_config
-from bw.settings import GLOBAL_CONFIGURATION
-from bw.environment import ENVIRONMENT
-from bw.state import State
-from bw.endpoints import define as define_endpoints
-from bw.cron import runner
 import bw.response  # noqa: F401
-import multiprocessing
-import asyncio
-import os
+from bw.cron import runner
+from bw.endpoints import define as define_endpoints
+from bw.environment import ENVIRONMENT
+from bw.log import log_config
+from bw.log import setup_config as setup_log_config
+from bw.realtime.queue import Queue
+from bw.settings import GLOBAL_CONFIGURATION
+from bw.state import State
 
 setup_log_config()
 
@@ -66,7 +68,7 @@ def production():
         config = Config()
         config.bind = [f'0.0.0.0:{ENVIRONMENT.port()}']
         config.logconfig_dict = log_config()
-        config.workers = int(os.getenv('WEB_CONCURRENCY', 6))
+        config.workers = int(os.getenv('WEB_CONCURRENCY', '6'))
         config.keep_alive_timeout = 15
 
         await serve(app, config)

@@ -1,11 +1,13 @@
+import json
+from collections.abc import AsyncGenerator, Callable, Iterable
+from dataclasses import dataclass
 from inspect import isasyncgen, isgenerator
-from bw.converters import make_json_safe
+from typing import Any, Self
+
 from quart import Response
 from werkzeug.datastructures.headers import Headers
-from dataclasses import dataclass
-from typing import Self, Any
-from collections.abc import AsyncGenerator, Iterable, Callable
-import json
+
+from bw.converters import make_json_safe
 
 
 class WebResponse(Response):
@@ -28,11 +30,14 @@ class WebResponse(Response):
     def __init__(
         self,
         status: int,
-        headers: dict = {},
+        headers: dict | None = None,
         response='',
         from_exception: Exception | None = None,
         **kwargs,
     ):
+        if not headers:
+            headers = {}
+
         self.exception = from_exception
         headers.update(self.headers())  # ty: ignore [call-non-callable]
         lower_headers = {key.lower(): value for key, value in headers.items()}
@@ -93,7 +98,7 @@ class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'application/json'
 
-    def __init__(self, json_payload: Any, *, headers: dict = {}, status=200):
+    def __init__(self, json_payload: Any, *, headers: dict | None = None, status=200):
         if not isinstance(json_payload, dict):
             json_payload = make_json_safe(json_payload)
 
@@ -117,7 +122,7 @@ class HtmlResponse(WebResponse):
     def content_type(self) -> str:
         return 'text/html'
 
-    def __init__(self, html: str, headers: dict = {}):
+    def __init__(self, html: str, headers: dict | None = None):
         super().__init__(status=200, headers=headers, response=html)
 
 
@@ -173,8 +178,10 @@ class ChunkedResponse(WebResponse):
 
     @classmethod
     def from_async_generator(
-        cls, content_type: str, async_generator: Callable[[], AsyncGenerator[bytes]], headers: dict[str, Any] = {}
+        cls, content_type: str, async_generator: Callable[[], AsyncGenerator[bytes]], headers: dict[str, Any] | None = None
     ) -> Self:
+        if not headers:
+            headers = {}
         headers |= {'Content-Type': content_type}
         response = cls(status=200, response=async_generator(), headers=headers)
         response.timeout = None  # Disable timeout for large chunks

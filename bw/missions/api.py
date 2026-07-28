@@ -1,44 +1,43 @@
-import re
 import logging
+import re
 import shutil
-from uuid import UUID, uuid5
 from pathlib import Path
+from uuid import UUID, uuid5
 
-from bw.state import State
-from bw.response import JsonResponse, WebResponse, Created
-from bw.error import (
-    BwServerError,
-    MissionDoesNotHaveMetadata,
-    MissionDoesNotExist,
-    NoResultFound,
-    AlreadyReviewedMission,
-    MissionAlreadyExists,
-    MissionHasNoMap,
-    HemttError,
-    MissionIsNotBinarized,
-    FailedToParseMissionSqm,
-)
 from bw.auth.user import UserStore
+from bw.error import (
+    AlreadyReviewedMission,
+    BwServerError,
+    FailedToParseMissionSqm,
+    HemttError,
+    MissionAlreadyExists,
+    MissionDoesNotExist,
+    MissionDoesNotHaveMetadata,
+    MissionHasNoMap,
+    MissionIsNotBinarized,
+    NoResultFound,
+)
+from bw.missions.missions import MissionStore, MissionTypeStore
 from bw.missions.pbo import MissionLoader
-from bw.missions.missions import MissionTypeStore, MissionStore
-from bw.missions.tests import TestStore
-from bw.missions.test_status import TestStatus
 from bw.missions.response import (
+    IterationResponse,
     MissionIterationResponse,
     MissionResponse,
     MissionTypeResponse,
-    IterationResponse,
 )
+from bw.missions.test_status import TestStatus
+from bw.missions.tests import TestStore
 from bw.models.auth import User
+from bw.response import Created, JsonResponse, WebResponse
+from bw.server_ops.arma.server import Server
 from bw.settings import BW_UUID_NAMESPACE
+from bw.state import State
 from bw.web_event.mission import (
-    MissionUploadEvent,
-    IterationReviewedEvent,
     IterationCosignedEvent,
+    IterationReviewedEvent,
+    MissionUploadEvent,
 )
 from bw.web_utils import define_api
-from bw.server_ops.arma.server import Server
-
 
 logger = logging.getLogger('bw.missions')
 
@@ -387,9 +386,9 @@ class TestApi:
             review = TestStore().create_review(state, tester, status, notes)
             try:
                 result = TestStore().create_result(state, iteration, review)
-            except BwServerError as e:
+            except BwServerError:
                 session.rollback()
-                raise e
+                raise
 
         State.broker.publish(IterationReviewedEvent(iteration=iteration.uuid, review=result.uuid))
         return JsonResponse({'result_uuid': result.uuid})

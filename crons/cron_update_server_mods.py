@@ -1,6 +1,7 @@
+import aiohttp
+
 from bw.environment import ENVIRONMENT
 from crons.cron import Cron
-import aiohttp
 
 
 class UpdateMods(Cron):
@@ -24,5 +25,5 @@ class UpdateMods(Cron):
                 try:
                     request.raise_for_status()
                     print(f'Succesfully updated mods for {server}')
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     print(f'Failed to update mods for {server}: {e}')

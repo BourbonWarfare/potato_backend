@@ -1,8 +1,8 @@
-from bw.settings import GLOBAL_CONFIGURATION
-from bw.environment import ENVIRONMENT, Local
-
 import os
 from typing import Any
+
+from bw.environment import ENVIRONMENT, Local
+from bw.settings import GLOBAL_CONFIGURATION
 
 PRODUCTION_LOG_CONFIG = {
     'root': 'INFO',

@@ -1,14 +1,14 @@
 import datetime
 import uuid
-
-from sqlalchemy import ForeignKey, String, UniqueConstraint, func, Uuid
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import Text, JSON, Enum
 from uuid import UUID
 
+from sqlalchemy import ForeignKey, String, UniqueConstraint, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import JSON, Enum, Text
+
+from bw.missions.test_status import TestStatus
 from bw.models import Base
 from bw.models.types import HtmlSafeString
-from bw.missions.test_status import TestStatus
 
 NAME_LENGTH = 256
 

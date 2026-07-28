@@ -1,12 +1,15 @@
 from uuid import UUID
-from sqlalchemy import delete, select
-from sqlalchemy.exc import NoResultFound, IntegrityError
 
-from bw.state import State
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError, NoResultFound
+
+from bw.error import CouldNotCosignResult, CouldNotCreateTestResult, NoReviewFound
+from bw.error import NoResultFound as NoTestResultFound
+from bw.missions.test_status import Review as IterationReview
+from bw.missions.test_status import TestStatus
 from bw.models.auth import User
-from bw.models.missions import Review, Iteration, TestResult, TestCosign
-from bw.error import CouldNotCreateTestResult, CouldNotCosignResult, NoReviewFound, NoResultFound as NoTestResultFound
-from bw.missions.test_status import TestStatus, Review as IterationReview
+from bw.models.missions import Iteration, Review, TestCosign, TestResult
+from bw.state import State
 
 
 class TestStore:

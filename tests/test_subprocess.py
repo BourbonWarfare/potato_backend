@@ -25,7 +25,7 @@ class MockSubSubcommand(MockSubcommand1):
 
 class MockSubcommandKeywordArg(MockCommand):
     COMMAND = 'kwarg'
-    KEYWORD_ARGUMENTS = {
+    KEYWORD_ARGUMENTS = {  # noqa: RUF012
         'option1': int,
         'option2': str | None,
         'option_3': str,
@@ -41,7 +41,7 @@ class MockSubcommandPositionalArg(MockCommand):
 class MockSubcommandPositionalKwarg(MockCommand):
     COMMAND = 'both'
     POSITIONAL_ARGUMENTS = (str, str | None)
-    KEYWORD_ARGUMENTS = {
+    KEYWORD_ARGUMENTS = {  # noqa: RUF012
         'option1': int,
         'option2': str | None,
         'option_3': str,

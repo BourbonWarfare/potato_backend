@@ -1,15 +1,17 @@
-import logging
 import asyncio
 import functools
+import logging
 from contextlib import contextmanager
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, CannotDetermineSession, NotEnoughPermissions
-from bw.state import State
-from bw.models.auth import User
-from bw.auth.validators import validate_local, validate_session
-from bw.auth.session import SessionStore
-from bw.auth.group import GroupStore
-from bw.auth.user import UserStore
+
 from quart import request
+
+from bw.auth.group import GroupStore
+from bw.auth.session import SessionStore
+from bw.auth.user import UserStore
+from bw.auth.validators import validate_local, validate_session
+from bw.error import CannotDetermineSession, NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions
+from bw.models.auth import User
+from bw.state import State
 
 logger = logging.getLogger('bw.auth')
 
@@ -75,9 +77,9 @@ def require_local(func):
     def _validate_local():
         try:
             validate_local(request.remote_addr)
-        except NonLocalIpAccessingLocalOnlyAddress as e:
-            logger.warning(f'Non-local API called from abroad: {e}')
-            raise e
+        except NonLocalIpAccessingLocalOnlyAddress as err:
+            logger.warning(f'Non-local API called from abroad: {err}')
+            raise
         yield
 
     @functools.wraps(func)

@@ -1,16 +1,17 @@
-import logging
-import copy
-import subprocess
+# ruff: noqa: RUF012
+
 import asyncio
 import asyncio.subprocess
-from typing import Any
-from collections.abc import Iterable, Callable
+import copy
+import logging
+import subprocess
+from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import Any
 
 from bw.environment import ENVIRONMENT
+from bw.error import SubprocessFailed, SubprocessNotFound
 from bw.subprocess.helpers import can_call_as_command
-from bw.error import SubprocessNotFound, SubprocessFailed
-
 
 logger = logging.getLogger('bw.subprocess')
 
@@ -139,9 +140,7 @@ class Command:
                 kwargs[k] = v
 
         kwargs_to_adjust = cls._validate_arguments(*args, **kwargs)
-        sorted_kwargs = {
-            key: kwargs[key.replace('-', '_')] for key in cls.KEYWORD_ARGUMENTS.keys() if key.replace('-', '_') in kwargs
-        }
+        sorted_kwargs = {key: kwargs[key.replace('-', '_')] for key in cls.KEYWORD_ARGUMENTS if key.replace('-', '_') in kwargs}
 
         args = [arg if isinstance(arg, str) else str(arg) for arg in args]
         string_options = {k: v if isinstance(v, str) else str(v) for k, v in sorted_kwargs.items()}
@@ -227,7 +226,7 @@ class Runner:
 
     def call(self) -> Any:
         logger.info(f'Calling `{" ".join(self.command)}` (synchronous)')
-        result = subprocess.run(args=self.command, capture_output=True)
+        result = subprocess.run(args=self.command, capture_output=True, check=False)
         stdout, stderr = tuple(r.decode() for r in (result.stdout, result.stderr))
         try:
             result.check_returncode()

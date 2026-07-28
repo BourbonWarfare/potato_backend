@@ -1,6 +1,7 @@
+import aiohttp
+
 from bw.environment import ENVIRONMENT
 from crons.cron import Cron
-import aiohttp
 
 
 class SessionReminder(Cron):

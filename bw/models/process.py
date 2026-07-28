@@ -1,13 +1,13 @@
-from bw.error import ProcessHasNoPid
 import datetime
 import uuid
-import psutil
-
-from sqlalchemy import String, func, Uuid, BigInteger, UniqueConstraint, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import Enum
 from uuid import UUID
 
+import psutil
+from sqlalchemy import BigInteger, ForeignKey, String, UniqueConstraint, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import Enum
+
+from bw.error import ProcessHasNoPid
 from bw.models import Base
 from bw.server_ops.process.state import State
 

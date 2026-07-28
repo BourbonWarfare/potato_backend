@@ -1,6 +1,6 @@
-from pathlib import Path
 import os
 import shutil
+from pathlib import Path
 
 
 def _validate() -> bool:
@@ -28,7 +28,7 @@ def main():
     print(f'Copying files from {main_arma_server_dir} to {staging_dir}')
     try:
         shutil.copytree(main_arma_server_dir, staging_dir, dirs_exist_ok=True, symlinks=True, ignore_dangling_symlinks=True)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f'An error occurred while copying files: {e}')
         return
 

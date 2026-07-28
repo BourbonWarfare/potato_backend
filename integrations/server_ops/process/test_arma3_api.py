@@ -1,23 +1,22 @@
-# ruff: noqa: F811, F401
+# ruff: noqa: F401
 
-import pytest
-import psutil
 import datetime
 from unittest.mock import MagicMock
 
-# Import fixtures from auth module as shown in the examples
-from integrations.auth.fixtures import state, session
+import psutil
+import pytest
 
-from bw.models.process import Process
-from bw.server_ops.process.status import Arma3ServerStatus, Arma3HeadlessClientStatus
-from bw.server_ops.process.state import State as ProcessState
 from bw.error import NoProcessWithNameAndNamespace
-from bw.server_ops.process.process import ProcessStore
-from bw.server_ops.arma.server import Server
+from bw.models.process import Process
 from bw.server_ops.arma.api import Arma3Api
+from bw.server_ops.arma.server import Server
+from bw.server_ops.process.process import ProcessStore
+from bw.server_ops.process.state import State as ProcessState
+from bw.server_ops.process.status import Arma3HeadlessClientStatus, Arma3ServerStatus
 from bw.state import State
-from bw.web_event.arma_ops import ServerStartEvent, ServerStopEvent, ServerRestartEvent
+from bw.web_event.arma_ops import ServerRestartEvent, ServerStartEvent, ServerStopEvent
 
+# Import fixtures from auth module as shown in the examples
 
 # --- Mock Helper Classes ---
 
@@ -100,7 +99,7 @@ def mock_psutil(mocker, mock_subprocess_factory):
     next_pid = 1000
     launched_subprocesses = []
 
-    def mock_popen(args):
+    def mock_popen(*args, **kwargs):
         nonlocal next_pid
         pid = next_pid
         next_pid += 1
@@ -147,7 +146,7 @@ def test__arma3_api__prune_server_processes__raises_no_process_error(state, sess
         api.prune_server_processes(state, server)
 
 
-def test__arma3_api__prune_server_processes__no_pruning_needed(state, session, mock_subprocess_factory, mock_psutil):
+def test__arma3_api__prune_server_processes__no_pruning_needed(state, mock_subprocess_factory, mock_psutil):
     server = MockServer(name='server_beta', headless_count=2)
     api = Arma3Api()
 
@@ -162,7 +161,7 @@ def test__arma3_api__prune_server_processes__no_pruning_needed(state, session, m
     assert len(db_processes) == 3
 
 
-def test__arma3_api__prune_server_processes__performs_pruning(state, session, mock_subprocess_factory, mock_psutil):
+def test__arma3_api__prune_server_processes__performs_pruning(state, mock_subprocess_factory, mock_psutil):
     server = MockServer(name='server_gamma', headless_count=4)
     api = Arma3Api()
 
@@ -194,7 +193,7 @@ def test__arma3_api__prune_server_processes__performs_pruning(state, session, mo
     assert all(p.id != hc_procs[0].id for p in db_processes)
 
 
-def test__arma3_api__prune_server_processes__timeout_error_handling(state, session, mock_subprocess_factory, mock_psutil, mocker):
+def test__arma3_api__prune_server_processes__timeout_error_handling(state, mock_subprocess_factory, mock_psutil, mocker):
     server = MockServer(name='server_prune_timeout', headless_count=1)
     api = Arma3Api()
 
@@ -225,7 +224,7 @@ def test__arma3_api__prune_server_processes__timeout_error_handling(state, sessi
     assert hc_db.state == ProcessState.ERROR
 
 
-def test__arma3_api__start_server__creates_and_starts_processes(state, session, mock_subprocess_factory, mock_psutil):
+def test__arma3_api__start_server__creates_and_starts_processes(state, mock_subprocess_factory, mock_psutil):
     server = MockServer(name='server_start', headless_count=2)
     api = Arma3Api()
 
@@ -252,7 +251,7 @@ def test__arma3_api__start_server__creates_and_starts_processes(state, session, 
         assert hc_proc.status == 'running'
 
 
-def test__arma3_api__start_server__os_error_handling(state, session, mocker):
+def test__arma3_api__start_server__os_error_handling(state, mocker):
     mocker.patch('psutil.Popen', side_effect=OSError('Failed to spawn process'))
 
     server = MockServer(name='server_fail', headless_count=1)
@@ -265,7 +264,7 @@ def test__arma3_api__start_server__os_error_handling(state, session, mocker):
     assert all(hc.running is False for hc in response.headless_clients)
 
 
-def test__arma3_api__start_server__headless_client_os_error_handling(state, session, mocker, mock_subprocess_factory):
+def test__arma3_api__start_server__headless_client_os_error_handling(state, mocker, mock_subprocess_factory):
     server = MockServer(name='server_hc_fail', headless_count=1)
     api = Arma3Api()
 
@@ -281,7 +280,7 @@ def test__arma3_api__start_server__headless_client_os_error_handling(state, sess
     assert response.headless_clients[0].running is False
 
 
-def test__arma3_api__start_server__increased_hc_allocates_new(state, session, mocker, mock_subprocess_factory, mock_psutil):
+def test__arma3_api__start_server__increased_hc_allocates_new(state, mocker, mock_subprocess_factory, mock_psutil):
     server = MockServer(name='server_start', headless_count=0)
     api = Arma3Api()
     response = api.start_server(state, server)
@@ -298,7 +297,7 @@ def test__arma3_api__start_server__increased_hc_allocates_new(state, session, mo
     assert len(db_processes) == 4
 
 
-def test__arma3_api__stop_server__success(state, session, mock_subprocess_factory, mock_psutil):
+def test__arma3_api__stop_server__success(state, mock_subprocess_factory, mock_psutil):
     server = MockServer(name='server_stop', headless_count=2)
     api = Arma3Api()
 
@@ -334,7 +333,7 @@ def test__arma3_api__stop_server__success(state, session, mock_subprocess_factor
     assert hc2_subproc.kill_called is True
 
 
-def test__arma3_api__stop_server__timeout_expired(state, session, mock_subprocess_factory, mock_psutil, mocker):
+def test__arma3_api__stop_server__timeout_expired(state, mock_subprocess_factory, mock_psutil, mocker):
     server = MockServer(name='server_stop_timeout', headless_count=1)
     api = Arma3Api()
 
@@ -372,7 +371,7 @@ def test__arma3_api__stop_server__timeout_expired(state, session, mock_subproces
     assert hc_db.state == ProcessState.IDLE
 
 
-def test__arma3_api__restart_server__success(state, session, mock_subprocess_factory, mock_psutil, mocker):
+def test__arma3_api__restart_server__success(state, mock_subprocess_factory, mock_psutil, mocker):
     server = MockServer(name='server_restart', headless_count=1)
     api = Arma3Api()
 
@@ -389,7 +388,7 @@ def test__arma3_api__restart_server__success(state, session, mock_subprocess_fac
     assert response.headless_clients[0].running is True
 
 
-def test__arma3_api__server_status__success(state, session, mock_subprocess_factory, mock_psutil):
+def test__arma3_api__server_status__success(state, mock_subprocess_factory, mock_psutil):
     server = MockServer(name='server_status_test', headless_count=2)
     api = Arma3Api()
 

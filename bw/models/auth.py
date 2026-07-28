@@ -1,15 +1,16 @@
 import datetime
 import uuid
 from uuid import UUID
-from sqlalchemy import ForeignKey, String, func, DateTime, Boolean, UniqueConstraint, Uuid
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from bw.models import Base
-from bw.models.types import HtmlSafeString
-from bw.settings import GLOBAL_CONFIGURATION
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
+from bw.models import Base
+from bw.models.types import HtmlSafeString
+from bw.settings import GLOBAL_CONFIGURATION
 
 GLOBAL_CONFIGURATION.require('default_session_length')
 GLOBAL_CONFIGURATION.require('api_session_length')

@@ -1,8 +1,10 @@
-import requests
 import functools
 import os
-from bw.environment import ENVIRONMENT
+
+import requests
+
 from bw.auth.roles import Roles
+from bw.environment import ENVIRONMENT
 
 url = f'http://localhost:{ENVIRONMENT.port()}/api'
 
@@ -18,7 +20,8 @@ def request_fixture(endpoint: str, description: str):
         def wrapper(*args, **kwargs):
             full_url = f'{url}/{endpoint}'
             print(f'{description} at {full_url}')
-            return func(url=full_url, *args, **kwargs)
+            kwargs['url'] = full_url
+            return func(*args, **kwargs)
 
         return wrapper
 

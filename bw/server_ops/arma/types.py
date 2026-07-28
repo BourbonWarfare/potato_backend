@@ -17,12 +17,12 @@ class WorkshopId:
     def __repr__(self) -> str:
         return f'wid({self.id})'
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, WorkshopId):
             return other.id == self.id
         return str(other) == self.id
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         if isinstance(other, WorkshopId):
             return other.id != self.id
         return str(other) != self.id

@@ -4,26 +4,23 @@ import asyncio
 
 import pytest
 
-from bw.realtime.queue import Queue, Worker
 from bw.realtime.api import RealtimeApi
-
-from integrations.fixtures import state, session
+from bw.realtime.queue import Queue, Worker
 from integrations.realtime.fixtures import (
     MockRealtimeEvent,
-    uuid1,
-    uuid2,
-    mock_broker,
-    mock_queue,
-    mock_event_1,
-    mock_event_2,
     db_event_1,
     db_event_2,
     db_queued_event_1,
     db_queued_event_2,
+    mock_broker,
+    mock_event_1,
+    mock_event_2,
     mock_event_message_1,
     mock_event_message_2,
+    mock_queue,
+    uuid1,
+    uuid2,
 )
-
 
 # ---------------------------------------------------------------------------
 # Worker — process (context manager)
@@ -52,9 +49,8 @@ def test__process__sets_alive_false_even_when_exception_raised():
     """Test that Worker.alive is False after the process context exits via an exception."""
     worker = Worker(messages=[], alive=False)
 
-    with pytest.raises(RuntimeError):
-        with worker.process():
-            raise RuntimeError('unexpected error')
+    with pytest.raises(RuntimeError), worker.process():
+        raise RuntimeError('unexpected error')
 
     assert worker.alive is False
 
@@ -149,7 +145,7 @@ def test__subscribe__each_call_returns_a_distinct_worker(mock_queue):
 
 @pytest.mark.asyncio
 async def test__process_event_queue__distributes_queued_events_to_active_workers(
-    mocker, state, session, mock_queue, db_queued_event_1, db_queued_event_2
+    mocker, state, mock_queue, db_queued_event_1, db_queued_event_2
 ):
     """Test that process_event_queue pushes each queued event to every active worker."""
     worker = mock_queue.subscribe()
@@ -165,15 +161,14 @@ async def test__process_event_queue__distributes_queued_events_to_active_workers
     mocker.patch('bw.realtime.queue.asyncio.sleep', side_effect=sleep_then_cancel)
     mocker.patch.object(RealtimeApi, 'publish_queued_events')
 
-    with worker.process():
-        with pytest.raises(asyncio.CancelledError):
-            await mock_queue.process_event_queue()
+    with worker.process(), pytest.raises(asyncio.CancelledError):
+        await mock_queue.process_event_queue()
 
     assert len(worker.messages) == 2
 
 
 @pytest.mark.asyncio
-async def test__process_event_queue__skips_dead_workers(mocker, state, session, mock_queue, db_queued_event_1):
+async def test__process_event_queue__skips_dead_workers(mocker, state, mock_queue, db_queued_event_1):
     """Test that process_event_queue does not deliver events to workers whose alive flag is False."""
     worker = mock_queue.subscribe()
     worker.alive = False

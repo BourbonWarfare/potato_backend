@@ -1,7 +1,8 @@
-from bw.web_event import UniqueEvent
+import uuid
 from dataclasses import dataclass
 from typing import Any
-import uuid
+
+from bw.web_event import UniqueEvent
 
 
 @dataclass

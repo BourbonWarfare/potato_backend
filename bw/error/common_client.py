@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from bw.error.base import ClientError
 
 
@@ -12,14 +14,14 @@ class BadHeader(ClientError):
 
 
 class MismatchedArguments(ClientError):
-    def __init__(self, expected_keys=[], extra_keys=[]):
-        if expected_keys == [] and extra_keys == []:
+    def __init__(self, expected_keys: Iterable[str] | None = None, extra_keys: Iterable[str] | None = None):
+        if not expected_keys and not extra_keys:
             raise BadArguments()
-        elif expected_keys == [] and extra_keys != []:
+        elif not expected_keys and extra_keys:
             super().__init__(f'Extra keys supplied: {"', '".join(extra_keys)}')
-        elif expected_keys != [] and extra_keys == []:
+        elif expected_keys and not extra_keys:
             super().__init__(f'Keys expected but not supplied: {", ".join(expected_keys)}')
-        else:
+        elif expected_keys and extra_keys:
             super().__init__(
                 f'Keys expected but not supplied: {", ".join(expected_keys)}. Extra keys supplied: {", ".join(extra_keys)}'
             )

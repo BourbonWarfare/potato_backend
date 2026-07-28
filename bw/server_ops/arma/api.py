@@ -1,64 +1,63 @@
-from bw.server_ops.process.api import Arma3Api
-import time
-import os
-import logging
-import shutil
-import json
-import tempfile
 import itertools
+import json
+import logging
 import math
+import os
+import shutil
+import tempfile
+import time
+from collections.abc import Collection, Iterable
 from pathlib import Path
 from typing import Any
-from collections.abc import Collection
-from collections.abc import Iterable
-from bw.server_ops.arma.server import Server, SERVER_MAP, load_server_config_directory
-from bw.server_ops.arma.server_status import ServerStatus, ServerState
-from bw.server_ops.arma.mod import (
-    Kind,
-    Mod,
-    MODS,
-    MODLISTS,
-    fetch_mod_details_from_workshop,
-    WorkshopId,
-    SteamWorkshopDetails,
-    load_modlists,
-    save_mod_configs,
-    load_mod_configs,
-    Modlist,
-)
-from bw.server_ops.arma.mod_store import ModStore
-from bw.subprocess.a3sb import a3sb
-from bw.subprocess.steam import steam
-from bw.subprocess.command import Chain
+
+from bw.converters import file_sha2, make_json_safe
+from bw.environment import ENVIRONMENT
 from bw.error import (
+    ArmaServerUnresponsive,
     BwServerError,
+    DuplicateModWorkshopID,
+    ModAlreadyDefined,
+    ModInvalidKind,
+    ModMissingField,
+    ModNotDefined,
     NotFoundError,
     ServerConfigNotFound,
-    DuplicateModWorkshopID,
-    ModMissingField,
-    ModInvalidKind,
-    ModAlreadyDefined,
-    ModNotDefined,
     SubprocessFailed,
-    ArmaServerUnresponsive,
 )
+from bw.response import ChunkedResponse, Created, JsonResponse, Ok, WebResponse
+from bw.server_ops.arma.mod import (
+    MODLISTS,
+    MODS,
+    Kind,
+    Mod,
+    Modlist,
+    SteamWorkshopDetails,
+    WorkshopId,
+    fetch_mod_details_from_workshop,
+    load_mod_configs,
+    load_modlists,
+    save_mod_configs,
+)
+from bw.server_ops.arma.mod_store import ModStore
+from bw.server_ops.arma.server import SERVER_MAP, Server, load_server_config_directory
+from bw.server_ops.arma.server_status import ServerState, ServerStatus
+from bw.server_ops.process.api import Arma3Api
 from bw.settings import GLOBAL_CONFIGURATION
-from bw.response import WebResponse, Ok, JsonResponse, Created, ChunkedResponse
-from bw.web_utils import define_api, chunk_file_response, chunk_json_response
 from bw.state import State
-from bw.converters import make_json_safe, file_sha2
+from bw.subprocess.a3sb import a3sb
+from bw.subprocess.command import Chain
+from bw.subprocess.steam import steam
 from bw.web_event import (
-    ReloadedServerConfig,
-    ReloadedModlistConfig,
+    KeysDeployed,
     ModAdded,
     ModlistAdded,
     ModsDeployed,
-    KeysDeployed,
-    ServerUpdateEvent,
+    ReloadedModlistConfig,
+    ReloadedServerConfig,
     ServerModUpdateEvent,
+    ServerUpdateEvent,
 )
-from bw.environment import ENVIRONMENT
-
+from bw.web_utils import chunk_file_response, chunk_json_response, define_api
 
 logger = logging.getLogger('bw.server_ops.arma')
 
@@ -475,8 +474,7 @@ class ArmaApi:
         keys = []
         for mod in server.modlist().mods:
             path = mod.download_path()
-            for key_file in path.rglob('*.bikey'):
-                keys.append(key_file)
+            keys.extend(path.rglob('*.bikey'))
 
         for key in keys:
             destination = key_path / key.name
@@ -669,9 +667,9 @@ class ArmaApi:
             logger.error(f'Failed to stop servers before updating mods: {e}')
             for server in stopped_servers:
                 Arma3Api().start_server(state, server)
-            raise e
+            raise
 
-        logging.info(f'Stopped {len(stopped_servers)} for mod update')
+        logger.info(f'Stopped {len(stopped_servers)} for mod update')
 
         mod_install_directories: dict[Path, list[Mod]] = {}
         for mod in mods_to_update:

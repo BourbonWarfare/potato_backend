@@ -1,25 +1,22 @@
 # ruff: noqa: F811, F401
 
-import pytest
 import os
 from pathlib import Path
 
-from integrations.fixtures import session, state
+import pytest
+
+from bw.error import ModAlreadyDefined, ModInvalidKind, ModMissingField, ModNotDefined, ServerConfigNotFound
+from bw.server_ops.arma.api import ArmaApi
+from bw.server_ops.arma.mod import MODLISTS, MODS, Kind, Mod, Modlist, WorkshopId
 from integrations.server_ops.arma.fixtures import (
-    workshop_details_1,
-    workshop_details_2,
-    workshop_details_3,
-    mod_1,
-    mod_2,
-    mod_3,
+    duplicate_workshop_id,
+    existing_mod_name,
+    invalid_kind,
     mock_mod_1,
     mock_mod_2,
     mock_mod_name_1,
     mock_mod_name_2,
     mock_mod_name_3,
-    mock_workshop_id_1,
-    mock_workshop_id_2,
-    mock_workshop_id_3,
     mock_modlist_1,
     mock_modlist_2,
     mock_modlist_3,
@@ -30,29 +27,31 @@ from integrations.server_ops.arma.fixtures import (
     mock_modlist_name_4,
     mock_modlist_name_5,
     mock_modlist_name_6,
+    mock_server_1,
+    mock_server_2,
+    mock_server_3,
+    mock_workshop_id_1,
+    mock_workshop_id_2,
+    mock_workshop_id_3,
+    mod_1,
+    mod_2,
+    mod_3,
+    nonexistent_mod_name,
     server_name_1,
     server_name_2,
     server_name_3,
     server_name_4,
-    existing_mod_name,
-    nonexistent_mod_name,
     test_config_path,
-    invalid_kind,
-    duplicate_workshop_id,
-    mock_server_1,
-    mock_server_2,
-    mock_server_3,
+    workshop_details_1,
+    workshop_details_2,
+    workshop_details_3,
 )
-from bw.server_ops.arma.api import ArmaApi
-from bw.server_ops.arma.mod import MODS, MODLISTS, Mod, Modlist, Kind, WorkshopId
-from bw.error import ServerConfigNotFound, ModAlreadyDefined, ModNotDefined, ModMissingField, ModInvalidKind
-
 
 # Tests for get_latest_rpt
 
 
 @pytest.mark.asyncio
-async def test__get_latest_rpt__returns_latest_rpt_content(mocker, state, session, server_name_1, tmp_path):
+async def test__get_latest_rpt__returns_latest_rpt_content(mocker, state, server_name_1, tmp_path):
     """Test that get_latest_rpt returns the content of the newest RPT file for the server"""
     # Arrange: Set up mock files with distinct modification times
     old_file = tmp_path / 'old_log.rpt'
@@ -81,7 +80,7 @@ async def test__get_latest_rpt__returns_latest_rpt_content(mocker, state, sessio
     assert await response.get_data(as_text=True) == 'newest rpt log content'
 
 
-def test__get_latest_rpt__raises_when_server_not_found(mocker, state, session, server_name_2):
+def test__get_latest_rpt__raises_when_server_not_found(mocker, state, server_name_2):
     """Test that get_latest_rpt returns 404 when the requested server does not exist"""
     # Arrange
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
@@ -93,7 +92,7 @@ def test__get_latest_rpt__raises_when_server_not_found(mocker, state, session, s
     assert response.status_code == 404
 
 
-def test__get_latest_rpt__raises_when_no_rpt_files_exist(mocker, state, session, server_name_1, tmp_path):
+def test__get_latest_rpt__raises_when_no_rpt_files_exist(mocker, state, server_name_1, tmp_path):
     """Test that get_latest_rpt returns 404 when the directory contains no .rpt files"""
     # Arrange: Directory exists, but has no files matching *.rpt
     (tmp_path / 'readme.txt').write_text('just a text file')
@@ -113,7 +112,7 @@ def test__get_latest_rpt__raises_when_no_rpt_files_exist(mocker, state, session,
 # Tests for get_all_configured_mods
 
 
-def test__get_all_configured_mods__returns_all_mods(mocker, state, session, mock_mod_1, mock_mod_2):
+def test__get_all_configured_mods__returns_all_mods(mocker, state, mock_mod_1, mock_mod_2):
     """Test that get_all_configured_mods returns all configured mods"""
     mock_mods = {
         mock_mod_1.name: mock_mod_1,
@@ -143,7 +142,7 @@ def test__get_all_configured_mods__returns_empty_when_no_mods(mocker, state, ses
 # Tests for get_server_mods
 
 
-def test__get_server_mods__returns_server_mods(mocker, state, session, server_name_1, mock_modlist_1):
+def test__get_server_mods__returns_server_mods(mocker, state, server_name_1, mock_modlist_1):
     """Test that get_server_mods returns mods for a specific server"""
     mock_server = mocker.Mock()
     mock_server.modlist.return_value = mock_modlist_1
@@ -159,7 +158,7 @@ def test__get_server_mods__returns_server_mods(mocker, state, session, server_na
     assert mock_modlist_1.mods[1].name in [mod['name'] for mod in response.contained_json['mods']]
 
 
-def test__get_server_mods__raises_when_server_not_found(mocker, state, session, server_name_2):
+def test__get_server_mods__raises_when_server_not_found(mocker, state, server_name_2):
     """Test that get_server_mods raises ServerConfigNotFound for nonexistent server"""
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
 
@@ -171,7 +170,7 @@ def test__get_server_mods__raises_when_server_not_found(mocker, state, session, 
 # Tests for get_all_configured_modlists
 
 
-def test__get_all_configured_modlists__returns_all_modlists(mocker, state, session, mock_modlist_2, mock_modlist_3):
+def test__get_all_configured_modlists__returns_all_modlists(mocker, state, mock_modlist_2, mock_modlist_3):
     """Test that get_all_configured_modlists returns all configured modlists"""
     mock_modlists = {
         mock_modlist_2.name: mock_modlist_2,
@@ -201,7 +200,7 @@ def test__get_all_configured_modlists__returns_empty_when_no_modlists(mocker, st
 # Tests for get_server_modlist
 
 
-def test__get_server_modlist__returns_server_modlist(mocker, state, session, server_name_1, mock_modlist_1):
+def test__get_server_modlist__returns_server_modlist(mocker, state, server_name_1, mock_modlist_1):
     """Test that get_server_modlist returns modlist for a specific server"""
     mock_server = mocker.Mock()
     mock_server.modlist.return_value = mock_modlist_1
@@ -218,7 +217,7 @@ def test__get_server_modlist__returns_server_modlist(mocker, state, session, ser
     assert mock_modlist_1.mods[1].name in response.contained_json['mods']
 
 
-def test__get_server_modlist__raises_when_server_not_found(mocker, state, session, server_name_2):
+def test__get_server_modlist__raises_when_server_not_found(mocker, state, server_name_2):
     """Test that get_server_modlist raises ServerConfigNotFound for nonexistent server"""
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
 
@@ -230,7 +229,7 @@ def test__get_server_modlist__raises_when_server_not_found(mocker, state, sessio
 # Tests for add_mod
 
 
-def test__add_mod__successfully_adds_new_mod(mocker, state, session, mock_mod_name_3, mock_workshop_id_3):
+def test__add_mod__successfully_adds_new_mod(mocker, state, mock_mod_name_3, mock_workshop_id_3):
     """Test that add_mod successfully adds a new mod to MODS dictionary"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
 
@@ -248,7 +247,7 @@ def test__add_mod__successfully_adds_new_mod(mocker, state, session, mock_mod_na
     assert mock_mod_name_3 in MODS
 
 
-def test__add_mod__raises_when_mod_already_exists(mocker, state, session, existing_mod_name, mock_workshop_id_1):
+def test__add_mod__raises_when_mod_already_exists(mocker, state, existing_mod_name, mock_workshop_id_1):
     """Test that add_mod raises ModAlreadyDefined when mod name already exists"""
     existing_mod = Mod(name=existing_mod_name, workshop_id=WorkshopId(mock_workshop_id_1))
     mocker.patch('bw.server_ops.arma.api.MODS', {existing_mod_name: existing_mod})
@@ -260,7 +259,7 @@ def test__add_mod__raises_when_mod_already_exists(mocker, state, session, existi
     assert response.status_code == 409
 
 
-def test__add_mod__raises_when_workshop_id_missing_for_non_manual(mocker, state, session, mock_mod_name_3):
+def test__add_mod__raises_when_workshop_id_missing_for_non_manual(mocker, state, mock_mod_name_3):
     """Test that add_mod raises ModMissingField when workshop_id missing for non-manual mod"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
 
@@ -271,7 +270,7 @@ def test__add_mod__raises_when_workshop_id_missing_for_non_manual(mocker, state,
     assert response.status_code == 400
 
 
-def test__add_mod__raises_when_mod_directory_missing_for_manual(mocker, state, session, mock_mod_name_3):
+def test__add_mod__raises_when_mod_directory_missing_for_manual(mocker, state, mock_mod_name_3):
     """Test that add_mod raises ModMissingField when mod_directory missing for manual mod"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
 
@@ -280,7 +279,7 @@ def test__add_mod__raises_when_mod_directory_missing_for_manual(mocker, state, s
     assert response.status_code == 400
 
 
-def test__add_mod__raises_when_invalid_kind(mocker, state, session, mock_mod_name_3, mock_workshop_id_3, invalid_kind):
+def test__add_mod__raises_when_invalid_kind(mocker, state, mock_mod_name_3, mock_workshop_id_3, invalid_kind):
     """Test that add_mod raises ModInvalidKind when kind is invalid"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
 
@@ -291,9 +290,7 @@ def test__add_mod__raises_when_invalid_kind(mocker, state, session, mock_mod_nam
     assert response.status_code == 400
 
 
-def test__add_mod__raises_when_duplicate_workshop_id(
-    mocker, state, session, mock_mod_name_3, existing_mod_name, duplicate_workshop_id
-):
+def test__add_mod__raises_when_duplicate_workshop_id(mocker, state, mock_mod_name_3, existing_mod_name, duplicate_workshop_id):
     """Test that add_mod raises DuplicateModWorkshopID when workshop_id already exists"""
     existing_mod = Mod(name=existing_mod_name, workshop_id=WorkshopId(duplicate_workshop_id))
     mocker.patch('bw.server_ops.arma.api.MODS', {existing_mod_name: existing_mod})
@@ -305,7 +302,7 @@ def test__add_mod__raises_when_duplicate_workshop_id(
     assert response.status_code == 400
 
 
-def test__add_mod__adds_server_mod_with_required_directory(mocker, state, session, mock_mod_name_3, mock_workshop_id_3):
+def test__add_mod__adds_server_mod_with_required_directory(mocker, state, mock_mod_name_3, mock_workshop_id_3):
     """Test that add_mod successfully adds server_mod with directory"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
 
@@ -320,7 +317,7 @@ def test__add_mod__adds_server_mod_with_required_directory(mocker, state, sessio
     assert response.status_code == 201
 
 
-def test__add_mod__raises_when_directory_missing_for_server_mod(mocker, state, session, mock_mod_name_3, mock_workshop_id_3):
+def test__add_mod__raises_when_directory_missing_for_server_mod(mocker, state, mock_mod_name_3, mock_workshop_id_3):
     """Test that add_mod raises ModMissingField when directory missing for server_mod"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
 
@@ -338,7 +335,7 @@ def test__add_mod__raises_when_directory_missing_for_server_mod(mocker, state, s
 # Tests for add_modlist
 
 
-def test__add_modlist__successfully_adds_new_modlist(mocker, state, session, mock_mod_1, mock_mod_2, mock_modlist_name_4):
+def test__add_modlist__successfully_adds_new_modlist(mocker, state, mock_mod_1, mock_mod_2, mock_modlist_name_4):
     """Test that add_modlist successfully adds a new modlist to MODLISTS dictionary"""
     mocker.patch('bw.server_ops.arma.api.MODS', {mock_mod_1.name: mock_mod_1, mock_mod_2.name: mock_mod_2})
     mocker.patch('bw.server_ops.arma.api.MODLISTS', {})
@@ -351,9 +348,7 @@ def test__add_modlist__successfully_adds_new_modlist(mocker, state, session, moc
     assert mock_modlist_name_4 in MODLISTS
 
 
-def test__add_modlist__raises_when_modlist_already_exists(
-    mocker, state, session, mock_mod_1, mock_modlist_4, mock_modlist_name_5
-):
+def test__add_modlist__raises_when_modlist_already_exists(mocker, state, mock_mod_1, mock_modlist_4, mock_modlist_name_5):
     """Test that add_modlist raises ModAlreadyDefined when modlist name already exists"""
     mocker.patch('bw.server_ops.arma.api.MODS', {mock_mod_1.name: mock_mod_1})
     mocker.patch('bw.server_ops.arma.api.MODLISTS', {mock_modlist_name_5: mock_modlist_4})
@@ -363,7 +358,7 @@ def test__add_modlist__raises_when_modlist_already_exists(
     assert response.status_code == 409
 
 
-def test__add_modlist__raises_when_mod_not_defined(mocker, state, session, nonexistent_mod_name, mock_modlist_name_4):
+def test__add_modlist__raises_when_mod_not_defined(mocker, state, nonexistent_mod_name, mock_modlist_name_4):
     """Test that add_modlist raises ModNotDefined when referenced mod doesn't exist"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
     mocker.patch('bw.server_ops.arma.api.MODLISTS', {})
@@ -373,7 +368,7 @@ def test__add_modlist__raises_when_mod_not_defined(mocker, state, session, nonex
     assert response.status_code == 404
 
 
-def test__add_modlist__creates_empty_modlist(mocker, state, session, mock_modlist_name_6):
+def test__add_modlist__creates_empty_modlist(mocker, state, mock_modlist_name_6):
     """Test that add_modlist can create a modlist with no mods"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
     mocker.patch('bw.server_ops.arma.api.MODLISTS', {})
@@ -387,9 +382,7 @@ def test__add_modlist__creates_empty_modlist(mocker, state, session, mock_modlis
     assert len(MODLISTS[mock_modlist_name_6].mods) == 0
 
 
-def test__add_modlist__validates_all_mods_before_adding(
-    mocker, state, session, mock_mod_1, nonexistent_mod_name, mock_modlist_name_4
-):
+def test__add_modlist__validates_all_mods_before_adding(mocker, state, mock_mod_1, nonexistent_mod_name, mock_modlist_name_4):
     """Test that add_modlist validates all mod names before adding the modlist"""
     mocker.patch('bw.server_ops.arma.api.MODS', {mock_mod_1.name: mock_mod_1})
     mocker.patch('bw.server_ops.arma.api.MODLISTS', {})
@@ -404,7 +397,7 @@ def test__add_modlist__validates_all_mods_before_adding(
 
 
 def test__get_all_servers__returns_all_servers(
-    mocker, state, session, server_name_1, server_name_2, server_name_3, mock_server_1, mock_server_2, mock_server_3
+    mocker, state, server_name_1, server_name_2, server_name_3, mock_server_1, mock_server_2, mock_server_3
 ):
     """Test that get_all_servers returns all configured servers"""
     mock_server_map = {

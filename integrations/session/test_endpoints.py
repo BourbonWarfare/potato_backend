@@ -1,6 +1,3 @@
-# ruff: noqa: F811, F401
-
-
 def test__register__needs_role():
     pass
 

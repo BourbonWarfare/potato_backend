@@ -1,7 +1,8 @@
-from bw.web_event import BaseEvent
 from dataclasses import dataclass
 from typing import Any
+
 from bw.server_ops.process.status import Arma3ServerStatus
+from bw.web_event.base import BaseEvent
 
 
 class ArmaServerManagementEvent(BaseEvent, namespace='arma_server', abstract=True):

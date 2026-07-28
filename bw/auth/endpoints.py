@@ -1,17 +1,17 @@
 import logging
-import uuid
 import secrets
+import uuid
+
 from quart import Blueprint, request
 
-from bw.web_utils import json_endpoint, url_endpoint, html_endpoint, unwrap_headers
-from bw.response import JsonResponse, WebResponse
-from bw.models.auth import User
-from bw.auth.decorators import require_session, require_local, require_user_role, with_token
+from bw.auth.api import AuthApi
+from bw.auth.decorators import require_local, require_session, require_user_role, with_token
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
-from bw.auth.api import AuthApi
+from bw.models.auth import User
+from bw.response import JsonResponse, WebResponse
 from bw.state import State
-
+from bw.web_utils import html_endpoint, json_endpoint, unwrap_headers, url_endpoint
 
 logger = logging.getLogger('bw.auth')
 
@@ -849,4 +849,4 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         try:
             AuthApi().register_access_code(state=State.state, code=code, code_state=state)
         finally:
-            return html
+            return html  # noqa: B012

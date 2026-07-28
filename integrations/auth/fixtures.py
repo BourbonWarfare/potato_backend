@@ -1,15 +1,10 @@
-# ruff: noqa: F811, F401
-
 import pytest
-import json
-
 from sqlalchemy import insert
 
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
-from bw.models.auth import DiscordUser, BotUser, User, Session, GroupPermission, Group, Role
-from integrations.fixtures import session, state
+from bw.models.auth import BotUser, DiscordUser, Group, GroupPermission, Role, Session, User
 
 
 @pytest.fixture(scope='session')
@@ -129,7 +124,7 @@ def non_db_user_1():
 
 
 @pytest.fixture(scope='function')
-def db_user_1(state, session):
+def db_user_1(state):
     with state.Session.begin() as session:
         query = insert(User).values(id=1).returning(User)
         user = session.execute(query).first()[0]
@@ -138,7 +133,7 @@ def db_user_1(state, session):
 
 
 @pytest.fixture(scope='function')
-def db_user_2(state, session):
+def db_user_2(state):
     with state.Session.begin() as session:
         query = insert(User).values(id=2).returning(User)
         user = session.execute(query).first()[0]
@@ -147,7 +142,7 @@ def db_user_2(state, session):
 
 
 @pytest.fixture(scope='function')
-def db_session_1(state, session, db_user_1, token_1):
+def db_session_1(state, db_user_1, token_1):
     with state.Session.begin() as session:
         query = insert(Session).values(id=1, user_id=db_user_1.id, token=token_1).returning(Session)
         user_session = session.execute(query).first()[0]
@@ -156,7 +151,7 @@ def db_session_1(state, session, db_user_1, token_1):
 
 
 @pytest.fixture(scope='function')
-def db_session_2(state, session, db_user_2, token_2):
+def db_session_2(state, db_user_2, token_2):
     with state.Session.begin() as session:
         query = insert(Session).values(id=2, user_id=db_user_2.id, token=token_2).returning(Session)
         user_session = session.execute(query).first()[0]
@@ -165,7 +160,7 @@ def db_session_2(state, session, db_user_2, token_2):
 
 
 @pytest.fixture(scope='function')
-def db_expired_session_1(state, session, db_user_1, token_1, expire_invalid):
+def db_expired_session_1(state, db_user_1, token_1, expire_invalid):
     with state.Session.begin() as session:
         query = insert(Session).values(id=1, user_id=db_user_1.id, token=token_1, expire_time=expire_invalid).returning(Session)
         user_session = session.execute(query).first()[0]
@@ -174,7 +169,7 @@ def db_expired_session_1(state, session, db_user_1, token_1, expire_invalid):
 
 
 @pytest.fixture(scope='function')
-def db_discord_user_1(state, session, db_user_1, discord_id_1):
+def db_discord_user_1(state, db_user_1, discord_id_1):
     with state.Session.begin() as session:
         query = insert(DiscordUser).values(id=1, user_id=db_user_1.id, discord_id=discord_id_1).returning(DiscordUser)
         user = session.execute(query).first()[0]
@@ -183,7 +178,7 @@ def db_discord_user_1(state, session, db_user_1, discord_id_1):
 
 
 @pytest.fixture(scope='function')
-def db_bot_user_1(state, session, db_user_1, token_1):
+def db_bot_user_1(state, db_user_1, token_1):
     with state.Session.begin() as session:
         query = insert(BotUser).values(id=1, user_id=db_user_1.id, bot_token=token_1).returning(BotUser)
         user = session.execute(query).first()[0]
@@ -192,7 +187,7 @@ def db_bot_user_1(state, session, db_user_1, token_1):
 
 
 @pytest.fixture(scope='function')
-def db_permission_1(state, session, permission_1, permission_name_1):
+def db_permission_1(state, permission_1, permission_name_1):
     with state.Session.begin() as session:
         query = insert(GroupPermission).values(id=1, name=permission_name_1, **permission_1.as_dict()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
@@ -201,7 +196,7 @@ def db_permission_1(state, session, permission_1, permission_name_1):
 
 
 @pytest.fixture(scope='function')
-def db_permission_2(state, session, permission_2, permission_name_2):
+def db_permission_2(state, permission_2, permission_name_2):
     with state.Session.begin() as session:
         query = insert(GroupPermission).values(id=2, name=permission_name_2, **permission_2.as_dict()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
@@ -210,7 +205,7 @@ def db_permission_2(state, session, permission_2, permission_name_2):
 
 
 @pytest.fixture(scope='function')
-def db_permission_3(state, session, permission_3, permission_name_3):
+def db_permission_3(state, permission_3, permission_name_3):
     with state.Session.begin() as session:
         query = insert(GroupPermission).values(id=3, name=permission_name_3, **permission_3.as_dict()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
@@ -219,7 +214,7 @@ def db_permission_3(state, session, permission_3, permission_name_3):
 
 
 @pytest.fixture(scope='function')
-def db_group_1(state, session, db_permission_1, group_name_1):
+def db_group_1(state, db_permission_1, group_name_1):
     with state.Session.begin() as session:
         query = insert(Group).values(id=1, name=group_name_1, permissions=db_permission_1.id).returning(Group)
         group = session.execute(query).first()[0]
@@ -228,7 +223,7 @@ def db_group_1(state, session, db_permission_1, group_name_1):
 
 
 @pytest.fixture(scope='function')
-def db_group_2(state, session, db_permission_2, group_name_2):
+def db_group_2(state, db_permission_2, group_name_2):
     with state.Session.begin() as session:
         query = insert(Group).values(id=2, name=group_name_2, permissions=db_permission_2.id).returning(Group)
         group = session.execute(query).first()[0]
@@ -237,7 +232,7 @@ def db_group_2(state, session, db_permission_2, group_name_2):
 
 
 @pytest.fixture(scope='function')
-def db_group_3(state, session, db_permission_3, group_name_3):
+def db_group_3(state, db_permission_3, group_name_3):
     with state.Session.begin() as session:
         query = insert(Group).values(id=3, name=group_name_3, permissions=db_permission_3.id).returning(Group)
         group = session.execute(query).first()[0]
@@ -246,7 +241,7 @@ def db_group_3(state, session, db_permission_3, group_name_3):
 
 
 @pytest.fixture(scope='function')
-def db_role_1(state, session, role_1, role_name_1):
+def db_role_1(state, role_1, role_name_1):
     with state.Session.begin() as session:
         query = insert(Role).values(id=1, name=role_name_1, **role_1.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
@@ -255,7 +250,7 @@ def db_role_1(state, session, role_1, role_name_1):
 
 
 @pytest.fixture(scope='function')
-def db_role_2(state, session, role_2, role_name_2):
+def db_role_2(state, role_2, role_name_2):
     with state.Session.begin() as session:
         query = insert(Role).values(id=2, name=role_name_2, **role_2.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
@@ -264,7 +259,7 @@ def db_role_2(state, session, role_2, role_name_2):
 
 
 @pytest.fixture(scope='function')
-def db_role_assigner(state, session, role_assigner):
+def db_role_assigner(state, role_assigner):
     with state.Session.begin() as session:
         query = insert(Role).values(id=666, name='role-assigner', **role_assigner.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
@@ -273,7 +268,7 @@ def db_role_assigner(state, session, role_assigner):
 
 
 @pytest.fixture(scope='function')
-def db_group_assigner(state, session, group_assigner):
+def db_group_assigner(state, group_assigner):
     with state.Session.begin() as session:
         query = insert(Role).values(id=777, name='group-assigner', **group_assigner.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
@@ -282,7 +277,7 @@ def db_group_assigner(state, session, group_assigner):
 
 
 @pytest.fixture(scope='function')
-def db_server_manager(state, session, server_manager, server_manager_name):
+def db_server_manager(state, server_manager, server_manager_name):
     with state.Session.begin() as session:
         query = insert(Role).values(id=1, name=server_manager_name, **server_manager.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
@@ -398,7 +393,7 @@ def oauth_state_4():
 
 # Database fixtures for OAuth codes (function scope for test isolation)
 @pytest.fixture(scope='function')
-def db_oauth_code_1(state, session, oauth_code_1, oauth_state_1):
+def db_oauth_code_1(state, oauth_code_1, oauth_state_1):
     """OAuth code in database with valid expiry time"""
     from bw.models.auth import DiscordOAuthCode
 
@@ -410,7 +405,7 @@ def db_oauth_code_1(state, session, oauth_code_1, oauth_state_1):
 
 
 @pytest.fixture(scope='function')
-def db_oauth_code_2(state, session, oauth_code_2, oauth_state_2):
+def db_oauth_code_2(state, oauth_code_2, oauth_state_2):
     """Second OAuth code in database with valid expiry time"""
     from bw.models.auth import DiscordOAuthCode
 
@@ -422,7 +417,7 @@ def db_oauth_code_2(state, session, oauth_code_2, oauth_state_2):
 
 
 @pytest.fixture(scope='function')
-def db_oauth_code_expired(state, session, oauth_code_3, oauth_state_3, expire_invalid):
+def db_oauth_code_expired(state, oauth_code_3, oauth_state_3, expire_invalid):
     """OAuth code in database with expired time"""
     from bw.models.auth import DiscordOAuthCode
 

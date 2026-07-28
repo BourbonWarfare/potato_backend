@@ -1,11 +1,13 @@
-from bw.error import MissionDoesNotHaveMetadata
 import dataclasses
+import json
 import shutil
 import tempfile
-import json
 from pathlib import Path
 from typing import Any
 
+import aiofiles
+
+from bw.error import MissionDoesNotHaveMetadata
 from bw.subprocess.hemtt import hemtt
 
 
@@ -85,7 +87,7 @@ class MissionFile:
             category_name = categories['name']
             attribute_count = categories['nAttributes']
             category_attributes = {}
-            for idx in range(0, attribute_count):
+            for idx in range(attribute_count):
                 attribute = categories[f'Attribute{idx}']
 
                 attribute_name = attribute['property']
@@ -112,10 +114,10 @@ class MissionLoader:
         await hemtt.utils.config.derapify.acall(str(mission_path / 'mission.sqm'), format='json')
 
         bwmf_version = '2016/01/19'
-        with open(mission_path / 'description.ext') as file:
-            for line in file:
+        async with aiofiles.open(mission_path / 'description.ext') as file:
+            async for line in file:
                 if 'bwmfDate' in line:
                     bwmf_version = line.split('=')[1]
                     break
 
-        return MissionFile(mission_name, json.load(open(mission_path / 'mission.json', 'rb')), bwmf_version=bwmf_version)
+        return MissionFile(mission_name, json.load(open(mission_path / 'mission.json', 'rb')), bwmf_version=bwmf_version)  # noqa: ASYNC230

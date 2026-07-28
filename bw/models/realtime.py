@@ -1,11 +1,10 @@
 import datetime
-
-from sqlalchemy import ForeignKey, String, func, Uuid, DateTime, Integer
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import JSON
+import uuid
 from typing import Any
 
-import uuid
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import JSON
 
 from bw.models import Base
 

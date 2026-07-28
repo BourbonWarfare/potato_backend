@@ -2,28 +2,27 @@
 
 import pytest
 
-from integrations.fixtures import state, session, test_app
+from bw.auth.user import UserStore
 from integrations.auth.fixtures import (
-    token_1,
-    expire_invalid,
-    db_user_1,
-    db_session_1,
     db_expired_session_1,
-    role_name_2,
-    role_2,
     db_role_2,
+    db_session_1,
+    db_user_1,
+    expire_invalid,
+    role_2,
+    role_name_2,
+    token_1,
 )
+from integrations.fixtures import test_app
 from integrations.realtime.fixtures import (
-    uuid1,
     endpoint_api_url,
     endpoint_api_v1_url,
-    endpoint_realtime_url,
     endpoint_realtime_push_url,
     endpoint_realtime_sse_url,
+    endpoint_realtime_url,
     mock_event_1,
+    uuid1,
 )
-from bw.auth.user import UserStore
-
 
 # ---------------------------------------------------------------------------
 # POST / — push_event
@@ -31,7 +30,7 @@ from bw.auth.user import UserStore
 
 
 @pytest.mark.asyncio
-async def test__push_event__requires_authentication(state, session, test_app, endpoint_realtime_push_url):
+async def test__push_event__requires_authentication(state, test_app, endpoint_realtime_push_url):
     """Test that POST /realtime/ returns 401 when no Authorization header is provided."""
     response = await test_app.post(endpoint_realtime_push_url, json={})
 
@@ -39,7 +38,7 @@ async def test__push_event__requires_authentication(state, session, test_app, en
 
 
 @pytest.mark.asyncio
-async def test__push_event__requires_permission(state, session, test_app, db_user_1, db_session_1, endpoint_realtime_push_url):
+async def test__push_event__requires_permission(state, test_app, db_user_1, db_session_1, endpoint_realtime_push_url):
     """Test that POST /realtime/ returns 403 when the user lacks can_publish_realtime_events."""
     response = await test_app.post(
         endpoint_realtime_push_url,
@@ -53,7 +52,6 @@ async def test__push_event__requires_permission(state, session, test_app, db_use
 @pytest.mark.asyncio
 async def test__push_event__rejects_expired_session(
     state,
-    session,
     test_app,
     db_user_1,
     db_expired_session_1,
@@ -77,7 +75,6 @@ async def test__push_event__rejects_expired_session(
 @pytest.mark.asyncio
 async def test__push_event__returns_415_when_no_json_body(
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -107,7 +104,7 @@ async def test__push_event__returns_415_when_no_json_body(
 
 
 @pytest.mark.asyncio
-async def test__subscribe__returns_sse_content_type(state, session, test_app, endpoint_realtime_sse_url):
+async def test__subscribe__returns_sse_content_type(state, test_app, endpoint_realtime_sse_url):
     """Test that GET /realtime/sse responds with a text/event-stream Content-Type."""
     response = await test_app.get(endpoint_realtime_sse_url)
 
@@ -116,7 +113,7 @@ async def test__subscribe__returns_sse_content_type(state, session, test_app, en
 
 
 @pytest.mark.asyncio
-async def test__subscribe__is_publicly_accessible(state, session, test_app, endpoint_realtime_sse_url):
+async def test__subscribe__is_publicly_accessible(state, test_app, endpoint_realtime_sse_url):
     """Test that GET /realtime/sse does not require authentication."""
     response = await test_app.get(endpoint_realtime_sse_url)
 

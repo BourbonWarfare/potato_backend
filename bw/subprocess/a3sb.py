@@ -1,7 +1,9 @@
+# ruff: noqa: RUF012
 import re
-from bw.subprocess.semver import Semver
-from bw.subprocess.command import Command, define_process
+
 from bw.error import ArmaServerUnresponsive
+from bw.subprocess.command import Command, define_process
+from bw.subprocess.semver import Semver
 
 
 class A3sb(Command):

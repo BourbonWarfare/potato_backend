@@ -69,9 +69,11 @@ Use for constants, configuration values, test data that never changes:
 def token_1():
     return 'token 1'
 
+
 @pytest.fixture(scope='session')
 def mock_mod_name_1():
     return 'mod1'
+
 
 @pytest.fixture(scope='session')
 def endpoint_mods_url():
@@ -85,6 +87,7 @@ Build complex objects from simpler fixtures:
 @pytest.fixture(scope='session')
 def mock_mod_1(mock_mod_name_1, mock_workshop_id_1):
     return Mod(name=mock_mod_name_1, workshop_id=WorkshopId(mock_workshop_id_1))
+
 
 @pytest.fixture(scope='session')
 def role_1() -> Roles:
@@ -102,6 +105,7 @@ def db_user_1(state, session):
         user = session.execute(query).first()[0]
         session.expunge(user)
     yield user
+
 
 @pytest.fixture(scope='function')
 def db_mod_1(state, session, workshop_details_1):
@@ -121,9 +125,11 @@ Create a hierarchy of URL fixtures:
 def endpoint_api_url():
     return '/api'
 
+
 @pytest.fixture(scope='session')
 def endpoint_api_v1_url(endpoint_api_url):
     return f'{endpoint_api_url}/v1'
+
 
 @pytest.fixture(scope='session')
 def endpoint_user_url(endpoint_api_v1_url):
@@ -145,11 +151,11 @@ List ALL fixtures used in the test as parameters:
 
 ```python
 def test__get_all_configured_mods__returns_all_mods(
-    mocker,           # From pytest-mock
-    state,            # From integrations.fixtures
-    session,          # From integrations.fixtures
-    mock_mod_1,       # From module fixtures
-    mock_mod_2        # From module fixtures
+    mocker,  # From pytest-mock
+    state,  # From integrations.fixtures
+    session,  # From integrations.fixtures
+    mock_mod_1,  # From module fixtures
+    mock_mod_2,  # From module fixtures
 ):
     """Test that get_all_configured_mods returns all configured mods"""
     # Not yet reviewed
@@ -211,25 +217,18 @@ def test__create_new_user_bot__can_create_and_get_token(mocker, state, session, 
 ```python
 @pytest.mark.asyncio
 async def test__create_role__role_created(
-    state, 
-    session, 
-    test_app, 
-    db_user_1, 
-    role_1, 
-    db_session_1, 
-    db_role_assigner, 
-    endpoint_user_role_create_url
+    state, session, test_app, db_user_1, role_1, db_session_1, db_role_assigner, endpoint_user_role_create_url
 ):
     """Test that POST /user/role/create creates a new role"""
     # Not yet reviewed
     UserStore().assign_user_role(state, db_user_1, db_role_assigner.name)
-    
+
     response = await test_app.post(
         endpoint_user_role_create_url,
         json={'role_name': 'test_role', **role_1.as_dict()},
         headers={'Authorization': f'Bearer {db_session_1.token}'},
     )
-    
+
     assert response.status_code == 201
     data = await response.get_json()
     assert data['name'] == 'test_role'

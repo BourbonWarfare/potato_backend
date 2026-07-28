@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from bw.error.base import ClientError
 
 

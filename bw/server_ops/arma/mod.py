@@ -1,27 +1,28 @@
-import logging
-from pathlib import Path
-from enum import StrEnum
-from dataclasses import dataclass
 import datetime
-from typing import Any, Self
-from collections.abc import Iterable
-from collections.abc import Collection
-import aiohttp
+import logging
 import tomllib
+from collections.abc import Collection, Iterable
+from dataclasses import dataclass
+from enum import StrEnum
+from pathlib import Path
+from typing import Any, Self
+
+import aiohttp
 import tomli_w
 
 from bw.error.arma_mod import (
-    ModNotDefined,
-    ModAlreadyDefined,
-    ModMissingField,
-    ModInvalidKind,
-    ModFieldInvalid,
-    DuplicateModWorkshopID,
     DuplicateModPath,
+    DuplicateModWorkshopID,
+    ModAlreadyDefined,
     ModAlreadyExists,
+    ModFieldInvalid,
+    ModInvalidKind,
+    ModMissingField,
+    ModNotDefined,
 )
-from bw.state import State
 from bw.server_ops.arma.types import WorkshopId
+from bw.settings import TIMEZONE
+from bw.state import State
 
 logger = logging.getLogger('bw.server_ops.arma')
 
@@ -95,7 +96,7 @@ class SteamWorkshopDetails:
             workshop_id=WorkshopId(str(json.get('publishedfileid', 'No Workshop ID'))),
             title=json.get('title', 'Unknown Title'),
             file_size_bytes=json.get('file_size', 0),
-            last_update=datetime.datetime.fromtimestamp(json.get('time_updated', 0)),
+            last_update=datetime.datetime.fromtimestamp(json.get('time_updated', 0), tz=TIMEZONE),
             preview_url=json.get('preview_url', ''),
         )
 
@@ -153,29 +154,26 @@ async def fetch_mod_details_from_workshop(
     logger.debug(f'Using URL: {url}')
 
     details: dict[WorkshopId, SteamWorkshopDetails] = {}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, data=params) as response:
-            if response.status != 200:
-                logger.error(f'Failed to fetch mod names ({response.status} {response.reason} {await response.text()})')
-                return {}
-            if response.content_type != 'application/json':
-                logger.error(f'Unexpected content type trying to fetch mod names: {response.content_type}')
-                return {}
+    async with aiohttp.ClientSession() as session, session.post(url, data=params) as response:
+        if response.status != 200:
+            logger.error(f'Failed to fetch mod names ({response.status} {response.reason} {await response.text()})')
+            return {}
+        if response.content_type != 'application/json':
+            logger.error(f'Unexpected content type trying to fetch mod names: {response.content_type}')
+            return {}
 
-            json = await response.json()
-            for file in json['response']['publishedfiledetails']:
-                workshop_id = WorkshopId(file['publishedfileid'])
-                if 'result' not in file or file['result'] != 1:
-                    error_reason = file.get('reason', 'unknown')
-                    logger.warning(
-                        f'Failed to fetch details for "{mod_workshop_ids[workshop_id]}" ({workshop_id}): {error_reason}'
-                    )
-                    continue
-                if workshop_id not in mod_workshop_ids:
-                    logger.warning(f'Workshop ID {workshop_id} not found in loaded mods')
-                    logger.debug(f'{workshop_id}, {type(workshop_id)}, {[(type(wid), wid) for wid in mod_workshop_ids.keys()]}')
-                    continue
-                details[workshop_id] = SteamWorkshopDetails.from_steam_json(file)
+        json = await response.json()
+        for file in json['response']['publishedfiledetails']:
+            workshop_id = WorkshopId(file['publishedfileid'])
+            if 'result' not in file or file['result'] != 1:
+                error_reason = file.get('reason', 'unknown')
+                logger.warning(f'Failed to fetch details for "{mod_workshop_ids[workshop_id]}" ({workshop_id}): {error_reason}')
+                continue
+            if workshop_id not in mod_workshop_ids:
+                logger.warning(f'Workshop ID {workshop_id} not found in loaded mods')
+                logger.debug(f'{workshop_id}, {type(workshop_id)}, {[(type(wid), wid) for wid in mod_workshop_ids]}')
+                continue
+            details[workshop_id] = SteamWorkshopDetails.from_steam_json(file)
 
     return details
 
@@ -254,7 +252,7 @@ async def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False
         logger.error(f'Mod file does not exist on the system: {mods_file}')
         return
 
-    with open(mods_file, 'rb') as f:
+    with open(mods_file, 'rb') as f:  # noqa: ASYNC230
         config = tomllib.load(f)
 
     if 'defaults' not in config:
@@ -462,7 +460,7 @@ def save_mod_configs(config_path: Path):
         if mod.kind == Kind.MOD:
             if str(mod.directory) != default_mod_dir:
                 mod_config['mod_directory'] = str(mod.directory)
-        elif mod.kind == Kind.SERVER_MOD:
+        elif mod.kind == Kind.SERVER_MOD:  # noqa: SIM102
             if str(mod.directory) != default_server_mod_dir:
                 mod_config['server_mod_directory'] = str(mod.directory)
 
@@ -526,8 +524,7 @@ def save_modlists(config_path: Path):
 
         # Write mod names to file, one per line
         with open(file_path, 'w') as f:
-            for mod in modlist.mods:
-                f.write(f'{mod.name}\n')
+            f.writelines(f'{mod.name}\n' for mod in modlist.mods)
 
         logger.debug(f'Saved modlist "{modlist_name}" with {len(modlist.mods)} mods to {file_path}')
 

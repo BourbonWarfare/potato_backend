@@ -1,6 +1,6 @@
-from contextlib import ContextDecorator
-import sys
 import logging
+import sys
+from contextlib import ContextDecorator
 
 logger = logging.getLogger('bw.cron')
 

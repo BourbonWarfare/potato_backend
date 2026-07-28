@@ -1,16 +1,18 @@
-import os
 import logging
-import psutil
+import os
 import subprocess as sp
 from collections.abc import Sequence
-from bw.models.process import Process
-from bw.server_ops.process.status import Arma3ServerStatus, Arma3HeadlessClientStatus
-from bw.server_ops.process.state import State as ProcessState
+
+import psutil
+
 from bw.error import NoProcessWithNameAndNamespace
-from bw.server_ops.process.process import ProcessStore
+from bw.models.process import Process
 from bw.server_ops.arma.server import Server
+from bw.server_ops.process.process import ProcessStore
+from bw.server_ops.process.state import State as ProcessState
+from bw.server_ops.process.status import Arma3HeadlessClientStatus, Arma3ServerStatus
 from bw.state import State
-from bw.web_event.arma_ops import ServerStartEvent, ServerStopEvent, ServerRestartEvent
+from bw.web_event.arma_ops import ServerRestartEvent, ServerStartEvent, ServerStopEvent
 
 NAMESPACE: str = 'arma3'
 logger = logging.getLogger('bw.server_ops.process')
@@ -191,7 +193,7 @@ class Arma3Api:
                     process_manager.update_status(subprocess.status())
                     all_processes.append(subprocess)
             except OSError as err:
-                logging.warning(f'Failed to start server {server.server_name()}: {err}')
+                logger.warning(f'Failed to start server {server.server_name()}: {err}')
                 return Arma3ServerStatus(
                     running=False,
                     headless_clients=[Arma3HeadlessClientStatus(running=False)] * 3,

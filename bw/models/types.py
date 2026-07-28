@@ -1,6 +1,5 @@
-import sqlalchemy.types as types
-import sqlalchemy.engine as engine
 import nh3
+from sqlalchemy import engine, types
 
 
 class HtmlSafeString(types.TypeDecorator):

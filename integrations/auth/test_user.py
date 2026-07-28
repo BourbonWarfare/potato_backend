@@ -1,39 +1,36 @@
 # ruff: noqa: F811, F401
 
 import pytest
-
 from sqlalchemy import select
 
-from bw.auth.user import UserStore
 from bw.auth.group import GroupStore
-from bw.models.auth import User, DiscordUser, BotUser, Role, Session, UserGroup
-from bw.error import DbError, NoUserWithGivenCredentials, AuthError, RoleCreationFailed, NoRoleWithName, DiscordUserAlreadyExists
+from bw.auth.user import UserStore
+from bw.error import AuthError, DbError, DiscordUserAlreadyExists, NoRoleWithName, NoUserWithGivenCredentials, RoleCreationFailed
+from bw.models.auth import BotUser, DiscordUser, Role, User, UserGroup
 from integrations.auth.fixtures import (
-    state,
-    session,
-    non_db_user_1,
-    db_user_1,
-    token_1,
-    db_discord_user_1,
     db_bot_user_1,
-    discord_id_1,
-    role_1,
-    role_2,
-    db_user_2,
+    db_discord_user_1,
     db_group_1,
+    db_group_2,
     db_permission_1,
-    group_name_1,
-    permission_1,
-    permission_name_1,
-    role_name_1,
-    role_name_2,
+    db_permission_2,
     db_role_1,
     db_role_2,
-    db_group_2,
+    db_user_1,
+    db_user_2,
+    discord_id_1,
+    group_name_1,
     group_name_2,
-    db_permission_2,
+    non_db_user_1,
+    permission_1,
     permission_2,
+    permission_name_1,
     permission_name_2,
+    role_1,
+    role_2,
+    role_name_1,
+    role_name_2,
+    token_1,
 )
 
 
@@ -41,7 +38,7 @@ def test__create_user__returns_user(state, session):
     UserStore().create_user(state)
 
 
-def test__user_from_id__doesnt_raise(state, session, db_user_1):
+def test__user_from_id__doesnt_raise(state, db_user_1):
     user = UserStore().user_from_id(state, db_user_1.id)
     assert user.id == db_user_1.id
     assert user.creation_date == db_user_1.creation_date
@@ -53,19 +50,19 @@ def test__user_from_id__raises(state, session):
         UserStore().user_from_id(state, 1)
 
 
-def test__user_from_discord_id__doesnt_raise(state, session, db_user_1, db_discord_user_1):
+def test__user_from_discord_id__doesnt_raise(state, db_user_1, db_discord_user_1):
     user = UserStore().user_from_discord_id(state, db_discord_user_1.discord_id)
     assert user.id == db_user_1.id
     assert user.creation_date == db_user_1.creation_date
     assert user.role == db_user_1.role
 
 
-def test__user_from_discord_id__raises(state, session, discord_id_1):
+def test__user_from_discord_id__raises(state, discord_id_1):
     with pytest.raises(NoUserWithGivenCredentials):
         UserStore().user_from_discord_id(state, discord_id_1)
 
 
-def test__user_from_bot_token__doesnt_raise(state, session, db_user_1, db_bot_user_1):
+def test__user_from_bot_token__doesnt_raise(state, db_user_1, db_bot_user_1):
     user = UserStore().user_from_bot_token(state, db_bot_user_1.bot_token)
     assert user.id == db_user_1.id
     assert user.creation_date == db_user_1.creation_date
@@ -77,12 +74,12 @@ def test__user_from_bot_token__raises(state, session):
         UserStore().user_from_bot_token(state, 'no token')
 
 
-def test__link_bot_user__linking_invalid_user_excepts(state, session, non_db_user_1):
+def test__link_bot_user__linking_invalid_user_excepts(state, non_db_user_1):
     with pytest.raises(NoUserWithGivenCredentials):
         UserStore().link_bot_user(state, non_db_user_1)
 
 
-def test__link_bot_user__linking_valid_user_no_except(mocker, state, session, db_user_1, token_1):
+def test__link_bot_user__linking_valid_user_no_except(mocker, state, db_user_1, token_1):
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     bot_user = UserStore().link_bot_user(state, db_user_1)
 
@@ -90,13 +87,13 @@ def test__link_bot_user__linking_valid_user_no_except(mocker, state, session, db
     assert bot_user.user_id == db_user_1.id
 
 
-def test__link_bot_user__cant_link_many(state, session, db_user_1):
+def test__link_bot_user__cant_link_many(state, db_user_1):
     UserStore().link_bot_user(state, db_user_1)
     with pytest.raises(DbError):
         UserStore().link_bot_user(state, db_user_1)
 
 
-def test__link_bot_user__can_get_user_from_generated_token(state, session, db_user_1):
+def test__link_bot_user__can_get_user_from_generated_token(state, db_user_1):
     bot_user = UserStore().link_bot_user(state, db_user_1)
     user = UserStore().user_from_bot_token(state, bot_user.bot_token)
     assert user.id == db_user_1.id
@@ -104,12 +101,12 @@ def test__link_bot_user__can_get_user_from_generated_token(state, session, db_us
     assert user.role == db_user_1.role
 
 
-def test__link_discord_user__linking_invalid_user_excepts(state, session, discord_id_1, non_db_user_1):
+def test__link_discord_user__linking_invalid_user_excepts(state, discord_id_1, non_db_user_1):
     with pytest.raises(NoUserWithGivenCredentials):
         UserStore().link_discord_user(state, discord_id_1, non_db_user_1)
 
 
-def test__link_discord_user__linking_valid_user_no_except(mocker, state, session, discord_id_1, db_user_1, token_1):
+def test__link_discord_user__linking_valid_user_no_except(mocker, state, discord_id_1, db_user_1, token_1):
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     discord_user = UserStore().link_discord_user(state, discord_id_1, db_user_1)
 
@@ -117,13 +114,13 @@ def test__link_discord_user__linking_valid_user_no_except(mocker, state, session
     assert discord_user.user_id == db_user_1.id
 
 
-def test__link_discord_user__cant_link_many(state, session, discord_id_1, db_user_1):
+def test__link_discord_user__cant_link_many(state, discord_id_1, db_user_1):
     UserStore().link_discord_user(state, discord_id_1, db_user_1)
     with pytest.raises(DiscordUserAlreadyExists):
         UserStore().link_discord_user(state, discord_id_1, db_user_1)
 
 
-def test__link_discord_user__can_get_user_from_generated_token(state, session, discord_id_1, db_user_1):
+def test__link_discord_user__can_get_user_from_generated_token(state, discord_id_1, db_user_1):
     discord_user = UserStore().link_discord_user(state, discord_id_1, db_user_1)
     user = UserStore().user_from_discord_id(state, discord_user.discord_id)
     assert user.id == db_user_1.id
@@ -131,7 +128,7 @@ def test__link_discord_user__can_get_user_from_generated_token(state, session, d
     assert user.role == db_user_1.role
 
 
-def test__delete_user__can_delete_valid_user(state, session, db_user_1):
+def test__delete_user__can_delete_valid_user(state, db_user_1):
     with state.Session.begin() as session:
         query = select(User).where(User.id == db_user_1.id)
         row = session.execute(query).first()
@@ -145,7 +142,7 @@ def test__delete_user__can_delete_valid_user(state, session, db_user_1):
         assert row is None
 
 
-def test__delete_user__can_try_delete_invalid_user(state, session, non_db_user_1):
+def test__delete_user__can_try_delete_invalid_user(state, non_db_user_1):
     with state.Session.begin() as session:
         query = select(User).where(User.id == non_db_user_1.id)
         row = session.execute(query).first()
@@ -159,7 +156,7 @@ def test__delete_user__can_try_delete_invalid_user(state, session, non_db_user_1
         assert row is None
 
 
-def test__delete_user__deletes_discord_user(state, session, db_discord_user_1, db_user_1):
+def test__delete_user__deletes_discord_user(state, db_discord_user_1, db_user_1):
     UserStore().delete_user(state, db_user_1)
 
     with state.Session.begin() as session:
@@ -173,7 +170,7 @@ def test__delete_user__deletes_discord_user(state, session, db_discord_user_1, d
         assert row is None
 
 
-def test__delete_user__deletes_bot_user(state, session, db_bot_user_1, db_user_1):
+def test__delete_user__deletes_bot_user(state, db_bot_user_1, db_user_1):
     UserStore().delete_user(state, db_user_1)
 
     with state.Session.begin() as session:
@@ -187,7 +184,7 @@ def test__delete_user__deletes_bot_user(state, session, db_bot_user_1, db_user_1
         assert row is None
 
 
-def test__delete_discord_user__deletes_discord_user_from_user(state, session, db_discord_user_1, db_user_1):
+def test__delete_discord_user__deletes_discord_user_from_user(state, db_discord_user_1, db_user_1):
     UserStore().delete_discord_user(state, db_user_1)
 
     with state.Session.begin() as session:
@@ -201,7 +198,7 @@ def test__delete_discord_user__deletes_discord_user_from_user(state, session, db
         assert row is None
 
 
-def test__delete_discord_user__deletes_discord_user_from_discord_user(state, session, db_discord_user_1, db_user_1):
+def test__delete_discord_user__deletes_discord_user_from_discord_user(state, db_discord_user_1, db_user_1):
     UserStore().delete_discord_user(state, db_discord_user_1)
 
     with state.Session.begin() as session:
@@ -220,7 +217,7 @@ def test__delete_discord_user__raises_on_bad_argument(state, session):
         UserStore().delete_discord_user(state, None)
 
 
-def test__delete_bot_user__deletes_bot_user_from_user(state, session, db_bot_user_1, db_user_1):
+def test__delete_bot_user__deletes_bot_user_from_user(state, db_bot_user_1, db_user_1):
     UserStore().delete_bot_user(state, db_user_1)
 
     with state.Session.begin() as session:
@@ -234,7 +231,7 @@ def test__delete_bot_user__deletes_bot_user_from_user(state, session, db_bot_use
         assert row is None
 
 
-def test__delete_bot_user__deletes_bot_user_from_bot_user(state, session, db_bot_user_1, db_user_1):
+def test__delete_bot_user__deletes_bot_user_from_bot_user(state, db_bot_user_1, db_user_1):
     UserStore().delete_bot_user(state, db_bot_user_1)
 
     with state.Session.begin() as session:
@@ -253,17 +250,17 @@ def test__delete_bot_user__raises_on_bad_argument(state, session):
         UserStore().delete_bot_user(state, None)
 
 
-def test__create_role__can_create_role(state, session, role_1):
+def test__create_role__can_create_role(state, role_1):
     UserStore().create_role(state, 'my_role', role_1)
 
 
-def test__create_role__create_duplicate_raises(state, session, role_1):
+def test__create_role__create_duplicate_raises(state, role_1):
     UserStore().create_role(state, 'my_role', role_1)
     with pytest.raises(RoleCreationFailed):
         UserStore().create_role(state, 'my_role', role_1)
 
 
-def test__edit_role__can_edit_role(state, session, role_1, role_2):
+def test__edit_role__can_edit_role(state, role_1, role_2):
     db_role_1 = UserStore().create_role(state, 'my_role', role_1)
     new_role = UserStore().edit_role(state, 'my_role', role_2)
     assert new_role.id == db_role_1.id
@@ -274,17 +271,17 @@ def test__edit_role__can_edit_role(state, session, role_1, role_2):
         assert db_role.into_roles().as_dict() == role_2.as_dict()
 
 
-def test__edit_role__cant_edit_non_existing_role(state, session, role_1):
+def test__edit_role__cant_edit_non_existing_role(state, role_1):
     with pytest.raises(NoRoleWithName):
         UserStore().edit_role(state, 'my_role', role_1)
 
 
-def test__delete_role__can_delete_role_simple(state, session, role_1):
+def test__delete_role__can_delete_role_simple(state, role_1):
     UserStore().create_role(state, 'my_role', role_1)
     UserStore().delete_role(state, 'my_role')
 
 
-def test__delete_role__can_delete_role_when_assigned(state, session, role_1, db_user_1, db_user_2):
+def test__delete_role__can_delete_role_when_assigned(state, role_1, db_user_1, db_user_2):
     UserStore().create_role(state, 'my_role', role_1)
     UserStore().assign_user_role(state, db_user_1, 'my_role')
     UserStore().assign_user_role(state, db_user_2, 'my_role')
@@ -301,12 +298,12 @@ def test__delete_role__cant_delete_non_existing(state, session):
         UserStore().delete_role(state, 'my_role')
 
 
-def test__assign_user_role__can_assign_user(state, session, db_user_1, role_1):
+def test__assign_user_role__can_assign_user(state, db_user_1, role_1):
     UserStore().create_role(state, 'my_role', role_1)
     UserStore().assign_user_role(state, db_user_1, 'my_role')
 
 
-def test__assign_user_role__can_assign_user_many_times(state, session, db_user_1, role_1, role_2):
+def test__assign_user_role__can_assign_user_many_times(state, db_user_1, role_1, role_2):
     UserStore().create_role(state, 'my_role', role_1)
     expected_role = UserStore().create_role(state, 'my_role2', role_2)
     UserStore().assign_user_role(state, db_user_1, 'my_role')
@@ -318,23 +315,23 @@ def test__assign_user_role__can_assign_user_many_times(state, session, db_user_1
         assert db_user.role == expected_role.id
 
 
-def test__assign_user_role__cant_assign_invalid_role(state, session, db_user_1):
+def test__assign_user_role__cant_assign_invalid_role(state, db_user_1):
     with pytest.raises(NoRoleWithName):
         UserStore().assign_user_role(state, db_user_1, 'my_role')
 
 
-def test__get_users_role__expected_role_returned(state, session, db_user_1, role_1):
+def test__get_users_role__expected_role_returned(state, db_user_1, role_1):
     role = UserStore().create_role(state, 'role', role_1)
     UserStore().assign_user_role(state, db_user_1, 'role')
     returned_role = UserStore().get_users_role(state, db_user_1)
     assert role.into_roles().as_dict() == returned_role.as_dict()
 
 
-def test__get_users_role__none_returned_if_no_role(state, session, db_user_1):
+def test__get_users_role__none_returned_if_no_role(state, db_user_1):
     assert UserStore().get_users_role(state, db_user_1) is None
 
 
-def test__edit_role__does_not_change_other_roles(state, session, role_1, role_2):
+def test__edit_role__does_not_change_other_roles(state, role_1, role_2):
     UserStore().create_role(state, 'role_a', role_1)
     role_b = UserStore().create_role(state, 'role_b', role_2)
     UserStore().edit_role(state, 'role_a', role_2)
@@ -344,7 +341,7 @@ def test__edit_role__does_not_change_other_roles(state, session, role_1, role_2)
         assert db_role_b.into_roles().as_dict() == role_b.into_roles().as_dict()
 
 
-def test__get_all_roles__success(state, session, role_1, role_2, db_role_1, db_role_2, role_name_1, role_name_2):
+def test__get_all_roles__success(state, role_1, role_2, db_role_1, db_role_2, role_name_1, role_name_2):
     roles = UserStore().get_all_roles(state)
     assert len(roles) == 2
     assert roles[0].into_roles().as_dict() == role_1.as_dict()
@@ -368,7 +365,7 @@ def test__get_all_users_paginated__empty_database_returns_empty_list(state, sess
     assert result['total_pages'] == 0
 
 
-def test__get_all_users_paginated__single_user_returns_correct_data(state, session, db_user_1):
+def test__get_all_users_paginated__single_user_returns_correct_data(state, db_user_1):
     """Test that single user is returned with correct structure"""
     result = UserStore().get_all_users_paginated(state, page=1, page_size=50)
     assert len(result['users']) == 1
@@ -385,7 +382,7 @@ def test__get_all_users_paginated__single_user_returns_correct_data(state, sessi
     assert user['connected_apps']['bot'] is False
 
 
-def test__get_all_users_paginated__multiple_users_returns_all(state, session, db_user_1, db_user_2):
+def test__get_all_users_paginated__multiple_users_returns_all(state, db_user_1, db_user_2):
     """Test that multiple users are returned"""
     result = UserStore().get_all_users_paginated(state, page=1, page_size=50)
     assert len(result['users']) == 2
@@ -393,7 +390,7 @@ def test__get_all_users_paginated__multiple_users_returns_all(state, session, db
     assert result['total_pages'] == 1
 
 
-def test__get_all_users_paginated__user_with_role_returns_role_name(state, session, db_user_1, role_1, role_name_1):
+def test__get_all_users_paginated__user_with_role_returns_role_name(state, db_user_1, role_1, role_name_1):
     """Test that user's role name is included"""
     UserStore().create_role(state, role_name_1, role_1)
     UserStore().assign_user_role(state, db_user_1, role_name_1)
@@ -403,7 +400,7 @@ def test__get_all_users_paginated__user_with_role_returns_role_name(state, sessi
     assert user['role'] == role_name_1
 
 
-def test__get_all_users_paginated__user_with_groups_returns_group_names(state, session, db_user_1, db_group_1, db_group_2):
+def test__get_all_users_paginated__user_with_groups_returns_group_names(state, db_user_1, db_group_1, db_group_2):
     """Test that user's group names are included"""
     GroupStore().assign_user_to_group(state, db_user_1, db_group_1)
     GroupStore().assign_user_to_group(state, db_user_1, db_group_2)
@@ -413,7 +410,7 @@ def test__get_all_users_paginated__user_with_groups_returns_group_names(state, s
     assert set(user['groups']) == {db_group_1.name, db_group_2.name}
 
 
-def test__get_all_users_paginated__user_with_discord_shows_connected(state, session, db_user_1, db_discord_user_1):
+def test__get_all_users_paginated__user_with_discord_shows_connected(state, db_user_1, db_discord_user_1):
     """Test that Discord connection is shown"""
     result = UserStore().get_all_users_paginated(state, page=1, page_size=50)
     user = result['users'][0]
@@ -421,7 +418,7 @@ def test__get_all_users_paginated__user_with_discord_shows_connected(state, sess
     assert user['connected_apps']['bot'] is False
 
 
-def test__get_all_users_paginated__user_with_bot_shows_connected(state, session, db_user_1, db_bot_user_1):
+def test__get_all_users_paginated__user_with_bot_shows_connected(state, db_user_1, db_bot_user_1):
     """Test that bot connection is shown"""
     result = UserStore().get_all_users_paginated(state, page=1, page_size=50)
     user = result['users'][0]
@@ -429,9 +426,7 @@ def test__get_all_users_paginated__user_with_bot_shows_connected(state, session,
     assert user['connected_apps']['bot'] is True
 
 
-def test__get_all_users_paginated__user_with_both_connections_shows_both(
-    state, session, db_user_1, db_discord_user_1, db_bot_user_1
-):
+def test__get_all_users_paginated__user_with_both_connections_shows_both(state, db_user_1, db_discord_user_1, db_bot_user_1):
     """Test that both connections are shown"""
     result = UserStore().get_all_users_paginated(state, page=1, page_size=50)
     user = result['users'][0]
@@ -468,7 +463,7 @@ def test__get_all_users_paginated__pagination_second_page(state, session):
     assert result['total_pages'] == 2
 
 
-def test__get_all_users_paginated__pagination_beyond_last_page_returns_empty(state, session, db_user_1):
+def test__get_all_users_paginated__pagination_beyond_last_page_returns_empty(state, db_user_1):
     """Test requesting page beyond available data"""
     result = UserStore().get_all_users_paginated(state, page=5, page_size=50)
     assert len(result['users']) == 0

@@ -1,6 +1,6 @@
 import bw.server  # noqa: F401
-from bw.server import run, production
 from bw.environment import ENVIRONMENT
+from bw.server import production, run
 
 
 def main():

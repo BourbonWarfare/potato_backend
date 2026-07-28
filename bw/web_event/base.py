@@ -1,7 +1,7 @@
-from bw.response import WebEvent
-from typing import Any, cast
 import uuid
+from typing import Any, cast
 
+from bw.response import WebEvent
 
 global_registered_events: dict[str, type['BaseEvent']] = {}
 

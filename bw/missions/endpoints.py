@@ -1,21 +1,21 @@
-from bw.missions.test_status import TestStatus
-from typing import Any
-from uuid import UUID
 import logging
 import urllib.parse
-from quart import Blueprint, render_template_string, request
 from pathlib import Path
+from typing import Any
+from uuid import UUID
 
-from bw.web_utils import json_endpoint, url_endpoint, html_endpoint, html_part_endpoint, load_template_from_disk
-from bw.response import JsonResponse, WebResponse, NotFound
-from bw.models.auth import User
-from bw.auth.decorators import require_session, require_group_permission
+from quart import Blueprint, render_template_string, request
+
+from bw.auth.decorators import require_group_permission, require_session
 from bw.auth.permissions import Permissions
-from bw.missions.api import MissionsApi, TestApi
-from bw.state import State
 from bw.error import ServerConfigNotFound
+from bw.missions.api import MissionsApi, TestApi
+from bw.missions.test_status import TestStatus
+from bw.models.auth import User
+from bw.response import JsonResponse, NotFound, WebResponse
 from bw.server_ops.arma.server import SERVER_MAP
-
+from bw.state import State
+from bw.web_utils import html_endpoint, html_part_endpoint, json_endpoint, load_template_from_disk, url_endpoint
 
 logger = logging.getLogger('bw.missions')
 
@@ -186,7 +186,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         if (current_page - 1) * items_per_page > MissionsApi().mission_count(State.state):
             return NotFound()
 
-        card_template = load_template_from_disk(template_path='missions/mission_card.template.html')
+        card_template = await load_template_from_disk(template_path='missions/mission_card.template.html')
         mission_cards = []
 
         for mission in MissionsApi().get_missions_by_page(State.state, page=current_page, items_per_page=items_per_page):

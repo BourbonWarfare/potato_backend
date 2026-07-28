@@ -1,10 +1,14 @@
-import pytest
 import logging
 import secrets
 
+import alembic.config
+import pytest
 from sqlalchemy.sql import text
 
+import alembic
 from bw.state import State
+
+logger = logging.getLogger()
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -19,7 +23,7 @@ def test_database(request):
     test_db_name = f'bw_integration__{secrets.token_hex(24)}'
     try:
         # Create a temporary DB to do tests in
-        logging.debug(f'CREATE DATABASE {test_db_name}')
+        logger.debug(f'CREATE DATABASE {test_db_name}')
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'CREATE DATABASE {test_db_name}'))
@@ -31,7 +35,35 @@ def test_database(request):
     finally:
         # Drop database to be clean :)
         state.default_database = original_default
-        logging.debug(f'DROP DATABASE {test_db_name}')
+        logger.debug(f'DROP DATABASE {test_db_name}')
         with state.Engine.connect().execution_options(isolation_level='AUTOCOMMIT') as conn:
             conn.execute(text('COMMIT'))
             conn.execute(text(f'DROP DATABASE {test_db_name}'))
+
+
+@pytest.fixture(scope='function', autouse=True)
+def state(test_database):
+    state = State()
+    state.register_database(test_database.default_database)
+    state.default_database = test_database.default_database
+    try:
+        yield state
+    finally:
+        while state.Engine.pool.checkedout() > 0:
+            # wait for connections to time out
+            pass
+        state.Engine.dispose()
+
+
+@pytest.fixture(scope='function', autouse=True)
+def session(state, request):
+    # temporarily create tables for test. downgrade immediately after
+    alembic_cfg = alembic.config.Config(toml_file='./pyproject.toml')
+    logger.debug('alembic upgrade head')
+    with state.Engine.connect() as session:
+        alembic_cfg.attributes['connection'] = session
+        alembic.command.upgrade(alembic_cfg, 'head')
+        try:
+            yield session
+        finally:
+            alembic.command.downgrade(alembic_cfg, 'base')

@@ -1,6 +1,7 @@
-from bw.web_event import BaseEvent
 from dataclasses import dataclass
 from typing import Any
+
+from bw.web_event import BaseEvent
 
 
 class CronEvent(BaseEvent, namespace='cron', abstract=True):

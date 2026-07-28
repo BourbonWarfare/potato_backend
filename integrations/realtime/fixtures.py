@@ -1,25 +1,21 @@
-# ruff: noqa: F811, F401
+# ruff: noqa: F401
 
-import pytest
 import uuid
 
+import pytest
 from sqlalchemy import insert
 
-from bw.models.realtime import Event, QueuedEvent
-from bw.web_event.base import BaseEvent
 from bw.converters import make_json_safe
-
 from bw.events import Broker
+from bw.models.realtime import Event, QueuedEvent
 from bw.realtime.queue import Queue
-
-from integrations.fixtures import state, session
+from bw.web_event.base import BaseEvent
 from integrations.auth.fixtures import (
-    db_user_1,
-    db_session_1,
     db_expired_session_1,
+    db_session_1,
+    db_user_1,
     role_2,
 )
-
 
 # ---------------------------------------------------------------------------
 # Test event class — defined at module level so the metaclass registers it
@@ -30,7 +26,9 @@ from integrations.auth.fixtures import (
 class MockRealtimeEvent(BaseEvent, event='test_event', namespace='test'):
     """Minimal concrete BaseEvent used across realtime integration tests."""
 
-    def __init__(self, id: uuid.UUID = uuid.uuid4(), message: str = 'hello'):
+    def __init__(self, id: uuid.UUID | None, message: str = 'hello'):
+        if not id:
+            id = uuid.uuid4()
         self.id = id
         self.message = message
         super().__init__()
@@ -176,7 +174,7 @@ def endpoint_realtime_sse_url(endpoint_realtime_url) -> str:
 
 
 @pytest.fixture(scope='function')
-def db_event_1(state, session, mock_event_1):
+def db_event_1(state, mock_event_1):
     """Persists mock_event_1 as an Event row and yields the detached model."""
     event_model = Event(
         event=mock_event_1.encoded_string(),
@@ -192,7 +190,7 @@ def db_event_1(state, session, mock_event_1):
 
 
 @pytest.fixture(scope='function')
-def db_event_2(state, session, mock_event_2):
+def db_event_2(state, mock_event_2):
     """Persists mock_event_2 as an Event row and yields the detached model."""
     event_model = Event(
         event=mock_event_2.encoded_string(),
@@ -208,7 +206,7 @@ def db_event_2(state, session, mock_event_2):
 
 
 @pytest.fixture(scope='function')
-def db_event_no_id(state, session, mock_event_no_id):
+def db_event_no_id(state, mock_event_no_id):
     """Persists mock_event_no_id as an Event row and yields the detached model."""
     event_model = Event(
         event=mock_event_no_id.encoded_string(),
@@ -223,7 +221,7 @@ def db_event_no_id(state, session, mock_event_no_id):
 
 
 @pytest.fixture(scope='function')
-def db_event_different_namespace(state, session, mock_event_different_namespace):
+def db_event_different_namespace(state, mock_event_different_namespace):
     """Persists mock_event_different_namespace as an Event row and yields the detached model."""
     event_model = Event(
         event=mock_event_different_namespace.encoded_string(),
@@ -239,7 +237,7 @@ def db_event_different_namespace(state, session, mock_event_different_namespace)
 
 
 @pytest.fixture(scope='function')
-def db_event_different_event(state, session, mock_event_different_event):
+def db_event_different_event(state, mock_event_different_event):
     """Persists mock_event_different_event as an Event row and yields the detached model."""
     event_model = Event(
         event=mock_event_different_event.encoded_string(),
@@ -255,7 +253,7 @@ def db_event_different_event(state, session, mock_event_different_event):
 
 
 @pytest.fixture(scope='function')
-def db_queued_event_1(state, session, db_event_1):
+def db_queued_event_1(state, db_event_1):
     """Queues db_event_1 and yields the detached QueuedEvent row."""
     queued = QueuedEvent(event=db_event_1.id)
     with state.Session.begin() as s:
@@ -266,7 +264,7 @@ def db_queued_event_1(state, session, db_event_1):
 
 
 @pytest.fixture(scope='function')
-def db_queued_event_different_namespace(state, session, db_event_different_namespace):
+def db_queued_event_different_namespace(state, db_event_different_namespace):
     """Queues db_event_1 and yields the detached QueuedEvent row."""
     queued = QueuedEvent(event=db_event_different_namespace.id)
     with state.Session.begin() as s:
@@ -277,7 +275,7 @@ def db_queued_event_different_namespace(state, session, db_event_different_names
 
 
 @pytest.fixture(scope='function')
-def db_queued_event_different_event(state, session, db_event_different_event):
+def db_queued_event_different_event(state, db_event_different_event):
     """Queues db_event_1 and yields the detached QueuedEvent row."""
     queued = QueuedEvent(event=db_event_different_event.id)
     with state.Session.begin() as s:
@@ -300,7 +298,7 @@ def mock_queue(mock_broker) -> Queue:
 
 
 @pytest.fixture(scope='function')
-def db_queued_event_2(state, session, db_event_2):
+def db_queued_event_2(state, db_event_2):
     """Queues db_event_2 and yields the detached QueuedEvent row."""
     queued = QueuedEvent(event=db_event_2.id)
     with state.Session.begin() as s:

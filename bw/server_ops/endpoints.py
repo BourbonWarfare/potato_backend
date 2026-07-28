@@ -1,5 +1,7 @@
 import logging
+
 from quart import Blueprint
+
 from bw.server_ops.arma.endpoints import define_arma
 
 logger = logging.getLogger('bw.server_ops')

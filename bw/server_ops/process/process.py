@@ -1,14 +1,17 @@
-from bw.error import NoProcessWithNameAndNamespace, NoProcessWithUuid, DeletingProcessWithAliveChild
-from sqlalchemy.exc import NoResultFound, ProgrammingError
-from uuid import UUID
 import datetime
-from bw.state import State
-from bw.server_ops.process.state import State as ProcessState
-from bw.models.process import Process
 from collections.abc import Generator
 from contextlib import contextmanager
-from sqlalchemy import select, or_
+from uuid import UUID
+
+from sqlalchemy import or_, select
+from sqlalchemy.exc import NoResultFound, ProgrammingError
 from sqlalchemy.orm import aliased
+
+from bw.error import DeletingProcessWithAliveChild, NoProcessWithNameAndNamespace, NoProcessWithUuid
+from bw.models.process import Process
+from bw.server_ops.process.state import State as ProcessState
+from bw.settings import TIMEZONE
+from bw.state import State
 
 
 class ProcessStateManager:
@@ -17,11 +20,11 @@ class ProcessStateManager:
 
     def update_state(self, state: ProcessState):
         self.process.state = state
-        self.process.state_updated = datetime.datetime.now()
+        self.process.state_updated = datetime.datetime.now(tz=TIMEZONE)
 
     def update_status(self, status: str):
         self.process.status = status
-        self.process.status_updated = datetime.datetime.now()
+        self.process.status_updated = datetime.datetime.now(tz=TIMEZONE)
 
 
 class ProcessStore:
@@ -42,7 +45,7 @@ class ProcessStore:
                 yield ProcessStateManager(process)
                 if update_state:
                     process.state = state_on_success
-                    process.state_updated = datetime.datetime.now()
+                    process.state_updated = datetime.datetime.now(tz=TIMEZONE)
                 session.flush()
                 session.expunge(process)
             print('succ')
@@ -52,7 +55,7 @@ class ProcessStore:
                 session.add(process)
                 if update_state:
                     process.state = state_on_error
-                    process.state_updated = datetime.datetime.now()
+                    process.state_updated = datetime.datetime.now(tz=TIMEZONE)
                 session.flush()
                 session.expunge(process)
             raise

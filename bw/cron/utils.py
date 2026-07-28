@@ -15,10 +15,10 @@ def backoff(delay=2, retries=3, max_delay=float('inf')):
                         return await func(*args, **kwargs)
                     else:
                         return func(*args, **kwargs)
-                except Exception as e:
+                except Exception:
                     current_retry += 1
                     if current_retry >= retries:
-                        raise e
+                        raise
                     await asyncio.sleep(current_delay + random.random() * delay)
                     current_delay *= 2
                     current_delay = min(current_delay, max_delay)

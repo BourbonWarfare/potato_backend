@@ -1,13 +1,15 @@
-from bw.error import EventNotRegistered
 import datetime
-from bw.web_event.base import global_registered_events
-from sqlalchemy import select, or_, delete
 import uuid
 from collections.abc import Iterable
-from bw.state import State
-from bw.models.realtime import Event, QueuedEvent, PublishedEvent
-from bw.web_event import BaseEvent
+
+from sqlalchemy import delete, or_, select
+
 from bw.converters import make_json_safe
+from bw.error import EventNotRegistered
+from bw.models.realtime import Event, PublishedEvent, QueuedEvent
+from bw.state import State
+from bw.web_event import BaseEvent
+from bw.web_event.base import global_registered_events
 
 
 class EventStore:

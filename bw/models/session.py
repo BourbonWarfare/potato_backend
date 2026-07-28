@@ -1,9 +1,9 @@
 import datetime
 import uuid
-
-from sqlalchemy import func, Uuid
-from sqlalchemy.orm import Mapped, mapped_column
 from uuid import UUID
+
+from sqlalchemy import Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.models import Base
 

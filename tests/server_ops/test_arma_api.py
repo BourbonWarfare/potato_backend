@@ -1,18 +1,19 @@
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from pathlib import Path
-import shutil
 import dataclasses
 import json
+import shutil
+from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
 
-from bw.server_ops.arma.api import ArmaApi
-from bw.server_ops.arma.server import Server
-from bw.server_ops.arma.server_status import ServerStatus, ServerState
-from bw.server_ops.arma.mod import Mod, Kind, Modlist
+import pytest
+
 from bw.error import ArmaServerUnresponsive
-from bw.response import WebResponse, Ok, JsonResponse
-from bw.state import State
 from bw.events import Broker
+from bw.response import JsonResponse, Ok, WebResponse
+from bw.server_ops.arma.api import ArmaApi
+from bw.server_ops.arma.mod import Kind, Mod, Modlist
+from bw.server_ops.arma.server import Server
+from bw.server_ops.arma.server_status import ServerState, ServerStatus
+from bw.state import State
 
 
 @pytest.fixture(scope='function')
@@ -287,13 +288,11 @@ def mock_filesystem_with_copy_errors():
         patch('bw.server_ops.arma.api.os.path.exists', return_value=False),
         patch('bw.server_ops.arma.api.os.makedirs'),
         patch('bw.server_ops.arma.api.shutil.copy', side_effect=shutil.SameFileError('Same file')),
+        patch('pathlib.Path.iterdir'),
+        patch('pathlib.Path.mkdir'),
+        patch('pathlib.Path.exists', return_value=False),
     ):
-        with (
-            patch('pathlib.Path.iterdir'),
-            patch('pathlib.Path.mkdir'),
-            patch('pathlib.Path.exists', return_value=False),
-        ):
-            yield
+        yield
 
 
 @pytest.fixture

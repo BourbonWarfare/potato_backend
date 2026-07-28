@@ -1,16 +1,16 @@
-from sqlalchemy import insert, delete, select
-from sqlalchemy.exc import NoResultFound, IntegrityError
+from sqlalchemy import delete, insert, select
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from bw.state import State
-from bw.models.auth import User, Group, GroupPermission, UserGroup
+from bw.auth.permissions import Permissions
 from bw.error import (
+    GroupAssignmentFailed,
     GroupCreationFailed,
     GroupPermissionCreationFailed,
     NoGroupPermissionWithCredentials,
-    GroupAssignmentFailed,
     NoGroupWithName,
 )
-from bw.auth.permissions import Permissions
+from bw.models.auth import Group, GroupPermission, User, UserGroup
+from bw.state import State
 
 
 class GroupStore:

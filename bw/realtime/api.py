@@ -1,5 +1,6 @@
-from bw.models.realtime import QueuedEvent
 from collections.abc import Iterable
+
+from bw.models.realtime import QueuedEvent
 from bw.realtime.event import EventStore
 from bw.state import State
 from bw.web_event.base import BaseEvent

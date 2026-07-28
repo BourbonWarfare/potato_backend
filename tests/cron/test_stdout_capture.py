@@ -1,7 +1,8 @@
-import pytest
 import sys
-from unittest import mock
 from contextlib import contextmanager
+from unittest import mock
+
+import pytest
 
 from bw.cron.stdout_capture import OutCapture
 

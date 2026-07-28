@@ -1,6 +1,7 @@
+from typing import Self
+
 from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
-from typing import Self
 
 from bw.models import Base
 from bw.models.types import HtmlSafeString

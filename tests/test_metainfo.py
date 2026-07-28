@@ -1,6 +1,5 @@
-# ruff: noqa: F811, F401
-
 import pytest
+
 from bw.missions.metainfo import Metainfo
 
 

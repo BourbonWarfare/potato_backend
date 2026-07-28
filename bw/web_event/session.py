@@ -1,8 +1,9 @@
-from bw.session.orbat import Orbat
-from bw.web_event import BaseEvent
+import uuid
 from dataclasses import dataclass
 from typing import Any
-import uuid
+
+from bw.session.orbat import Orbat
+from bw.web_event import BaseEvent
 
 
 class SessionEvent(BaseEvent, namespace='session', abstract=True):

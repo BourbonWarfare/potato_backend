@@ -1,17 +1,18 @@
-from bw.models.auth import User
-from bw.web_event.base import global_registered_events
-from bw.web_event.connection import EndEvent
 import logging
-from quart import Blueprint
 from collections.abc import AsyncIterator
 from typing import Any
 
-from bw.web_utils import json_endpoint, sse_endpoint
-from bw.response import Created, DoesNotExist
+from quart import Blueprint
+
 from bw.auth.decorators import require_session, require_user_role
 from bw.auth.roles import Roles
-from bw.web_event import BaseEvent, StartEvent
+from bw.models.auth import User
+from bw.response import Created, DoesNotExist
 from bw.state import State
+from bw.web_event import BaseEvent, StartEvent
+from bw.web_event.base import global_registered_events
+from bw.web_event.connection import EndEvent
+from bw.web_utils import json_endpoint, sse_endpoint
 
 logger = logging.getLogger('bw.realtime')
 

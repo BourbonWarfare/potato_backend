@@ -1,5 +1,6 @@
-from bw.settings import GLOBAL_CONFIGURATION as GC
 from pathlib import Path
+
+from bw.settings import GLOBAL_CONFIGURATION as GC
 
 
 class Environment:

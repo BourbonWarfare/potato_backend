@@ -1,9 +1,11 @@
-import pytest
 import unittest
-from bw.auth.decorators import require_local, require_session, require_group_permission, require_user_role
-from bw.error.auth import NonLocalIpAccessingLocalOnlyAddress, CannotDetermineSession, SessionExpired, NotEnoughPermissions
+
+import pytest
+
+from bw.auth.decorators import require_group_permission, require_local, require_session, require_user_role
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
+from bw.error.auth import CannotDetermineSession, NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
 
 
 class MockUser:
@@ -131,13 +133,15 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            tester()
         assert mock_validator.called
         assert mock_get_session_user.called
         assert called
@@ -151,22 +155,26 @@ class TestRequireSession:
             assert isinstance(arg2, str)
             assert arg2 == 'test'
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session'):
-            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    tester(arg1=42, arg2='test')
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session'),
+            unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            tester(arg1=42, arg2='test')
 
     def test__require_session__sync__proper_return(self):
         @require_session
         def tester(session_user):
             return 42
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session'):
-            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    assert 42 == tester()
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session'),
+            unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            assert 42 == tester()
 
     def test__require_session__sync__without_header_fails(self):
         called = False
@@ -177,14 +185,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {}
-                    with pytest.raises(CannotDetermineSession):
-                        tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {}
+            with pytest.raises(CannotDetermineSession):
+                tester()
         assert not mock_validator.called
         assert not mock_get_session_user.called
         assert not called
@@ -198,14 +208,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Meercat valid_token'}
-                    with pytest.raises(CannotDetermineSession):
-                        tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Meercat valid_token'}
+            with pytest.raises(CannotDetermineSession):
+                tester()
         assert not mock_validator.called
         assert not mock_get_session_user.called
         assert not called
@@ -219,14 +231,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session', side_effect=SessionExpired) as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session', side_effect=SessionExpired) as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    with pytest.raises(SessionExpired):
-                        tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            with pytest.raises(SessionExpired):
+                tester()
         assert mock_validator.called
         assert not mock_get_session_user.called
         assert not called
@@ -240,14 +254,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', side_effect=SessionExpired
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    with pytest.raises(SessionExpired):
-                        tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            with pytest.raises(SessionExpired):
+                tester()
         assert mock_validator.called
         assert mock_get_session_user.called
         assert not called
@@ -262,13 +278,15 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    await tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            await tester()
         assert mock_validator.called
         assert mock_get_session_user.called
         assert called
@@ -283,11 +301,13 @@ class TestRequireSession:
             assert isinstance(arg2, str)
             assert arg2 == 'test'
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session'):
-            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    await tester(arg1=42, arg2='test')
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session'),
+            unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            await tester(arg1=42, arg2='test')
 
     @pytest.mark.asyncio
     async def test__require_session__async__proper_return(self):
@@ -295,11 +315,13 @@ class TestRequireSession:
         async def tester(session_user):
             return 42
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session'):
-            with unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456):
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    assert 42 == await tester()
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session'),
+            unittest.mock.patch('bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            assert 42 == await tester()
 
     @pytest.mark.asyncio
     async def test__require_session__async__without_header_fails(self):
@@ -311,14 +333,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {}
-                    with pytest.raises(CannotDetermineSession):
-                        tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {}
+            with pytest.raises(CannotDetermineSession):
+                tester()
         assert not mock_validator.called
         assert not mock_get_session_user.called
         assert not called
@@ -333,14 +357,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Meercat valid_token'}
-                    with pytest.raises(CannotDetermineSession):
-                        await tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Meercat valid_token'}
+            with pytest.raises(CannotDetermineSession):
+                await tester()
         assert not mock_validator.called
         assert not mock_get_session_user.called
         assert not called
@@ -355,14 +381,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session', side_effect=SessionExpired) as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session', side_effect=SessionExpired) as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', return_value=123456
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    with pytest.raises(SessionExpired):
-                        await tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            with pytest.raises(SessionExpired):
+                await tester()
         assert mock_validator.called
         assert not mock_get_session_user.called
         assert not called
@@ -377,14 +405,16 @@ class TestRequireSession:
             called = True
             assert session_user == 123456
 
-        with unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator:
-            with unittest.mock.patch(
+        with (
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+            unittest.mock.patch(
                 'bw.auth.decorators.SessionStore.get_user_from_session_token', side_effect=SessionExpired
-            ) as mock_get_session_user:
-                with unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request:
-                    mock_request.headers = {'Authorization': 'Bearer valid_token'}
-                    with pytest.raises(SessionExpired):
-                        await tester()
+            ) as mock_get_session_user,
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+        ):
+            mock_request.headers = {'Authorization': 'Bearer valid_token'}
+            with pytest.raises(SessionExpired):
+                await tester()
         assert mock_validator.called
         assert mock_get_session_user.called
         assert not called

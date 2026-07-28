@@ -1,14 +1,17 @@
-from bw.environment import ENVIRONMENT
+import aiofiles
 from quart import Blueprint, Quart
 
-from bw.auth.endpoints import define_auth, define_user, define_group, define_html as define_auth_html
-from bw.missions.endpoints import define as missions_define, define_html as missions_define_html
-from bw.server_ops.endpoints import define as server_ops_define
+from bw.auth.endpoints import define_auth, define_group, define_user
+from bw.auth.endpoints import define_html as define_auth_html
+from bw.environment import ENVIRONMENT
+from bw.missions.endpoints import define as missions_define
+from bw.missions.endpoints import define_html as missions_define_html
 from bw.realtime.endpoints import define as realtime_define
-from bw.session.endpoints import define as sessions_define, define_html as session_define_html
-
 from bw.response import Ok, WebResponse
-from bw.web_utils import html_endpoint, url_endpoint, chunk_file_response
+from bw.server_ops.endpoints import define as server_ops_define
+from bw.session.endpoints import define as sessions_define
+from bw.session.endpoints import define_html as session_define_html
+from bw.web_utils import chunk_file_response, html_endpoint, url_endpoint
 
 
 def define(app: Quart):
@@ -21,7 +24,8 @@ def define(app: Quart):
         @app.get('/static/css/<string:path>')
         @url_endpoint
         async def static_file(path: str) -> WebResponse:
-            return chunk_file_response(open(f'static/css/{path}'), mimetype='text/css')
+            file = await aiofiles.open(f'static/css/{path}')
+            return chunk_file_response(file, mimetype='text/css')
 
     api_blueprint = Blueprint('bw_api', __name__, url_prefix='/api/v1')
     local_blueprint = Blueprint('bw_api_local', __name__, url_prefix='/api/local')

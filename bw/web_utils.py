@@ -1,19 +1,21 @@
-from inspect import isawaitable
+import asyncio
+import functools
+import inspect
+import json
 import logging
 import traceback
-import functools
-import asyncio
-import json
-from typing import Any, IO
-from collections.abc import AsyncIterator, AsyncGenerator, Callable, Awaitable, Iterable
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
+from inspect import isawaitable
 from pathlib import Path
-from quart import request, render_template_string
+from typing import IO, Any
 
-from bw.error import ExpectedJson, BadArguments, JsonPayloadError, BwServerError, BadHeader, WrongAccept
-from bw.response import JsonResponse, WebResponse, WebEvent, ServerSentEventResponse, ServerSentResponseError, ChunkedResponse
-from bw.web_event import BaseEvent
+import aiofiles
+from quart import render_template_string, request
+
 from bw.converters import make_json_safe
-
+from bw.error import BadArguments, BadHeader, BwServerError, ExpectedJson, JsonPayloadError, WrongAccept
+from bw.response import ChunkedResponse, JsonResponse, ServerSentEventResponse, ServerSentResponseError, WebEvent, WebResponse
+from bw.web_event import BaseEvent
 
 logger = logging.getLogger('bw.web_utils')
 
@@ -176,7 +178,7 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
     async def wrapper(*args, **kwargs):
         converted_json = await request.get_json()
         if converted_json is not None:
-            for key in converted_json.keys():
+            for key in converted_json:
                 if key in kwargs:
                     logger.warning(f'Duplicate key found while parsing arguments: {key}')
                     return JsonPayloadError().as_response_code()
@@ -249,8 +251,9 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
             html = load_template_from_disk(template_path=template_path)
             page = load_template_from_disk(template_path='page.html')
 
+            kwargs['html'] = html
             try:
-                inner_html = await func(html=html, *args, **kwargs)
+                inner_html = await func(*args, **kwargs)
             except BwServerError as e:
                 logger.warning(e)
                 inner_html = load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
@@ -303,15 +306,16 @@ def html_part_endpoint(*, template_path: Path | str):
     def decorator(func: Callable[..., Awaitable[str | WebResponse]]):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            with open(template_path, encoding='utf-8') as file:
-                html = file.read()
+            async with aiofiles.open(template_path, encoding='utf-8') as file:
+                html = await file.read()
 
+            kwargs['html'] = html
             try:
-                inner_html = await func(html=html, *args, **kwargs)
+                inner_html = await func(*args, **kwargs)
             except BwServerError as e:
                 logger.warning(e)
-                with open(templates_path / 'error' / f'{e.status()}.html', encoding='utf-8') as file:
-                    inner_html = file.read()
+                async with aiofiles.open(templates_path / 'error' / f'{e.status()}.html', encoding='utf-8') as file:
+                    inner_html = await file.read()
 
             if isinstance(inner_html, str):
                 return chunk_text_response(inner_html, mimetype='text/html')
@@ -355,7 +359,7 @@ def sse_endpoint(func: Callable[..., AsyncIterator[WebEvent | BaseEvent]]):
     async def wrapper(*args, **kwargs) -> ServerSentEventResponse:
         if 'text/event-stream' not in request.accept_mimetypes:
             exception = WrongAccept(recieved=', '.join(request.accept_mimetypes.values()), expected='text/event-stream')
-            logger.error(f'Cannot connect SSE socket: {str(exception)}')
+            logger.error(f'Cannot connect SSE socket: {exception!s}')
             return ServerSentResponseError(exception.status())
 
         async def async_byte_generator() -> AsyncGenerator[bytes]:
@@ -408,7 +412,7 @@ def unwrap_headers(*headers: tuple[str, Any]):
 
 
 def chunk_text_response(
-    to_stream: str, *, max_chunk_size: int = 2**10, headers: dict[str, Any] = {}, mimetype: str | None = None
+    to_stream: str, *, max_chunk_size: int = 2**10, headers: dict[str, Any] | None = None, mimetype: str | None = None
 ) -> ChunkedResponse:
     async def chunk_generator():
         to_stream_bin = to_stream.encode('utf-8')
@@ -419,7 +423,7 @@ def chunk_text_response(
 
 
 def chunk_json_response(
-    to_stream: Iterable[dict[str, Any]], *, max_chunk_size: int = 2**10, headers: dict[str, Any] = {}
+    to_stream: Iterable[dict[str, Any]], *, max_chunk_size: int = 2**10, headers: dict[str, Any] | None = None
 ) -> ChunkedResponse:
     async def chunk_generator():
         response_buffer: bytes = b''
@@ -446,11 +450,17 @@ def chunk_json_response(
 
 
 def chunk_file_response(
-    file_obj: IO, *, chunk_size: int = 2**10, headers: dict[str, Any] = {}, mimetype: str | None = None
+    file_obj: IO, *, chunk_size: int = 2**10, headers: dict[str, Any] | None = None, mimetype: str | None = None
 ) -> ChunkedResponse:
+    async def read_file(file_obj: IO, chunk_size: int) -> str | bytes:
+        if inspect.iscoroutinefunction(file_obj.read):
+            return await file_obj.read(chunk_size)
+        else:
+            return file_obj.read(chunk_size)
+
     async def chunk_generator():
         try:
-            while chunk := file_obj.read(chunk_size):
+            while chunk := await read_file(file_obj, chunk_size):
                 if isinstance(chunk, str):
                     yield chunk.encode('utf-8')
                 else:

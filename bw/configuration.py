@@ -1,21 +1,20 @@
 import os
 import tomllib
-
+from collections.abc import Callable, Sequence
 from enum import StrEnum
 from pathlib import Path
 from typing import Self
-from collections.abc import Sequence
-from collections.abc import Callable
+
+from dotenv import dotenv_values
 
 from bw.error import (
-    DuplicateConfigKey,
-    ConfigurationKeyNotPresent,
     ConfigIsNotEnv,
     ConfigIsNotKeyValue,
     ConfigIsNotToml,
+    ConfigurationKeyNotPresent,
+    DuplicateConfigKey,
     UnknownConfigFileType,
 )
-from dotenv import dotenv_values
 
 
 def enforce_lowercase_keys(func: Callable[..., 'Configuration']):
@@ -23,7 +22,7 @@ def enforce_lowercase_keys(func: Callable[..., 'Configuration']):
         config = func(self, *args, **kwargs)
 
         to_delete = []
-        for key in config.keys():
+        for key in config:
             if key.lower() != key:
                 to_delete.append(key)
 

@@ -1,19 +1,20 @@
 import logging
-from bw.state import State
-from bw.response import JsonResponse, Ok, WebResponse, Exists, DoesNotExist
-from bw.auth.session import SessionStore
-from bw.auth.user import UserStore
-from bw.auth.group import GroupStore
-from bw.auth.types import DiscordSnowflake
-from bw.auth.roles import Roles
-from bw.auth.permissions import Permissions
-from bw.models.auth import User
-from bw.error import BwServerError, SessionExpired
-from bw.web_utils import define_api
-from bw.environment import ENVIRONMENT
-from bw.error import ReauthNeededError, AuthError, NoUserWithGivenCredentials
 import uuid
+
 import aiohttp
+
+from bw.auth.group import GroupStore
+from bw.auth.permissions import Permissions
+from bw.auth.roles import Roles
+from bw.auth.session import SessionStore
+from bw.auth.types import DiscordSnowflake
+from bw.auth.user import UserStore
+from bw.environment import ENVIRONMENT
+from bw.error import AuthError, BwServerError, NoUserWithGivenCredentials, ReauthNeededError, SessionExpired
+from bw.models.auth import User
+from bw.response import DoesNotExist, Exists, JsonResponse, Ok, WebResponse
+from bw.state import State
+from bw.web_utils import define_api
 
 logger = logging.getLogger('bw.auth')
 
@@ -42,14 +43,13 @@ class AuthApi:
         # Error: WebResponse(status=400, reason='An internal error occurred')
         ```
         """
-        with state.Session.begin() as session:
-            with session.begin_nested() as savepoint:
-                user = UserStore().create_user(state)
-                try:
-                    bot = UserStore().link_bot_user(state, user)
-                except BwServerError as e:
-                    savepoint.rollback()
-                    raise e
+        with state.Session.begin() as session, session.begin_nested() as savepoint:
+            user = UserStore().create_user(state)
+            try:
+                bot = UserStore().link_bot_user(state, user)
+            except BwServerError:
+                savepoint.rollback()
+                raise
         return JsonResponse({'bot_token': bot.bot_token}, status=201)
 
     @define_api
@@ -81,16 +81,18 @@ class AuthApi:
         ```
         """
         headers = {'Authorization': f'Bearer {token}'}
-        async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.get(f'{ENVIRONMENT.discord_api_url()}/users/@me') as response:
-                try:
-                    response.raise_for_status()
-                except aiohttp.ClientResponseError as e:
-                    if e.status == 401:
-                        raise ReauthNeededError(e.message, 'Discord OAuth')
-                    raise AuthError(e.message)
+        async with (
+            aiohttp.ClientSession(headers=headers) as session,
+            session.get(f'{ENVIRONMENT.discord_api_url()}/users/@me') as response,
+        ):
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError as e:
+                if e.status == 401:
+                    raise ReauthNeededError(e.message, 'Discord OAuth')
+                raise AuthError(e.message)
 
-                user = await response.json()
+            user = await response.json()
 
         discord_id = DiscordSnowflake(user['id'])
         logger.info(f'Discord user {discord_id} is logging in')

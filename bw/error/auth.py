@@ -1,6 +1,7 @@
-from bw.error.base import ClientError, ConflictError, NotFoundError
-from bw.auth.types import DiscordSnowflake
 from typing import Any
+
+from bw.auth.types import DiscordSnowflake
+from bw.error.base import ClientError, ConflictError, NotFoundError
 
 
 class AuthError(ClientError):

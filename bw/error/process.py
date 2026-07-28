@@ -1,5 +1,6 @@
-from bw.error.base import BwServerError
 from uuid import UUID
+
+from bw.error.base import BwServerError
 
 
 class ProcessError(BwServerError):

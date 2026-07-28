@@ -1,16 +1,16 @@
-from bw.session.orbat import Orbat
-from uuid import UUID
-from bw.session.api import SessionApi
-from bw.auth.roles import Roles
 import logging
-from quart import Blueprint
+from uuid import UUID
+
 from dacite import from_dict
+from quart import Blueprint
 
-from bw.web_utils import json_endpoint, url_endpoint
-from bw.response import JsonResponse, Ok
-from bw.models.auth import User
 from bw.auth.decorators import require_session, require_user_role
-
+from bw.auth.roles import Roles
+from bw.models.auth import User
+from bw.response import JsonResponse, Ok
+from bw.session.api import SessionApi
+from bw.session.orbat import Orbat
+from bw.web_utils import json_endpoint, url_endpoint
 
 logger = logging.getLogger('bw.session')
 

@@ -1,6 +1,8 @@
-import objsize
 import logging
 from typing import Any, Optional
+
+import objsize
+
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.web_event import BaseEvent
 

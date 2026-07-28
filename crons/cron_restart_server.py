@@ -1,6 +1,7 @@
+import aiohttp
+
 from bw.environment import ENVIRONMENT
 from crons.cron import Cron
-import aiohttp
 
 
 class RestartServer(Cron):
@@ -22,7 +23,7 @@ class RestartServer(Cron):
             async with session.get(f'{ENVIRONMENT.server_url()}/api/v1/server_ops/arma/{server}/healthcheck') as request:
                 try:
                     request.raise_for_status()
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     print(f'Failed to get status on {server}: {e}')
                     continue
 
@@ -31,5 +32,5 @@ class RestartServer(Cron):
                 try:
                     request.raise_for_status()
                     print(f'Succesfully restarted {server}')
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     print(f'Failed to restart {server}: {e}')

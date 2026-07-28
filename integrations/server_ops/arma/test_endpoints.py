@@ -2,26 +2,35 @@
 
 import pytest
 
-from integrations.fixtures import test_app, session, state
+from bw.auth.user import UserStore
+from bw.response import WebResponse
+from bw.server_ops.arma.mod import MODLISTS, MODS, Mod, Modlist, WorkshopId
 from integrations.auth.fixtures import (
-    db_user_1,
-    db_session_1,
-    expire_invalid,
     db_expired_session_1,
-    token_1,
+    db_server_manager,
+    db_session_1,
+    db_user_1,
+    expire_invalid,
     server_manager,
     server_manager_name,
-    db_server_manager,
+    token_1,
 )
+from integrations.fixtures import test_app
 from integrations.server_ops.arma.fixtures import (
+    endpoint_arma_base_url,
+    endpoint_modlists_url,
+    endpoint_mods_url,
+    endpoint_reload_modlists_url,
+    endpoint_reload_mods_url,
+    endpoint_server_modlist_url,
+    endpoint_server_mods_url,
+    endpoint_servers_url,
+    existing_mod_name,
     mock_mod_1,
     mock_mod_2,
     mock_mod_name_1,
     mock_mod_name_2,
     mock_mod_name_3,
-    mock_workshop_id_1,
-    mock_workshop_id_2,
-    mock_workshop_id_3,
     mock_modlist_1,
     mock_modlist_2,
     mock_modlist_3,
@@ -32,35 +41,25 @@ from integrations.server_ops.arma.fixtures import (
     mock_modlist_name_4,
     mock_modlist_name_5,
     mock_modlist_name_6,
+    mock_server_1,
+    mock_server_2,
+    mock_server_3,
+    mock_workshop_id_1,
+    mock_workshop_id_2,
+    mock_workshop_id_3,
+    nonexistent_mod_name,
     server_name_1,
     server_name_2,
     server_name_3,
     server_name_4,
-    existing_mod_name,
-    nonexistent_mod_name,
-    endpoint_mods_url,
-    endpoint_server_mods_url,
-    endpoint_modlists_url,
-    endpoint_server_modlist_url,
-    endpoint_reload_mods_url,
-    endpoint_reload_modlists_url,
-    endpoint_arma_base_url,
-    endpoint_servers_url,
-    mock_server_1,
-    mock_server_2,
-    mock_server_3,
 )
-from bw.server_ops.arma.mod import MODS, MODLISTS, Mod, Modlist, WorkshopId
-from bw.auth.user import UserStore
-from bw.response import WebResponse
-
 
 # Tests for GET /<server>/rpt
 
 
 @pytest.mark.asyncio
 async def test__get_latest_rpt__returns_stream_successfully(
-    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
 ):
     """Test that GET /<server>/rpt successfully returns the latest RPT stream"""
     # Arrange
@@ -81,7 +80,7 @@ async def test__get_latest_rpt__returns_stream_successfully(
 
 @pytest.mark.asyncio
 async def test__get_latest_rpt__returns_404_when_not_found(
-    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_2
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_2
 ):
     """Test that GET /<server>/rpt returns 404 when server or RPT logs are missing"""
     # Arrange
@@ -99,7 +98,7 @@ async def test__get_latest_rpt__returns_404_when_not_found(
 
 
 @pytest.mark.asyncio
-async def test__get_latest_rpt__requires_authentication(state, session, test_app, endpoint_arma_base_url, server_name_1):
+async def test__get_latest_rpt__requires_authentication(state, test_app, endpoint_arma_base_url, server_name_1):
     """Test that GET /<server>/rpt requires authentication"""
     # Act
     url = f'{endpoint_arma_base_url}/{server_name_1}/rpt'
@@ -111,7 +110,7 @@ async def test__get_latest_rpt__requires_authentication(state, session, test_app
 
 @pytest.mark.asyncio
 async def test__get_latest_rpt__requires_permission(
-    state, session, test_app, db_user_1, db_session_1, endpoint_arma_base_url, server_name_1
+    state, test_app, db_user_1, db_session_1, endpoint_arma_base_url, server_name_1
 ):
     """Test that GET /<server>/rpt requires can_manage_server role"""
     # Act
@@ -124,7 +123,7 @@ async def test__get_latest_rpt__requires_permission(
 
 @pytest.mark.asyncio
 async def test__get_latest_rpt__rejects_expired_session(
-    mocker, state, session, test_app, db_user_1, db_expired_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
+    mocker, state, test_app, db_user_1, db_expired_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
 ):
     """Test that GET /<server>/rpt rejects expired sessions"""
     # Arrange
@@ -142,7 +141,7 @@ async def test__get_latest_rpt__rejects_expired_session(
 
 
 @pytest.mark.asyncio
-async def test__get_configured_mods__returns_mods(mocker, state, session, test_app, endpoint_mods_url, mock_mod_1, mock_mod_2):
+async def test__get_configured_mods__returns_mods(mocker, state, test_app, endpoint_mods_url, mock_mod_1, mock_mod_2):
     """Test that GET /mods returns all configured mods"""
     mock_mods = {
         mock_mod_1.name: mock_mod_1,
@@ -161,7 +160,7 @@ async def test__get_configured_mods__returns_mods(mocker, state, session, test_a
 
 
 @pytest.mark.asyncio
-async def test__get_configured_mods__returns_empty_list(mocker, state, session, test_app, endpoint_mods_url):
+async def test__get_configured_mods__returns_empty_list(mocker, state, test_app, endpoint_mods_url):
     """Test that GET /mods returns empty list when no mods configured"""
     mocker.patch('bw.server_ops.arma.api.MODS', {})
 
@@ -177,7 +176,7 @@ async def test__get_configured_mods__returns_empty_list(mocker, state, session, 
 
 @pytest.mark.asyncio
 async def test__get_server_mods__returns_server_mods(
-    mocker, state, session, test_app, endpoint_server_mods_url, server_name_1, mock_modlist_1
+    mocker, state, test_app, endpoint_server_mods_url, server_name_1, mock_modlist_1
 ):
     """Test that GET /mods/<server> returns mods for specific server"""
     mock_server = mocker.Mock()
@@ -195,7 +194,7 @@ async def test__get_server_mods__returns_server_mods(
 
 @pytest.mark.asyncio
 async def test__get_server_mods__returns_404_for_nonexistent_server(
-    mocker, state, session, test_app, endpoint_arma_base_url, server_name_2
+    mocker, state, test_app, endpoint_arma_base_url, server_name_2
 ):
     """Test that GET /mods/<server> returns 404 for nonexistent server"""
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
@@ -210,7 +209,7 @@ async def test__get_server_mods__returns_404_for_nonexistent_server(
 
 @pytest.mark.asyncio
 async def test__get_configured_modlists__returns_modlists(
-    mocker, state, session, test_app, endpoint_modlists_url, mock_modlist_2, mock_modlist_3
+    mocker, state, test_app, endpoint_modlists_url, mock_modlist_2, mock_modlist_3
 ):
     """Test that GET /mods/lists returns all configured modlists"""
     mock_modlists = {
@@ -230,7 +229,7 @@ async def test__get_configured_modlists__returns_modlists(
 
 
 @pytest.mark.asyncio
-async def test__get_configured_modlists__returns_empty_dict(mocker, state, session, test_app, endpoint_modlists_url):
+async def test__get_configured_modlists__returns_empty_dict(mocker, state, test_app, endpoint_modlists_url):
     """Test that GET /mods/lists returns empty dict when no modlists configured"""
     mocker.patch('bw.server_ops.arma.api.MODLISTS', {})
 
@@ -246,7 +245,7 @@ async def test__get_configured_modlists__returns_empty_dict(mocker, state, sessi
 
 @pytest.mark.asyncio
 async def test__get_server_modlist__returns_server_modlist(
-    mocker, state, session, test_app, endpoint_server_modlist_url, server_name_1, mock_modlist_1
+    mocker, state, test_app, endpoint_server_modlist_url, server_name_1, mock_modlist_1
 ):
     """Test that GET /mods/list/<server> returns modlist for specific server"""
     mock_server = mocker.Mock()
@@ -265,7 +264,7 @@ async def test__get_server_modlist__returns_server_modlist(
 
 @pytest.mark.asyncio
 async def test__get_server_modlist__returns_404_for_nonexistent_server(
-    mocker, state, session, test_app, endpoint_arma_base_url, server_name_2
+    mocker, state, test_app, endpoint_arma_base_url, server_name_2
 ):
     """Test that GET /mods/list/<server> returns 404 for nonexistent server"""
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
@@ -280,7 +279,7 @@ async def test__get_server_modlist__returns_404_for_nonexistent_server(
 
 @pytest.mark.asyncio
 async def test__reload_mods__reloads_successfully(
-    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_reload_mods_url
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_reload_mods_url
 ):
     """Test that POST /mods/reload reloads mod configuration"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -293,7 +292,7 @@ async def test__reload_mods__reloads_successfully(
 
 
 @pytest.mark.asyncio
-async def test__reload_mods__requires_authentication(state, session, test_app, endpoint_reload_mods_url):
+async def test__reload_mods__requires_authentication(state, test_app, endpoint_reload_mods_url):
     """Test that POST /mods/reload requires authentication"""
     response = await test_app.post(endpoint_reload_mods_url)
 
@@ -301,7 +300,7 @@ async def test__reload_mods__requires_authentication(state, session, test_app, e
 
 
 @pytest.mark.asyncio
-async def test__reload_mods__requires_permission(state, session, test_app, db_user_1, db_session_1, endpoint_reload_mods_url):
+async def test__reload_mods__requires_permission(state, test_app, db_user_1, db_session_1, endpoint_reload_mods_url):
     """Test that POST /mods/reload requires can_manage_server role"""
     response = await test_app.post(endpoint_reload_mods_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
 
@@ -310,7 +309,7 @@ async def test__reload_mods__requires_permission(state, session, test_app, db_us
 
 @pytest.mark.asyncio
 async def test__reload_mods__rejects_expired_session(
-    mocker, state, session, test_app, db_user_1, db_expired_session_1, db_server_manager, endpoint_reload_mods_url
+    mocker, state, test_app, db_user_1, db_expired_session_1, db_server_manager, endpoint_reload_mods_url
 ):
     """Test that POST /mods/reload rejects expired sessions"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -325,7 +324,7 @@ async def test__reload_mods__rejects_expired_session(
 
 @pytest.mark.asyncio
 async def test__reload_modlists__reloads_successfully(
-    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_reload_modlists_url
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_reload_modlists_url
 ):
     """Test that POST /mods/lists/reload reloads modlist configuration"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -339,7 +338,7 @@ async def test__reload_modlists__reloads_successfully(
 
 
 @pytest.mark.asyncio
-async def test__reload_modlists__requires_authentication(state, session, test_app, endpoint_reload_modlists_url):
+async def test__reload_modlists__requires_authentication(state, test_app, endpoint_reload_modlists_url):
     """Test that POST /mods/lists/reload requires authentication"""
     response = await test_app.post(endpoint_reload_modlists_url)
 
@@ -347,9 +346,7 @@ async def test__reload_modlists__requires_authentication(state, session, test_ap
 
 
 @pytest.mark.asyncio
-async def test__reload_modlists__requires_permission(
-    state, session, test_app, db_user_1, db_session_1, endpoint_reload_modlists_url
-):
+async def test__reload_modlists__requires_permission(state, test_app, db_user_1, db_session_1, endpoint_reload_modlists_url):
     """Test that POST /mods/lists/reload requires can_manage_server role"""
     response = await test_app.post(endpoint_reload_modlists_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
 
@@ -363,7 +360,6 @@ async def test__reload_modlists__requires_permission(
 async def test__add_new_mod__creates_mod_successfully(
     mocker,
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -392,9 +388,7 @@ async def test__add_new_mod__creates_mod_successfully(
 
 
 @pytest.mark.asyncio
-async def test__add_new_mod__requires_authentication(
-    state, session, test_app, endpoint_mods_url, mock_mod_name_3, mock_workshop_id_3
-):
+async def test__add_new_mod__requires_authentication(state, test_app, endpoint_mods_url, mock_mod_name_3, mock_workshop_id_3):
     """Test that POST /mods requires authentication"""
     response = await test_app.post(
         endpoint_mods_url,
@@ -412,7 +406,7 @@ async def test__add_new_mod__requires_authentication(
 
 @pytest.mark.asyncio
 async def test__add_new_mod__requires_permission(
-    state, session, test_app, db_user_1, db_session_1, endpoint_mods_url, mock_mod_name_3, mock_workshop_id_3
+    state, test_app, db_user_1, db_session_1, endpoint_mods_url, mock_mod_name_3, mock_workshop_id_3
 ):
     """Test that POST /mods requires can_manage_server role"""
     response = await test_app.post(
@@ -434,7 +428,6 @@ async def test__add_new_mod__requires_permission(
 async def test__add_new_mod__rejects_duplicate_mod(
     mocker,
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -467,7 +460,6 @@ async def test__add_new_mod__rejects_duplicate_mod(
 async def test__add_new_mod__rejects_invalid_kind(
     mocker,
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -497,7 +489,7 @@ async def test__add_new_mod__rejects_invalid_kind(
 
 @pytest.mark.asyncio
 async def test__add_new_mod__rejects_missing_workshop_id(
-    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_mods_url, mock_mod_name_3
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_mods_url, mock_mod_name_3
 ):
     """Test that POST /mods rejects non-manual mod without workshop_id"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -525,7 +517,6 @@ async def test__add_new_mod__rejects_missing_workshop_id(
 async def test__add_new_modlist__creates_modlist_successfully(
     mocker,
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -551,7 +542,7 @@ async def test__add_new_modlist__creates_modlist_successfully(
 
 @pytest.mark.asyncio
 async def test__add_new_modlist__requires_authentication(
-    state, session, test_app, endpoint_modlists_url, mock_mod_name_1, mock_mod_name_2, mock_modlist_name_4
+    state, test_app, endpoint_modlists_url, mock_mod_name_1, mock_mod_name_2, mock_modlist_name_4
 ):
     """Test that POST /mods/lists requires authentication"""
     response = await test_app.post(
@@ -564,7 +555,6 @@ async def test__add_new_modlist__requires_authentication(
 @pytest.mark.asyncio
 async def test__add_new_modlist__requires_permission(
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -587,7 +577,6 @@ async def test__add_new_modlist__requires_permission(
 async def test__add_new_modlist__rejects_duplicate_modlist(
     mocker,
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -615,7 +604,6 @@ async def test__add_new_modlist__rejects_duplicate_modlist(
 async def test__add_new_modlist__rejects_nonexistent_mod(
     mocker,
     state,
-    session,
     test_app,
     db_user_1,
     db_session_1,
@@ -640,7 +628,7 @@ async def test__add_new_modlist__rejects_nonexistent_mod(
 
 @pytest.mark.asyncio
 async def test__add_new_modlist__creates_empty_modlist(
-    mocker, state, session, test_app, db_user_1, db_session_1, db_server_manager, endpoint_modlists_url, mock_modlist_name_6
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_modlists_url, mock_modlist_name_6
 ):
     """Test that POST /mods/lists can create empty modlist"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -660,7 +648,6 @@ async def test__add_new_modlist__creates_empty_modlist(
 async def test__get_all_servers__returns_servers(
     mocker,
     state,
-    session,
     test_app,
     endpoint_servers_url,
     server_name_1,
@@ -691,7 +678,7 @@ async def test__get_all_servers__returns_servers(
 
 
 @pytest.mark.asyncio
-async def test__get_all_servers__returns_empty_list(mocker, state, session, test_app, endpoint_servers_url):
+async def test__get_all_servers__returns_empty_list(mocker, state, test_app, endpoint_servers_url):
     """Test that GET /servers returns empty list when no servers configured"""
     # Not yet reviewed
     mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})

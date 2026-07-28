@@ -1,15 +1,16 @@
 from collections.abc import Iterable
-from sqlalchemy import select, delete, or_
+
+from sqlalchemy import delete, or_, select
 from sqlalchemy.exc import IntegrityError
 
-from bw.server_ops.arma.mod import SteamWorkshopDetails, WorkshopId, Mod
-from bw.state import State
-from bw.models.arma import Mod as DbMod
 from bw.error.arma_mod import (
-    ModFieldInvalid,
     ModAlreadyExists,
+    ModFieldInvalid,
     ModNotFound,
 )
+from bw.models.arma import Mod as DbMod
+from bw.server_ops.arma.mod import Mod, SteamWorkshopDetails, WorkshopId
+from bw.state import State
 
 
 class ModStore:

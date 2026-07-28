@@ -2,15 +2,15 @@ import secrets
 from uuid import UUID
 
 import sqlalchemy
-from sqlalchemy import select, delete, insert, update
-from sqlalchemy.exc import NoResultFound, IntegrityError
-from bw.auth.group import GroupStore
+from sqlalchemy import delete, insert, select, update
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from bw.state import State
+from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
-from bw.models.auth import User, DiscordUser, BotUser, TOKEN_LENGTH, Role
-from bw.error import AuthError, NoUserWithGivenCredentials, DbError, RoleCreationFailed, NoRoleWithName, DiscordUserAlreadyExists
+from bw.error import AuthError, DbError, DiscordUserAlreadyExists, NoRoleWithName, NoUserWithGivenCredentials, RoleCreationFailed
+from bw.models.auth import TOKEN_LENGTH, BotUser, DiscordUser, Role, User
+from bw.state import State
 
 
 class UserStore:
@@ -358,9 +358,7 @@ class UserStore:
         ```
         """
         with state.Session.begin() as session:
-            if isinstance(user, BotUser):
-                query = delete(BotUser).where(BotUser.id == user.id)
-            elif isinstance(user, User):
+            if isinstance(user, BotUser | User):
                 query = delete(BotUser).where(BotUser.id == user.id)
             else:
                 raise AuthError('attempting to delete user with bad arguments')

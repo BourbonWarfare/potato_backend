@@ -155,6 +155,7 @@ A minimal cron:
 # crons/cron_my_task.py
 from crons.cron import Cron
 
+
 class MyTask(Cron):
     @staticmethod
     def cron_str() -> str:

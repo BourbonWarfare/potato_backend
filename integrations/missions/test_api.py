@@ -1,53 +1,53 @@
 # ruff: noqa: F811, F401
 
-from uuid import UUID
-import pytest
-import json
-import unittest
-import re
 import csv
+import json
+import re
 import shutil
-from bw.response import JsonResponse, Created, WebResponse
-from bw.missions.api import MissionsApi, TestApi
+import unittest
+from uuid import UUID
+
+import pytest
+
+from bw.auth.session import SessionStore
 from bw.error import CouldNotCreateIteration, HemttError
+from bw.missions.api import MissionsApi, TestApi
 from bw.missions.missions import MissionStore
 from bw.missions.pbo import MissionLoader
 from bw.missions.test_status import TestStatus
 from bw.models.missions import TestCosign
-from bw.auth.session import SessionStore
+from bw.response import Created, JsonResponse, WebResponse
 from integrations.missions.fixtures import (
-    state,
-    session,
-    db_user_1,
-    db_user_2,
-    db_user_3,
-    db_mission_type_1,
-    fake_mission,
-    fake_changelog,
-    fake_iteration_1,
-    fake_iteration_2,
-    db_mission_1,
+    arma_server,
     db_iteration_1,
     db_iteration_2,
+    db_mission_1,
+    db_mission_type_1,
     db_review_1,
     db_review_2,
+    db_test_cosign_1,
     db_test_result_1,
     db_test_result_1_2,
     db_test_result_2,
-    db_test_cosign_1,
+    db_user_1,
+    db_user_2,
+    db_user_3,
+    disk_metadata_1,
+    fake_changelog,
+    fake_iteration_1,
+    fake_iteration_2,
+    fake_mission,
     invalid_uuid,
+    metadata_1,
     test_notes,
     test_notes_multiple,
-    metadata_1,
-    disk_metadata_1,
-    arma_server,
 )
 
 
 class TestMissionsApi:
     @pytest.mark.asyncio
     async def test__upload_mission__success_with_new_upload(
-        self, mocker, state, session, db_user_1, db_mission_type_1, fake_changelog, fake_iteration_1, fake_mission, arma_server
+        self, mocker, state, db_user_1, db_mission_type_1, fake_changelog, fake_iteration_1, fake_mission, arma_server
     ):
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
@@ -60,7 +60,7 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__upload_mission__copy_file_already_exists_at_destination(
-        self, mocker, state, session, db_user_1, db_mission_type_1, fake_changelog, fake_iteration_1, fake_mission, arma_server
+        self, mocker, state, db_user_1, db_mission_type_1, fake_changelog, fake_iteration_1, fake_mission, arma_server
     ):
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
@@ -71,9 +71,7 @@ class TestMissionsApi:
         assert resp.status_code == 409
 
     @pytest.mark.asyncio
-    async def test__upload_mission__not_binarized(
-        self, mocker, state, session, fake_mission, fake_changelog, db_user_1, arma_server
-    ):
+    async def test__upload_mission__not_binarized(self, mocker, state, fake_mission, fake_changelog, db_user_1, arma_server):
         fake_mission.custom_attributes = {}
         mocker.patch.object(
             MissionLoader,
@@ -85,9 +83,7 @@ class TestMissionsApi:
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
-    async def test__upload_mission__missing_metadata(
-        self, mocker, state, session, fake_mission, fake_changelog, db_user_1, arma_server
-    ):
+    async def test__upload_mission__missing_metadata(self, mocker, state, fake_mission, fake_changelog, db_user_1, arma_server):
         fake_mission.custom_attributes = {}
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch('bw.missions.api.shutil.copyfile', return_value=None)
@@ -97,7 +93,7 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__upload_mission__missing_mission_type(
-        self, mocker, state, session, fake_mission, fake_changelog, db_user_1, arma_server
+        self, mocker, state, fake_mission, fake_changelog, db_user_1, arma_server
     ):
         fake_mission.custom_attributes = {'potato_missiontesting_missionTestingInfo': {}}
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
@@ -108,7 +104,7 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__upload_mission__no_mission_type_with_tag(
-        self, mocker, state, session, fake_mission, fake_changelog, db_user_1, arma_server
+        self, mocker, state, fake_mission, fake_changelog, db_user_1, arma_server
     ):
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch('bw.missions.api.shutil.copyfile', return_value=None)
@@ -118,7 +114,7 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__upload_mission__could_not_create_iteration(
-        self, mocker, state, session, db_user_1, db_mission_type_1, fake_mission, fake_changelog, arma_server
+        self, mocker, state, db_user_1, db_mission_type_1, fake_mission, fake_changelog, arma_server
     ):
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
@@ -130,7 +126,7 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__upload_mission__creates_new_mission(
-        self, mocker, state, session, db_user_1, db_mission_type_1, fake_mission, fake_changelog, fake_iteration_1, arma_server
+        self, mocker, state, db_user_1, db_mission_type_1, fake_mission, fake_changelog, fake_iteration_1, arma_server
     ):
         mocker.patch.object(MissionLoader, 'load_pbo_from_directory', new=mocker.AsyncMock(return_value=fake_mission))
         mocker.patch.object(SessionStore, 'get_user_from_session_token', return_value=db_user_1)
@@ -146,7 +142,6 @@ class TestMissionsApi:
         self,
         mocker,
         state,
-        session,
         db_user_1,
         db_mission_type_1,
         fake_mission,
@@ -170,7 +165,7 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__get_iteration_information__returns_full_mission_info(
-        self, state, session, db_user_1, db_mission_type_1, db_mission_1, db_iteration_1
+        self, state, db_user_1, db_mission_type_1, db_mission_1, db_iteration_1
     ):
         iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=db_iteration_1.uuid)
         mission_information = iteration_information['mission']
@@ -201,7 +196,7 @@ class TestMissionsApi:
 
     @pytest.mark.asyncio
     async def test__get_iteration_information__second_iteration_returns_full_mission_info(
-        self, state, session, db_user_1, db_mission_type_1, db_mission_1, db_iteration_2
+        self, state, db_user_1, db_mission_type_1, db_mission_1, db_iteration_2
     ):
         iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=db_iteration_2.uuid)
         mission_information = iteration_information['mission']
@@ -231,14 +226,12 @@ class TestMissionsApi:
         assert type_information['tag'] == db_mission_type_1.numeric_tag
 
     @pytest.mark.asyncio
-    async def test__get_iteration_information__non_existent_iteration_returns_404(self, state, session, db_iteration_2):
+    async def test__get_iteration_information__non_existent_iteration_returns_404(self, state, db_iteration_2):
         iteration_information = await MissionsApi().get_iteration_information(state, iteration_uuid=UUID(int=0))
         assert iteration_information.status_code == 404
 
     @pytest.mark.asyncio
-    async def test__get_mission_information__returns_full_mission_info(
-        self, state, session, db_user_1, db_mission_type_1, db_mission_1
-    ):
+    async def test__get_mission_information__returns_full_mission_info(self, state, db_user_1, db_mission_type_1, db_mission_1):
         mission_information = await MissionsApi().get_mission_information(state, mission_uuid=db_mission_1.uuid)
         type_information = mission_information['mission_type']
 
@@ -255,9 +248,7 @@ class TestMissionsApi:
         assert type_information['tag'] == db_mission_type_1.numeric_tag
 
     @pytest.mark.asyncio
-    async def test__get_mission_information__authorless_mission_uses_nil_uuid(
-        self, state, session, db_mission_type_1, db_mission_1
-    ):
+    async def test__get_mission_information__authorless_mission_uses_nil_uuid(self, state, db_mission_type_1, db_mission_1):
         # Wipe the author link to simulate a mission with no author.
         with state.Session.begin() as db_session:
             mission = db_session.merge(db_mission_1)
@@ -275,7 +266,7 @@ class TestMissionsApi:
 # god i love naming conventions
 class TestTestApi:
     @pytest.mark.asyncio
-    async def test__review_mission__success(self, state, session, db_user_1, db_iteration_1, test_notes):
+    async def test__review_mission__success(self, state, db_user_1, db_iteration_1, test_notes):
         api = TestApi()
         resp = await api.review_mission(state, db_user_1, db_iteration_1.uuid, TestStatus.PASSED, test_notes)
 
@@ -284,9 +275,7 @@ class TestTestApi:
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
-    async def test__review_mission__success_with_multiple_notes(
-        self, state, session, db_user_1, db_iteration_2, test_notes_multiple
-    ):
+    async def test__review_mission__success_with_multiple_notes(self, state, db_user_1, db_iteration_2, test_notes_multiple):
         api = TestApi()
         resp = await api.review_mission(state, db_user_1, db_iteration_2.uuid, TestStatus.PASSED, test_notes_multiple)
 
@@ -295,7 +284,7 @@ class TestTestApi:
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
-    async def test__review_mission__success_with_empty_notes(self, state, session, db_user_2, db_iteration_2):
+    async def test__review_mission__success_with_empty_notes(self, state, db_user_2, db_iteration_2):
         empty_notes = {}
         api = TestApi()
         resp = await api.review_mission(state, db_user_2, db_iteration_2.uuid, TestStatus.PASSED, empty_notes)
@@ -305,7 +294,7 @@ class TestTestApi:
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
-    async def test__review_mission__iteration_not_found(self, state, session, db_user_1, invalid_uuid, test_notes):
+    async def test__review_mission__iteration_not_found(self, state, db_user_1, invalid_uuid, test_notes):
         api = TestApi()
         resp = await api.review_mission(state, db_user_1, invalid_uuid, TestStatus.PASSED, test_notes)
 
@@ -315,7 +304,7 @@ class TestTestApi:
 
     @pytest.mark.asyncio
     async def test__review_mission__duplicate_review_same_user_same_iteration(
-        self, state, session, db_user_1, db_iteration_1, test_notes, db_test_result_1
+        self, state, db_user_1, db_iteration_1, test_notes, db_test_result_1
     ):
         # First review already exists via fixture db_test_result_1
         api = TestApi()
@@ -326,7 +315,7 @@ class TestTestApi:
         assert resp.status_code == 400
 
     @pytest.mark.asyncio
-    async def test__cosign_result__success(self, state, session, db_user_2, db_test_result_1):
+    async def test__cosign_result__success(self, state, db_user_2, db_test_result_1):
         api = TestApi()
         resp = await api.cosign_result(state, db_user_2, db_test_result_1.uuid)
 
@@ -334,7 +323,7 @@ class TestTestApi:
         assert resp.status == '201 CREATED'
 
     @pytest.mark.asyncio
-    async def test__cosign_result__result_not_found(self, state, session, db_user_2, invalid_uuid):
+    async def test__cosign_result__result_not_found(self, state, db_user_2, invalid_uuid):
         api = TestApi()
         resp = await api.cosign_result(state, db_user_2, invalid_uuid)
 
@@ -343,7 +332,7 @@ class TestTestApi:
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
-    async def test__cosign_result__cannot_cosign_own_review(self, state, session, db_user_1, db_test_result_1):
+    async def test__cosign_result__cannot_cosign_own_review(self, state, db_user_1, db_test_result_1):
         # db_test_result_1 is created by db_user_1 via db_review_1
         api = TestApi()
         resp = await api.cosign_result(state, db_user_1, db_test_result_1.uuid)
@@ -353,7 +342,7 @@ class TestTestApi:
         assert resp.status_code == 400
 
     @pytest.mark.asyncio
-    async def test__cosign_result__duplicate_cosign(self, state, session, db_user_2, db_test_result_1, db_test_cosign_1):
+    async def test__cosign_result__duplicate_cosign(self, state, db_user_2, db_test_result_1, db_test_cosign_1):
         # db_test_cosign_1 already exists for this user and result
         api = TestApi()
         resp = await api.cosign_result(state, db_user_2, db_test_result_1.uuid)
@@ -363,7 +352,7 @@ class TestTestApi:
         assert resp.status_code == 400
 
     @pytest.mark.asyncio
-    async def test__reviews__success_with_viewer_as_reviewer(self, state, session, db_user_1, db_iteration_1, db_test_result_1):
+    async def test__reviews__success_with_viewer_as_reviewer(self, state, db_user_1, db_iteration_1, db_test_result_1):
         api = TestApi()
         resp = await api.reviews(state, db_iteration_1.uuid, db_user_1)
 
@@ -380,7 +369,7 @@ class TestTestApi:
 
     @pytest.mark.asyncio
     async def test__reviews__success_with_viewer_as_cosigner(
-        self, state, session, db_user_2, db_iteration_1, db_test_result_1, db_test_cosign_1
+        self, state, db_user_2, db_iteration_1, db_test_result_1, db_test_cosign_1
     ):
         api = TestApi()
         resp = await api.reviews(state, db_iteration_1.uuid, db_user_2)
@@ -392,7 +381,7 @@ class TestTestApi:
         assert review['is_viewer_cosigner'] is True
 
     @pytest.mark.asyncio
-    async def test__reviews__success_with_no_viewer(self, state, session, db_iteration_1, db_test_result_1):
+    async def test__reviews__success_with_no_viewer(self, state, db_iteration_1, db_test_result_1):
         api = TestApi()
         resp = await api.reviews(state, db_iteration_1.uuid, None)
 
@@ -404,7 +393,7 @@ class TestTestApi:
 
     @pytest.mark.asyncio
     async def test__reviews__multiple_reviews_with_different_statuses(
-        self, state, session, db_user_1, db_iteration_1, db_test_result_1, db_test_result_1_2
+        self, state, db_user_1, db_iteration_1, db_test_result_1, db_test_result_1_2
     ):
         # db_test_result_1 has PASSED status, db_test_result_1_2 has FAILED status
         api = TestApi()
@@ -419,7 +408,7 @@ class TestTestApi:
         assert TestStatus.FAILED in statuses
 
     @pytest.mark.asyncio
-    async def test__reviews__empty_reviews_list(self, state, session, db_user_1, db_iteration_2):
+    async def test__reviews__empty_reviews_list(self, state, db_user_1, db_iteration_2):
         # db_iteration_2 has no test results
         api = TestApi()
         resp = await api.reviews(state, db_iteration_2.uuid, db_user_1)
@@ -428,7 +417,7 @@ class TestTestApi:
         assert resp.contained_json['reviews'] == []
 
     @pytest.mark.asyncio
-    async def test__reviews__iteration_not_found(self, state, session, db_user_1, invalid_uuid):
+    async def test__reviews__iteration_not_found(self, state, db_user_1, invalid_uuid):
         api = TestApi()
         resp = await api.reviews(state, invalid_uuid, db_user_1)
 
@@ -437,7 +426,7 @@ class TestTestApi:
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
-    async def test__reviews__date_format_validation(self, state, session, db_user_1, db_iteration_1, db_test_result_1):
+    async def test__reviews__date_format_validation(self, state, db_user_1, db_iteration_1, db_test_result_1):
         api = TestApi()
         resp = await api.reviews(state, db_iteration_1.uuid, db_user_1)
 
@@ -449,9 +438,7 @@ class TestTestApi:
         assert re.match(iso_date_pattern, review['date_tested'])
 
     @pytest.mark.asyncio
-    async def test__reviews__viewer_is_neither_reviewer_nor_cosigner(
-        self, state, session, db_user_3, db_iteration_1, db_test_result_1_2
-    ):
+    async def test__reviews__viewer_is_neither_reviewer_nor_cosigner(self, state, db_user_3, db_iteration_1, db_test_result_1_2):
         # db_test_result_1_2 is by db_user_2, viewing as db_user_3
         api = TestApi()
         resp = await api.reviews(state, db_iteration_1.uuid, db_user_3)
@@ -466,7 +453,7 @@ class TestTestApi:
 
     @pytest.mark.asyncio
     async def test__reviews__viewer_both_reviewer_and_cosigner_different_reviews(
-        self, state, session, db_user_1, db_user_2, db_iteration_1, db_test_result_1, db_test_result_1_2
+        self, state, db_user_1, db_user_2, db_iteration_1, db_test_result_1, db_test_result_1_2
     ):
         # Create a cosign for user1 on the review by user2
         with state.Session.begin() as session:

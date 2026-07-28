@@ -1,8 +1,11 @@
-from bw.configuration import Configuration
-
 import uuid
 
+import pytz
+
+from bw.configuration import Configuration
+
 BW_UUID_NAMESPACE = uuid.UUID(hex='86878fc0-0db5-4d22-910c-c8e561292550')
+TIMEZONE = pytz.utc
 
 GLOBAL_CONFIGURATION = None
 if GLOBAL_CONFIGURATION is None:

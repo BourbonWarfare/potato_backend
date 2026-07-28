@@ -1,5 +1,6 @@
-import pytest
 from dataclasses import dataclass
+
+import pytest
 
 from bw.combined_dataclass import SlotCombiner
 from bw.error import MismatchedArguments

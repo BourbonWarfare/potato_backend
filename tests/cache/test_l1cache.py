@@ -1,11 +1,12 @@
-# ruff: noqa: F811, F401
+# ruff: noqa: F401
 
 from uuid import UUID
+
 import pytest
 
-from bw.cache.l1 import L1Cache, Entry
-from bw.web_event import MissionUploadEvent, IterationCosignedEvent
+from bw.cache.l1 import Entry, L1Cache
 from bw.error import L1CacheMiss
+from bw.web_event import IterationCosignedEvent, MissionUploadEvent
 
 
 @pytest.fixture

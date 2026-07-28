@@ -1,13 +1,14 @@
-import logging
 import asyncio
-from sqlalchemy import create_engine, Engine
-from sqlalchemy.orm import sessionmaker, Session
+import logging
 
-from bw.environment import ENVIRONMENT, Test
-from bw.settings import GLOBAL_CONFIGURATION
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
 from bw.cache import Cache
+from bw.environment import ENVIRONMENT, Test
 from bw.events import Broker
 from bw.realtime.queue import Queue
+from bw.settings import GLOBAL_CONFIGURATION
 
 logger = logging.getLogger('bw.state')
 
@@ -33,8 +34,8 @@ class State:
     def _load_arma_configs(self):
         if isinstance(ENVIRONMENT, Test):
             return
+        from bw.server_ops.arma.mod import load_mod_configs, load_modlists
         from bw.server_ops.arma.server import load_server_config_directory
-        from bw.server_ops.arma.mod import load_modlists, load_mod_configs
 
         logger.info('Loading ARMA server configurations')
         logger.info(f'Loading mods from {ENVIRONMENT.arma_mod_config_path()}')

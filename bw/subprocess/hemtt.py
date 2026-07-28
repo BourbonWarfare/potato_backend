@@ -1,8 +1,10 @@
-from bw.error import HemttError
+# ruff: noqa: RUF012
 import re
 from typing import Any
-from bw.subprocess.semver import Semver
+
+from bw.error import HemttError
 from bw.subprocess.command import Command, define_process
+from bw.subprocess.semver import Semver
 
 
 class Hemtt(Command):

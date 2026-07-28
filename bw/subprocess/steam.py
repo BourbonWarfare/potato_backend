@@ -1,5 +1,6 @@
-from bw.subprocess.command import DryCommand, define_process
+# ruff: noqa: RUF012
 from bw.environment import ENVIRONMENT
+from bw.subprocess.command import DryCommand, define_process
 
 
 class Steam(DryCommand):

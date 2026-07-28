@@ -1,8 +1,10 @@
-from bw.web_event.arma_ops import FoundOutOfDateMods
 from typing import Any
-from bw.environment import ENVIRONMENT
-from crons.cron import Cron
+
 import aiohttp
+
+from bw.environment import ENVIRONMENT
+from bw.web_event.arma_ops import FoundOutOfDateMods
+from crons.cron import Cron
 
 
 class FindOutOfDateMods(Cron):
@@ -21,7 +23,7 @@ class FindOutOfDateMods(Cron):
             try:
                 request.raise_for_status()
                 response = await request.json()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f'Failed to get configured mods: {e}')
             mods_to_check = [mod['name'] for mod in response['mods']]
 

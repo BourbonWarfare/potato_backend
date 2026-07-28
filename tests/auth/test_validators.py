@@ -1,7 +1,7 @@
 import pytest
 
 from bw.auth import validators
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionExpired, NotEnoughPermissions
+from bw.error import NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
 
 
 def test__validate_local__non_local_ip_raises():

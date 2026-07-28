@@ -1,22 +1,17 @@
-# ruff: noqa: F811, F401
-
 import datetime
 import uuid
+
 import pytest
 from sqlalchemy import select
 
-# Database and transaction fixtures
-from integrations.auth.fixtures import state, session
-
-from bw.models.process import Process
-from bw.server_ops.process.process import ProcessStore, ProcessStateManager
-from bw.server_ops.process.state import State as ProcessState
 from bw.error import (
+    DeletingProcessWithAliveChild,
     NoProcessWithNameAndNamespace,
     NoProcessWithUuid,
-    DeletingProcessWithAliveChild,
 )
-
+from bw.models.process import Process
+from bw.server_ops.process.process import ProcessStateManager, ProcessStore
+from bw.server_ops.process.state import State as ProcessState
 
 # ==============================================================================
 # 1. PROCESS CREATION TESTS
@@ -155,10 +150,12 @@ def test__process_store__manage_process__handles_exceptions_and_sets_error_state
     store = ProcessStore()
     process = store.create_managed_process(state, 'error_ns', 'error_proc')
 
-    with pytest.raises(ValueError, match='something went wrong'):
-        with store.manage_process(state, process, state_on_error=ProcessState.ERROR) as manager:
-            manager.update_state(ProcessState.STARTING)
-            raise ValueError('something went wrong')
+    with (
+        pytest.raises(ValueError, match='something went wrong'),
+        store.manage_process(state, process, state_on_error=ProcessState.ERROR) as manager,
+    ):
+        manager.update_state(ProcessState.STARTING)
+        raise ValueError('something went wrong')
 
     assert process.state == ProcessState.ERROR
 

@@ -1,6 +1,7 @@
+from typing import Any
+
 from bw.error.base import BwServerError, ClientError
 from bw.error.common_client import UploadError
-from typing import Any
 
 
 class MissionError(ClientError):

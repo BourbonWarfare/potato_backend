@@ -1,12 +1,12 @@
 import asyncio
 import logging
 import uuid
-from dataclasses import dataclass
 from contextlib import contextmanager
-from bw.events import Broker
-import bw.web_event  # noqa: F401
-from bw.web_event.base import BaseEvent
+from dataclasses import dataclass
 
+import bw.web_event  # noqa: F401
+from bw.events import Broker
+from bw.web_event.base import BaseEvent
 
 logger = logging.getLogger('bw.realtime')
 
@@ -15,7 +15,7 @@ logger = logging.getLogger('bw.realtime')
 class Worker:
     messages: list[BaseEvent]
     alive: bool
-    id: uuid.UUID = uuid.uuid4()
+    id: uuid.UUID
 
     @contextmanager
     def process(self):
@@ -48,20 +48,20 @@ class Queue:
             worker.alive = False
 
     def on_event(self, event: BaseEvent):
-        from bw.state import State
         from bw.realtime.api import RealtimeApi
+        from bw.state import State
 
         RealtimeApi().push_event(State.state, event)
 
     def subscribe(self) -> Worker:
-        worker = Worker(messages=[], alive=not self.dead)
+        worker = Worker(messages=[], alive=not self.dead, id=uuid.uuid4())
         self.queues.append(worker)
         return worker
 
     async def process_event_queue(self):
-        from bw.state import State
         from bw.realtime.api import RealtimeApi
         from bw.realtime.event import EventStore
+        from bw.state import State
 
         while not self.dead:
             await asyncio.sleep(self.delay)

@@ -1,23 +1,22 @@
 import io
 from contextlib import aclosing
-import pytest
-
 from unittest.mock import AsyncMock, MagicMock, mock_open
 
-from bw.response import WebResponse, JsonResponse
+import pytest
+
+from bw.error import BadHeader, BwServerError
+from bw.response import JsonResponse, WebResponse
 from bw.web_utils import (
-    chunk_text_response,
-    chunk_json_response,
     chunk_file_response,
+    chunk_json_response,
+    chunk_text_response,
     define_api,
-    url_endpoint,
-    json_endpoint,
     html_endpoint,
+    json_endpoint,
     sse_endpoint,
     unwrap_headers,
+    url_endpoint,
 )
-from bw.error import BwServerError, BadHeader
-
 
 # ==============================================================================
 # FIXTURES & MOCKS
@@ -166,7 +165,7 @@ async def test__url_endpoint__bad_arguments_return_bad_request(mock_request, moc
     async def endpoint(my_arg: int):
         return 'blah'
 
-    response = await endpoint(**{'fake': 400})
+    response = await endpoint(fake=400)
     assert response.status == '400 BAD REQUEST'
 
 

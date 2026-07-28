@@ -1,21 +1,22 @@
-from bw.converters import make_json_safe
-from bw.session.orbat import Orbat
-from bw.models.session import Session
 from uuid import UUID
-from sqlalchemy import delete, select, func
-from sqlalchemy.exc import NoResultFound, IntegrityError
 
-from bw.state import State
-from bw.models.auth import User
-from bw.models.missions import MissionType, Mission, Iteration, PlayedMission
+from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError, NoResultFound
+
+from bw.converters import make_json_safe
 from bw.error import (
-    CouldNotCreateMissionType,
-    NoMissionTypeWithName,
     CouldNotCreateIteration,
-    MissionDoesNotExist,
-    NoMissionTypeWithTag,
+    CouldNotCreateMissionType,
     IterationDoesNotExist,
+    MissionDoesNotExist,
+    NoMissionTypeWithName,
+    NoMissionTypeWithTag,
 )
+from bw.models.auth import User
+from bw.models.missions import Iteration, Mission, MissionType, PlayedMission
+from bw.models.session import Session
+from bw.session.orbat import Orbat
+from bw.state import State
 
 
 class MissionTypeStore:

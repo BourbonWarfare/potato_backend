@@ -1,6 +1,3 @@
-# ruff: noqa: F811, F401
-
-
 def test__create_session__inserted_into_db():
     pass
 

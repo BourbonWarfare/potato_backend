@@ -1,8 +1,8 @@
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, SessionExpired, NotEnoughPermissions
-from bw.state import State
 from bw.auth import api
-from bw.auth.roles import Roles
 from bw.auth.permissions import Permissions
+from bw.auth.roles import Roles
+from bw.error import NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
+from bw.state import State
 
 
 def validate_user_has_permissions(state: State, session_token: str, permissions: Permissions):
@@ -85,5 +85,5 @@ def validate_local(ip: str | None):
         '192.0.0.',
         '192.168.',
     )
-    if not any([ip.startswith(prefix) for prefix in valid_local_prefix]):
+    if not any(ip.startswith(prefix) for prefix in valid_local_prefix):
         raise NonLocalIpAccessingLocalOnlyAddress(ip)
