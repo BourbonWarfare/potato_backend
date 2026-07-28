@@ -1,13 +1,16 @@
 import datetime
+import hashlib
 import uuid
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, Uuid, func
+import argon2
+from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, String, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
+from bw.error import PasswordDoesNotMatch
 from bw.models import Base
 from bw.models.types import HtmlSafeString
 from bw.settings import GLOBAL_CONFIGURATION
@@ -17,6 +20,8 @@ GLOBAL_CONFIGURATION.require('api_session_length')
 
 NAME_LENGTH = 64
 TOKEN_LENGTH = 32
+SALT_LENGTH = 64
+EMAIL_LENGTH = 254
 
 
 class Role(Base):
@@ -39,18 +44,43 @@ class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    uuid: Mapped[UUID] = mapped_column(Uuid, nullable=False, unique=True, default=uuid.uuid4)
+    uuid: Mapped[UUID] = mapped_column(Uuid, unique=True, default=uuid.uuid4)
     role: Mapped[int | None] = mapped_column(ForeignKey(Role.id, name='linked_role_for_user'))
-    creation_date: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=False), nullable=False, server_default=func.current_timestamp()
-    )
+    creation_date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=False), server_default=func.current_timestamp())
+
+
+class BourbonUser(Base):
+    __tablename__ = 'bourbon_users'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_bw'), unique=True)
+    email: Mapped[str] = mapped_column(String(EMAIL_LENGTH), unique=True)
+    password_hashed: Mapped[str] = mapped_column(String())
+    salt: Mapped[bytes] = mapped_column(LargeBinary(SALT_LENGTH))
+    verified: Mapped[bool] = mapped_column(Boolean(), default=False)
+
+    @staticmethod
+    def hashed_password(plaintext_password: str, salt: str) -> str:
+        unsalted_password = hashlib.sha512(plaintext_password.encode()).hexdigest()
+        salted_password = f'{unsalted_password}{salt}'
+        hasher = argon2.PasswordHasher()
+        return hasher.hash(password=salted_password)
+
+    def verify_password(self, plaintext_password: str):
+        unsalted_password = hashlib.sha512(plaintext_password.encode()).hexdigest()
+        salted_password = f'{unsalted_password}{self.salt}'
+        hasher = argon2.PasswordHasher()
+        try:
+            hasher.verify(self.password_hashed, salted_password)
+        except argon2.exceptions.VerifyMismatchError:
+            raise PasswordDoesNotMatch()
 
 
 class DiscordUser(Base):
     __tablename__ = 'discord_users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_discord'), nullable=False, unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_discord'), unique=True)
     discord_id: Mapped[DiscordSnowflake] = mapped_column(unique=True)
 
 
@@ -58,21 +88,24 @@ class BotUser(Base):
     __tablename__ = 'bot_users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_bot'), nullable=False, unique=True)
-    bot_token: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_bot'), unique=True)
+    bot_token: Mapped[str] = mapped_column(String(TOKEN_LENGTH))
 
 
 class Session(Base):
     __tablename__ = 'sessions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_session'), nullable=False, unique=False)
-    token: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
+    token: Mapped[str] = mapped_column(String(TOKEN_LENGTH))
+    authenticated: Mapped[bool] = mapped_column(Boolean(), default=False)
+    creation_date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=False), server_default=func.current_timestamp())
     expire_time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False),
-        nullable=False,
         server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
     )
+
+    user_id: Mapped[int | None] = mapped_column(ForeignKey(User.id, name='linked_user_for_session'), unique=False)
+    csrf_token: Mapped[str | None] = mapped_column(String(TOKEN_LENGTH), default=None)
 
     @staticmethod
     def now():
@@ -91,10 +124,10 @@ class GroupPermission(Base):
     __tablename__ = 'group_permissions'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), unique=True)
 
-    can_upload_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
-    can_test_mission: Mapped[bool] = mapped_column(Boolean(False), nullable=False)
+    can_upload_mission: Mapped[bool] = mapped_column(Boolean(False))
+    can_test_mission: Mapped[bool] = mapped_column(Boolean(False))
 
     def into_permissions(self) -> Permissions:
         return Permissions.from_keys(**{key: getattr(self, key) for key in Permissions.__slots__})
@@ -104,18 +137,16 @@ class Group(Base):
     __tablename__ = 'groups'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    permissions: Mapped[int] = mapped_column(
-        ForeignKey(GroupPermission.id, name='linked_group_permission_for_group'), nullable=False
-    )
-    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), nullable=False, unique=True)
+    permissions: Mapped[int] = mapped_column(ForeignKey(GroupPermission.id, name='linked_group_permission_for_group'))
+    name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), unique=True)
 
 
 class UserGroup(Base):
     __tablename__ = 'user_groups'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_group'), nullable=False)
-    group_id: Mapped[int] = mapped_column(ForeignKey(Group.id, name='linked_group_for_group'), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_group'))
+    group_id: Mapped[int] = mapped_column(ForeignKey(Group.id, name='linked_group_for_group'))
 
     __table_args__ = (UniqueConstraint('user_id', 'group_id', name='can_be_added_to_group_once'),)
 
@@ -124,9 +155,8 @@ class DiscordOAuthCode(Base):
     __tablename__ = 'discord_oauth_codes'
 
     state: Mapped[str] = mapped_column(String(TOKEN_LENGTH), primary_key=True)
-    code: Mapped[str] = mapped_column(String(TOKEN_LENGTH), nullable=False)
+    code: Mapped[str] = mapped_column(String(TOKEN_LENGTH))
     expire_time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False),
-        nullable=False,
         server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
     )

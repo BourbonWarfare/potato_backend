@@ -280,7 +280,9 @@ async def test__html_endpoint__renders_successful_template(mocker, mock_render_t
     result = b''.join(await consume_generator(await endpoint())).decode()
 
     assert result == 'FINAL PAGE'
-    mock_render_template.assert_called_once_with('<html>{{inner}}</html>', inner_html='<html>Success</html>', title='My Title')
+    mock_render_template.assert_called_once_with(
+        '<html>{{inner}}</html>', inner_html='<html>Success</html>', title='My Title', logged_in=False
+    )
 
 
 @pytest.mark.asyncio
@@ -295,7 +297,9 @@ async def test__html_endpoint__renders_error_template_on_bw_server_error(mocker,
     result = b''.join(await consume_generator(await endpoint())).decode()
 
     assert result == 'FINAL ERROR PAGE'
-    mock_render_template.assert_called_once_with('Error Page HTML', inner_html='Error Page HTML', title='Bourbon Warfare')
+    mock_render_template.assert_called_once_with(
+        'Error Page HTML', inner_html='Error Page HTML', title='Bourbon Warfare', logged_in=False
+    )
 
 
 # ==============================================================================

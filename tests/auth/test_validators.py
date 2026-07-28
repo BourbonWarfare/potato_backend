@@ -1,7 +1,7 @@
 import pytest
 
 from bw.auth import validators
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
+from bw.error import NeedsAuthenticatedSession, NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
 
 
 def test__validate_local__non_local_ip_raises():
@@ -27,7 +27,15 @@ def test__validate_session__invalid_session_raises(mocker):
 
 def test__validate_session__valid_session_passes(mocker):
     mocker.patch('bw.auth.api.AuthApi.is_session_active', return_value=True)
+    mocker.patch('bw.auth.api.AuthApi.is_session_authenticated', return_value=True)
     validators.validate_session(None, 'token')  # state not needed; we mock it
+
+
+def test__validate_session__unauthed_session_raises(mocker):
+    mocker.patch('bw.auth.api.AuthApi.is_session_active', return_value=True)
+    mocker.patch('bw.auth.api.AuthApi.is_session_authenticated', return_value=False)
+    with pytest.raises(NeedsAuthenticatedSession):
+        validators.validate_session(None, 'token')  # state not needed; we mock it
 
 
 def test__validate_user_has_role__no_role_raises(mocker):

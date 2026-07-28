@@ -1,14 +1,14 @@
-<div class="container-card auth-card">
+<div class="container-card auth-card" id="auth-card">
     <div class="card-content" id="auth-card-content">
 
         <div class="auth-header">
-            <h1>Sign in to Bourbon Warfare</h1>
+            <h2>Sign in to Bourbon Warfare</h2>
             <p>Potatoes await.</p>
         </div>
 
         <!-- Normal POST — will redirect after server response -->
         <form action="/api/v1/auth/login" method="POST" class="auth-form" autocomplete="on">
-            <input type="hidden" name="csrf_token" value="stub-csrf-token" />
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
 
             <div class="form-group">
                 <label for="username">Username or E-Mail</label>
@@ -29,8 +29,8 @@
                     <span class="checkbox-label">Remember me</span>
                 </label>
                 <!-- HTMX: loads forgot password form into the same card -->
-                <a href="/forgot-password" class="forgot-link" hx-get="/forgot-password" hx-target="#auth-card-content"
-                    hx-swap="innerHTML" hx-push-url="true" hx-browser-indicator="true">
+                <a href="/auth/forgot-password" class="forgot-link" hx-get="/auth/forgot-password"
+                    hx-target="#auth-card" hx-swap="outerHTML" hx-push-url="true" hx-browser-indicator="true">
                     Forgot password?
                 </a>
             </div>
@@ -51,7 +51,7 @@
         <div class="auth-footer">
             <p>Need an account?
                 <!-- HTMX: loads registration form into the same card -->
-                <a href="/register" hx-get="/register" hx-target="#auth-card-content" hx-swap="innerHTML"
+                <a href="/auth/register" hx-get="/auth/register" hx-target="#auth-card" hx-swap="outerHTML"
                     hx-push-url="true" hx-browser-indicator="true">
                     Create one
                 </a>

@@ -64,6 +64,11 @@ class ReauthNeededError(AuthError):
         super().__init__(reason)
 
 
+class NeedsAuthenticatedSession(ReauthNeededError):
+    def __init__(self):
+        super().__init__('Session is not authenticated', reauth_uri='/auth/login')
+
+
 class NotEnoughDetails(ReauthNeededError):
     def __init__(self):
         super().__init__('Not enough details provided to authenticate user')
@@ -105,3 +110,8 @@ class NoRoleWithName(NotFoundError):
 class NoAccessCodeFound(NotFoundError):
     def __init__(self):
         super().__init__('No access code was found.')
+
+
+class PasswordDoesNotMatch(AuthError):
+    def __init__(self):
+        super().__init__('Password does not match user')

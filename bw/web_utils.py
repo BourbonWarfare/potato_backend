@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import IO, Any
 
 import aiofiles
-from quart import render_template_string, request
+from quart import has_request_context, render_template_string, request
 
 from bw.converters import make_json_safe
 from bw.error import (
@@ -225,7 +225,7 @@ async def load_template_from_disk(*, template_path: Path | str) -> str:
         return await file.read()
 
 
-def html_endpoint(*, template_path: Path | str, title: str | None = None):
+def html_endpoint(*, template_path: Path | str, title: str | None = None, only_allow_partial: bool = False):
     """
     ### Decorator for HTML endpoint functions with template caching and rendering
 
@@ -262,14 +262,22 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             html = await load_template_from_disk(template_path=template_path)
-            page = await load_template_from_disk(template_path='page.html')
-
             kwargs['html'] = html
             try:
                 inner_html = await func(*args, **kwargs)
             except BwServerError as e:
                 logger.warning(e)
                 inner_html = await load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
+
+            if has_request_context():
+                headers = request.headers
+            else:
+                headers = {}
+            if 'HX-Request' in headers:
+                if isinstance(inner_html, str):
+                    return chunk_text_response(inner_html, mimetype='text/html')
+                else:
+                    return inner_html
 
             try:
                 session_token = AuthApi().get_session_cookie()
@@ -278,8 +286,9 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
             except (CannotDetermineSession, SessionExpired):
                 is_logged_in = False
 
+            partial_page = await load_template_from_disk(template_path='page.html')
             full_page = await render_template_string(
-                page,
+                partial_page,
                 inner_html=inner_html,
                 title=title if title is not None else 'Bourbon Warfare',
                 logged_in=is_logged_in,
@@ -287,59 +296,6 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
 
             if isinstance(inner_html, str):
                 return chunk_text_response(full_page, mimetype='text/html')
-            else:
-                return inner_html
-
-        return wrapper
-
-    return decorator
-
-
-def html_part_endpoint(*, template_path: Path | str):
-    """
-    ### Decorator for HTML endpoint functions which return partial DOMs
-
-    Wraps HTML endpoint functions to provide automatic template loading and caching.
-    Inserts loaded HTML into the `html` named argument
-
-    **Async:** No (decorator function itself is synchronous)
-
-    **Args:**
-    - `template_path` (`Path | str`): The path to the HTML template file relative to the templates directory.
-
-    **Returns:**
-    - `Callable`: A decorator function that wraps HTML endpoint functions with template rendering capabilities.
-
-    **Example:**
-    ```python
-    @html_part_endpoint(template_path='dashboard.container.html')
-    async def dashboard_page(html: str) -> str:
-        return render_template_string(html, data={'status': 'active'})
-    # Callable[..., Awaitable[str]]
-    ```
-    """
-    if isinstance(template_path, str):
-        template_path = Path(template_path)
-
-    templates_path = Path('./static') / 'templates'
-    template_path = templates_path / template_path
-
-    def decorator(func: Callable[..., Awaitable[str | WebResponse]]):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            async with aiofiles.open(template_path, encoding='utf-8') as file:
-                html = await file.read()
-
-            kwargs['html'] = html
-            try:
-                inner_html = await func(*args, **kwargs)
-            except BwServerError as e:
-                logger.warning(e)
-                async with aiofiles.open(templates_path / 'error' / f'{e.status()}.html', encoding='utf-8') as file:
-                    inner_html = await file.read()
-
-            if isinstance(inner_html, str):
-                return chunk_text_response(inner_html, mimetype='text/html')
             else:
                 return inner_html
 
@@ -488,6 +444,10 @@ def chunk_file_response(
                     yield chunk
         finally:
             if not file_obj.closed:
-                file_obj.close()  # Safely closes the file when the stream ends or aborts
+                # Safely closes the file when the stream ends or aborts
+                if inspect.iscoroutinefunction(file_obj.close):
+                    await file_obj.close()
+                else:
+                    file_obj.close()
 
     return ChunkedResponse.from_async_generator(mimetype if mimetype else 'text/plain', chunk_generator, headers=headers)

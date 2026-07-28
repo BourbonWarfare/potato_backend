@@ -19,6 +19,7 @@ dependencies = [
     "dacite>=1.9.2",
     "psutil",
     "aiofiles>=24.1.0",
+    "argon2-cffi>=25.1.0",
 ]
 authors = [
     {name="Bailey Danyluk"}

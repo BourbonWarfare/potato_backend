@@ -15,7 +15,7 @@ from bw.models.auth import User
 from bw.response import JsonResponse, NotFound, WebResponse
 from bw.server_ops.arma.server import SERVER_MAP
 from bw.state import State
-from bw.web_utils import html_endpoint, html_part_endpoint, json_endpoint, load_template_from_disk, url_endpoint
+from bw.web_utils import html_endpoint, json_endpoint, load_template_from_disk, url_endpoint
 
 logger = logging.getLogger('bw.missions')
 
@@ -176,7 +176,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         return await render_template_string(html, mission_count=mission_count)
 
     @parts.get('/list')
-    @html_part_endpoint(template_path='missions/mission_card.bundle.html')
+    @html_endpoint(template_path='missions/mission_card.bundle.html', only_allow_partial=True)
     async def list(html: str) -> str | WebResponse:
         current_page = int(request.args.get('page', '1'))
         current_page = max(1, current_page)

@@ -14,25 +14,21 @@
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6/dist/ext/hx-preload.js"></script>
 </head>
 
-<body>
+<body hx-ext="preload, browser-indicator">
     <!-- The top bar for the website -->
     <header>
-        <nav class="navbar">
+        <nav class="navbar" hx-target:inherited="#view" hx-push-url:inherited="true" hx-preload:inherited="mouseenter"
+            hx-browser-indicator:inherited="true">
             <ul class="nav-links">
-                <li><a href="/" hx-get="/" hx-target="#view" hx-select="#view" hx-push-url="true"
-                        hx-preload="mouseenter" hx-browser-indicator="true">Home</a></li>
-                <li><a href="/missions" hx-get="/missions" hx-target="#view" hx-select="#view" hx-push-url="true"
-                        hx-preload="mouseenter" hx-browser-indicator="true">Missions</a></li>
+                <li><a href="/" hx-get="/">Home</a></li>
+                <li><a href="/missions" hx-get="/missions">Missions</a></li>
             </ul>
             <div class="nav-profile">
                 {% if logged_in %}
-                <a href="/profile" hx-get="/profile" hx-target="#view" hx-select="#view" hx-push-url="true"
-                    hx-preload="mouseenter" hx-browser-indicator="true">Profile</a>
+                <a href="/profile" hx-get="/profile">Profile</a>
                 {% else %}
-                <a href="/auth/register" hx-get="/auth/register" hx-target="#view" hx-select="#view" hx-push-url="true"
-                    hx-preload="mouseenter" hx-browser-indicator="true">Register</a>
-                <a href="/auth/login" hx-get="/auth/login" hx-target="#view" hx-select="#view" hx-push-url="true"
-                    hx-preload="mouseenter" hx-browser-indicator="true">Login</a>
+                <a href="/auth/register" hx-get="/auth/register">Register</a>
+                <a href="/auth/login" hx-get="/auth/login">Login</a>
                 {% endif %}
             </div>
         </nav>

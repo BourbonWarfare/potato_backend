@@ -1,7 +1,7 @@
 from bw.auth import api
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
-from bw.error import NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
+from bw.error import NeedsAuthenticatedSession, NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
 from bw.state import State
 
 
@@ -43,7 +43,7 @@ def validate_user_has_role(state: State, session_token: str, roles: Roles):
         raise NotEnoughPermissions()
 
 
-def validate_session(state: State, session_token: str):
+def validate_session(state: State, session_token: str, *, require_authentication: bool = True):
     """
     ### Validate session token
 
@@ -59,6 +59,9 @@ def validate_session(state: State, session_token: str):
     """
     if not api.AuthApi().is_session_active(state, session_token):
         raise SessionExpired()
+
+    if require_authentication and not api.AuthApi().is_session_authenticated(state, session_token):
+        raise NeedsAuthenticatedSession()
 
 
 def validate_local(ip: str | None):

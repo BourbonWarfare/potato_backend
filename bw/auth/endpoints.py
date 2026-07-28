@@ -2,7 +2,7 @@ import logging
 import secrets
 import uuid
 
-from quart import Blueprint, request
+from quart import Blueprint, render_template_string, request
 
 from bw.auth.api import AuthApi
 from bw.auth.decorators import require_local, require_session, require_user_role, with_token
@@ -80,10 +80,10 @@ def define_auth(api: Blueprint):
         logger.info('Retrieving access code (Discord)')
         return AuthApi().retrieve_access_code(state=State.state, code_state=state)
 
-    @api.post('/login')
+    @api.post('/register')
     @url_endpoint
-    async def login() -> WebResponse:
-        return WebResponse(status=200, headers={'HX-Redirect': '/'})
+    async def register() -> WebResponse:
+        return WebResponse(status=200)
 
     @api.post('/login/discord')
     @url_endpoint
@@ -825,7 +825,17 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     @frontend.get('/login')
     @html_endpoint(template_path='auth/login.html', title='Sign in to Bourbon Warfare')
     async def login_page(html: str) -> str:
-        return html
+        return await render_template_string(html, csrf_token='blah')
+
+    @frontend.get('/register')
+    @html_endpoint(template_path='auth/create_account.html', title='Register a Bourbon Warfare account')
+    async def register_page(html: str) -> str:
+        return await render_template_string(html, csrf_token='blah')
+
+    @frontend.get('/forgot-password')
+    @html_endpoint(template_path='auth/forgot_password.html', title='Recover your Bourbon Warfare account')
+    async def recover_page(html: str) -> str:
+        return await render_template_string(html, csrf_token='blah')
 
     @frontend.get('/login/discord')
     @html_endpoint(template_path='auth/oauth/discord.html', title='Logged in with Discord')
