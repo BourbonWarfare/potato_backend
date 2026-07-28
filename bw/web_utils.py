@@ -207,13 +207,13 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
     return wrapper
 
 
-def load_template_from_disk(*, template_path: Path | str) -> str:
+async def load_template_from_disk(*, template_path: Path | str) -> str:
     if isinstance(template_path, str):
         template_path = Path(template_path)
     templates_path = Path('./static') / 'templates'
     template_path = templates_path / template_path
-    with open(template_path, encoding='utf-8') as file:
-        return file.read()
+    async with aiofiles.open(template_path, encoding='utf-8') as file:
+        return await file.read()
 
 
 def html_endpoint(*, template_path: Path | str, title: str | None = None):
@@ -248,15 +248,15 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
     def decorator(func: Callable[..., Awaitable[str | WebResponse]]):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            html = load_template_from_disk(template_path=template_path)
-            page = load_template_from_disk(template_path='page.html')
+            html = await load_template_from_disk(template_path=template_path)
+            page = await load_template_from_disk(template_path='page.html')
 
             kwargs['html'] = html
             try:
                 inner_html = await func(*args, **kwargs)
             except BwServerError as e:
                 logger.warning(e)
-                inner_html = load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
+                inner_html = await load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
 
             full_page = await render_template_string(
                 page,

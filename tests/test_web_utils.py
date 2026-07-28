@@ -1,6 +1,6 @@
 import io
 from contextlib import aclosing
-from unittest.mock import AsyncMock, MagicMock, mock_open
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -270,7 +270,7 @@ async def test__json_endpoint__bad_arguments_return_bad_request(mock_request, mo
 @pytest.mark.asyncio
 async def test__html_endpoint__renders_successful_template(mocker, mock_render_template):
     # Mock file reading to return predictable HTML content
-    mocker.patch('builtins.open', mock_open(read_data='<html>{{inner}}</html>'))
+    mocker.patch('bw.web_utils.load_template_from_disk', return_value='<html>{{inner}}</html>')
     mock_render_template.return_value = 'FINAL PAGE'
 
     @html_endpoint(template_path='dashboard.html', title='My Title')
@@ -285,7 +285,7 @@ async def test__html_endpoint__renders_successful_template(mocker, mock_render_t
 
 @pytest.mark.asyncio
 async def test__html_endpoint__renders_error_template_on_bw_server_error(mocker, mock_error, mock_render_template):
-    mocker.patch('builtins.open', mock_open(read_data='Error Page HTML'))
+    mocker.patch('bw.web_utils.load_template_from_disk', return_value='Error Page HTML')
     mock_render_template.return_value = 'FINAL ERROR PAGE'
 
     @html_endpoint(template_path='dashboard.html')
