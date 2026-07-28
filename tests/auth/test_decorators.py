@@ -2,9 +2,17 @@ import unittest
 
 import pytest
 
-from bw.auth.decorators import require_group_permission, require_local, require_session, require_user_role, with_default_session
+from bw.auth.decorators import (
+    require_group_permission,
+    require_local,
+    require_session,
+    require_user_role,
+    verify_csrf_from_form,
+    with_default_session,
+)
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
+from bw.error import CsrfTokenDoesntMatch
 from bw.error.auth import CannotDetermineSession, NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
 
 
@@ -830,4 +838,45 @@ class TestWithDefaultSession:
         ):
             mock_request.headers = {'Authorization': f'Bearer {mock_token}ff'}
             tester()
+        assert mock_validator.called
+
+
+class TestVerifyCsrfFromForm:
+    @pytest.mark.asyncio
+    async def test__matching_csrf__passes(self, mock_token):
+        @verify_csrf_from_form('token')
+        async def tester():
+            pass
+
+        async def mock_form():
+            return {'token': mock_token}
+
+        with (
+            unittest.mock.patch('bw.auth.decorators.SessionStore.get_csrf_token', return_value=mock_token),
+            unittest.mock.patch('bw.auth.decorators.session_token_from_cookie', return_value='valid'),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+        ):
+            mock_request.form = mock_form()
+            await tester()
+        assert mock_validator.called
+
+    @pytest.mark.asyncio
+    async def test__mismatching_csrf__raises(self, mock_token):
+        @verify_csrf_from_form()
+        async def tester():
+            pass
+
+        async def mock_form():
+            return {'token': f'{mock_token}ff'}
+
+        with (
+            unittest.mock.patch('bw.auth.decorators.SessionStore.get_csrf_token', return_value=mock_token),
+            unittest.mock.patch('bw.auth.decorators.session_token_from_cookie', return_value='valid'),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+        ):
+            mock_request.form = mock_form()
+            with pytest.raises(CsrfTokenDoesntMatch):
+                await tester()
         assert mock_validator.called

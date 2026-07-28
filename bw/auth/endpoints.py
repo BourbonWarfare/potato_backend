@@ -5,7 +5,13 @@ import uuid
 from quart import Blueprint, render_template_string, request
 
 from bw.auth.api import AuthApi
-from bw.auth.decorators import require_local, require_session, require_user_role, with_default_session, with_token
+from bw.auth.decorators import (
+    require_local,
+    require_session,
+    require_user_role,
+    with_default_session,
+    with_token,
+)
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.models.auth import User
@@ -827,6 +833,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     @with_default_session
     async def login_page(session_token: str, html: str) -> str:
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
+        AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/register')
@@ -834,6 +841,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     @with_default_session
     async def register_page(session_token: str, html: str) -> str:
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
+        AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/forgot-password')
@@ -841,6 +849,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     @with_default_session
     async def recover_page(session_token: str, html: str) -> str:
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
+        AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/login/discord')

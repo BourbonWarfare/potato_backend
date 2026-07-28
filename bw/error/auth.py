@@ -115,3 +115,8 @@ class NoAccessCodeFound(NotFoundError):
 class PasswordDoesNotMatch(AuthError):
     def __init__(self):
         super().__init__('Password does not match user')
+
+
+class CsrfTokenDoesntMatch(AuthError):
+    def __init__(self):
+        super().__init__('csrf token does not match')

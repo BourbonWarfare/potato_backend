@@ -13,6 +13,7 @@ from bw.auth.utils import session_token_from_bearer, session_token_from_cookie
 from bw.auth.validators import validate_local, validate_session
 from bw.error import (
     CannotDetermineSession,
+    CsrfTokenDoesntMatch,
     NeedsAuthenticatedSession,
     NonLocalIpAccessingLocalOnlyAddress,
     NotEnoughPermissions,
@@ -288,6 +289,51 @@ def require_user_role(*required_roles: bool):
                     return afnc()
                 else:
                     return func(session_user=session_user, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def verify_csrf_from_form(form_id: str = 'csrf_token'):
+    def decorator(func):
+        @contextmanager
+        def _session_csrf():
+            session_token: str = ''
+            try:
+                session_token = session_token_from_cookie(AuthApi())
+            except CannotDetermineSession:
+                pass
+
+            if not session_token:
+                try:
+                    session_token = session_token_from_bearer(headers=request.headers)
+                except CannotDetermineSession:
+                    pass
+
+            try:
+                if not session_token:
+                    raise NeedsAuthenticatedSession()
+
+                validate_session(State.state, session_token)
+            except (SessionExpired, NeedsAuthenticatedSession):
+                pass
+
+            yield SessionStore().get_csrf_token(State.state, session_token)
+
+        @functools.wraps(func)
+        async def wrapper(**kwargs):
+            with _session_csrf() as csrf_token:
+                print(request.form)
+                form_token = (await request.form).get(form_id, '')
+                print(csrf_token, form_token)
+                if form_token != csrf_token:
+                    raise CsrfTokenDoesntMatch()
+
+            if asyncio.iscoroutinefunction(func):
+                return await func(**kwargs)
+            else:
+                return func(**kwargs)
 
         return wrapper
 

@@ -44,7 +44,6 @@ class AuthApi:
     @define_api
     def set_csrf_token(self, state: State, session_token: str) -> WebResponse:
         csrf_token = secure_token_urlsafe()
-        self.store_session_cookie(session_token)
         SessionStore().set_csrf_token(state, session_token, csrf_token)
         return WithState(state=csrf_token)
 
