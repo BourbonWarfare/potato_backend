@@ -7,52 +7,34 @@
     <title>{{ title }}</title>
 
     <link rel="stylesheet" href="/static/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
-    <script>
-        const html_map = new Map();
-        let element_id = 0;
-
-        function preload(element) {
-            // If the HTML is already cached, use it
-            if (html_map.has(element.href)) {
-                return;
-            }
-
-            // Otherwise, fetch the HTML and cache it
-            const parser = new DOMParser();
-            console.log('Preloading:', element.href);
-            fetch(element.href)
-                .then(response => response.text())
-                .then(html => {
-                    const htmlDoc = parser.parseFromString(html, 'text/html');
-                    return htmlDoc.querySelector('#view').innerHTML;
-                })
-                .then(html => {
-                    html_map.set(element.href, html);
-                })
-                .catch(error => console.error('Error fetching HTML:', error));
-        }
-
-        function setViewToCachedHTML(element) {
-            // If the HTML is cached, set the view to it
-            if (html_map.has(element.href)) {
-                document.getElementById("view").innerHTML = html_map.get(element.href);
-            } else {
-                console.error('No cached HTML found for:', element.href);
-            }
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6"
+        integrity="sha384-6lyVbhrs13b9z7mLOpt/N6R76rtkEBWgCjAXRs/DSWyi2AMnQSs10ijWk+PI8n7W"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6/dist/ext/hx-browser-indicator.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6/dist/ext/hx-preload.js"></script>
 </head>
 
 <body>
     <!-- The top bar for the website -->
     <header>
-        <nav>
-            <ul>
-                <li><a href="/" hx-on:mouseover="preload(this)" hx-on:click="setViewToCachedHTML(this)">Home</a></li>
-                <li><a href="/missions" hx-on:mouseover="preload(this)"
-                        hx-on:click="setViewToCachedHTML(this)">Missions</a></li>
+        <nav class="navbar">
+            <ul class="nav-links">
+                <li><a href="/" hx-get="/" hx-target="#view" hx-select="#view" hx-push-url="true"
+                        hx-preload="mouseenter" hx-browser-indicator="true">Home</a></li>
+                <li><a href="/missions" hx-get="/missions" hx-target="#view" hx-select="#view" hx-push-url="true"
+                        hx-preload="mouseenter" hx-browser-indicator="true">Missions</a></li>
             </ul>
+            <div class="nav-profile">
+                {% if logged_in %}
+                <a href="/profile" hx-get="/profile" hx-target="#view" hx-select="#view" hx-push-url="true"
+                    hx-preload="mouseenter" hx-browser-indicator="true">Profile</a>
+                {% else %}
+                <a href="/auth/register" hx-get="/auth/register" hx-target="#view" hx-select="#view" hx-push-url="true"
+                    hx-preload="mouseenter" hx-browser-indicator="true">Register</a>
+                <a href="/auth/login" hx-get="/auth/login" hx-target="#view" hx-select="#view" hx-push-url="true"
+                    hx-preload="mouseenter" hx-browser-indicator="true">Login</a>
+                {% endif %}
+            </div>
         </nav>
     </header>
     <!-- The body of page the website. This gets filled out server-side -->

@@ -1,0 +1,62 @@
+<div class="container-card auth-card">
+    <div class="card-content" id="auth-card-content">
+
+        <div class="auth-header">
+            <h1>Sign in to Bourbon Warfare</h1>
+            <p>Potatoes await.</p>
+        </div>
+
+        <!-- Normal POST — will redirect after server response -->
+        <form action="/api/v1/auth/login" method="POST" class="auth-form" autocomplete="on">
+            <input type="hidden" name="csrf_token" value="stub-csrf-token" />
+
+            <div class="form-group">
+                <label for="username">Username or E-Mail</label>
+                <input type="text" name="username" id="username" placeholder="you@example.com" autocomplete="username"
+                    autocapitalize="off" required />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" placeholder="••••••••"
+                    autocomplete="current-password" required />
+            </div>
+
+            <div class="form-options">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" name="remember" id="remember" />
+                    <span class="checkmark"></span>
+                    <span class="checkbox-label">Remember me</span>
+                </label>
+                <!-- HTMX: loads forgot password form into the same card -->
+                <a href="/forgot-password" class="forgot-link" hx-get="/forgot-password" hx-target="#auth-card-content"
+                    hx-swap="innerHTML" hx-push-url="true" hx-browser-indicator="true">
+                    Forgot password?
+                </a>
+            </div>
+
+            <button type="submit" class="btn-primary">Sign In</button>
+        </form>
+
+        <div class="login-divider"><span>or</span></div>
+
+        <!-- Normal navigation — will redirect to Discord OAuth -->
+        <div class="oauth-grid">
+            <a href="/auth/discord" class="oauth-btn discord">
+                <img src="/static/svg/discord.svg" class="discord-logo" alt="Discord logo" />
+                Sign in with Discord
+            </a>
+        </div>
+
+        <div class="auth-footer">
+            <p>Need an account?
+                <!-- HTMX: loads registration form into the same card -->
+                <a href="/register" hx-get="/register" hx-target="#auth-card-content" hx-swap="innerHTML"
+                    hx-push-url="true" hx-browser-indicator="true">
+                    Create one
+                </a>
+            </p>
+        </div>
+
+    </div>
+</div>

@@ -13,7 +13,16 @@ import aiofiles
 from quart import render_template_string, request
 
 from bw.converters import make_json_safe
-from bw.error import BadArguments, BadHeader, BwServerError, ExpectedJson, JsonPayloadError, WrongAccept
+from bw.error import (
+    BadArguments,
+    BadHeader,
+    BwServerError,
+    CannotDetermineSession,
+    ExpectedJson,
+    JsonPayloadError,
+    SessionExpired,
+    WrongAccept,
+)
 from bw.response import ChunkedResponse, JsonResponse, ServerSentEventResponse, ServerSentResponseError, WebEvent, WebResponse
 from bw.web_event import BaseEvent
 
@@ -242,6 +251,10 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
     # Callable[..., Awaitable[str]]
     ```
     """
+    from bw.auth.api import AuthApi
+    from bw.auth.validators import validate_session
+    from bw.state import State
+
     if isinstance(template_path, str):
         template_path = Path(template_path)
 
@@ -258,10 +271,18 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None):
                 logger.warning(e)
                 inner_html = await load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
 
+            try:
+                session_token = AuthApi().get_session_cookie()
+                validate_session(State.state, session_token)
+                is_logged_in = True
+            except (CannotDetermineSession, SessionExpired):
+                is_logged_in = False
+
             full_page = await render_template_string(
                 page,
                 inner_html=inner_html,
                 title=title if title is not None else 'Bourbon Warfare',
+                logged_in=is_logged_in,
             )
 
             if isinstance(inner_html, str):

@@ -80,6 +80,11 @@ def define_auth(api: Blueprint):
         logger.info('Retrieving access code (Discord)')
         return AuthApi().retrieve_access_code(state=State.state, code_state=state)
 
+    @api.post('/login')
+    @url_endpoint
+    async def login() -> WebResponse:
+        return WebResponse(status=200, headers={'HX-Redirect': '/'})
+
     @api.post('/login/discord')
     @url_endpoint
     @with_token
@@ -817,6 +822,11 @@ def define_group(api: Blueprint):
 
 
 def define_html(frontend: Blueprint, parts: Blueprint):
+    @frontend.get('/login')
+    @html_endpoint(template_path='auth/login.html', title='Sign in to Bourbon Warfare')
+    async def login_page(html: str) -> str:
+        return html
+
     @frontend.get('/login/discord')
     @html_endpoint(template_path='auth/oauth/discord.html', title='Logged in with Discord')
     async def login_discord_redirect(html: str) -> str:
