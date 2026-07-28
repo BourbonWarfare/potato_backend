@@ -23,9 +23,15 @@ def define(app: Quart):
 
         @app.get('/static/css/<string:path>')
         @url_endpoint
-        async def static_file(path: str) -> WebResponse:
+        async def static_css(path: str) -> WebResponse:
             file = await aiofiles.open(f'static/css/{path}')
             return chunk_file_response(file, mimetype='text/css')
+
+        @app.get('/static/svg/<string:path>')
+        @url_endpoint
+        async def static_svg(path: str) -> WebResponse:
+            file = await aiofiles.open(f'static/svg/{path}')
+            return chunk_file_response(file, mimetype='image/svg+xml')
 
     api_blueprint = Blueprint('bw_api', __name__, url_prefix='/api/v1')
     local_blueprint = Blueprint('bw_api_local', __name__, url_prefix='/api/local')
