@@ -182,7 +182,7 @@ def with_default_session(func):
             if not session_token:
                 raise NeedsAuthenticatedSession()
 
-            validate_session(State.state, session_token)
+            validate_session(State.state, session_token, require_authentication=False)
         except (SessionExpired, NeedsAuthenticatedSession):
             session = SessionStore().start_unauthenticated_session(State.state)
             session_token = session['session_token']

@@ -20,6 +20,7 @@ from bw.error import (
     CannotDetermineSession,
     ExpectedJson,
     JsonPayloadError,
+    NeedsAuthenticatedSession,
     SessionExpired,
     WrongAccept,
 )
@@ -337,7 +338,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, only_a
                 session_token = AuthApi().get_session_cookie()
                 validate_session(State.state, session_token)
                 is_logged_in = True
-            except (CannotDetermineSession, SessionExpired):
+            except (CannotDetermineSession, SessionExpired, NeedsAuthenticatedSession):
                 is_logged_in = False
 
             partial_page = await load_template_from_disk(template_path='page.html')
