@@ -67,6 +67,11 @@ class Environment:
         assert isinstance(player_count, str)
         return int(player_count)
 
+    def signing_key(self) -> bytes:
+        key = GC.require('signing_key').get()
+        assert isinstance(key, str)
+        return key.encode('utf-8')
+
 
 class Local(Environment):
     def port(self) -> int:
@@ -100,6 +105,9 @@ class Test(Environment):
 
     def use_subprocess(self) -> bool:
         return False
+
+    def signing_key(self) -> bytes:
+        return b'blah'
 
 
 class Staging(Environment):

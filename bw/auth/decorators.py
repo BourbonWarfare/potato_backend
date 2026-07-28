@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from quart import request
 
+from bw.auth.api import AuthApi
 from bw.auth.group import GroupStore
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
@@ -115,8 +116,7 @@ def require_session(func):
     ```
     """
 
-    @contextmanager
-    def _session_user():
+    def _session_token_from_bearer() -> str:
         auth = request.headers.get('Authorization')
         if auth is None:
             logger.warning("'Session Token' not present in header")
@@ -127,7 +127,17 @@ def require_session(func):
             logger.warning("'Session Token' does not start with 'Bearer '")
             raise CannotDetermineSession()
 
-        session_token = auth[len(bearer_header) :]  # Remove 'Bearer ' prefix
+        return auth[len(bearer_header) :]  # Remove 'Bearer ' prefix
+
+    def _session_token_from_cookie() -> str:
+        return AuthApi().get_session_cookie()
+
+    @contextmanager
+    def _session_user():
+        try:
+            session_token = _session_token_from_cookie()
+        except CannotDetermineSession:
+            session_token = _session_token_from_bearer()
 
         validate_session(State.state, session_token)
         yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)

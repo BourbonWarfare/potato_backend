@@ -2,6 +2,8 @@ import logging
 import uuid
 
 import aiohttp
+from quart import has_request_context
+from quart import session as user_session
 
 from bw.auth.group import GroupStore
 from bw.auth.permissions import Permissions
@@ -10,7 +12,14 @@ from bw.auth.session import SessionStore
 from bw.auth.types import DiscordSnowflake
 from bw.auth.user import UserStore
 from bw.environment import ENVIRONMENT
-from bw.error import AuthError, BwServerError, NoUserWithGivenCredentials, ReauthNeededError, SessionExpired
+from bw.error import (
+    AuthError,
+    BwServerError,
+    CannotDetermineSession,
+    NoUserWithGivenCredentials,
+    ReauthNeededError,
+    SessionExpired,
+)
 from bw.models.auth import User
 from bw.response import DoesNotExist, Exists, JsonResponse, Ok, WebResponse
 from bw.state import State
@@ -20,6 +29,17 @@ logger = logging.getLogger('bw.auth')
 
 
 class AuthApi:
+    def store_session_cookie(self, session: str):
+        user_session['session'] = session
+
+    def get_session_cookie(self) -> str:
+        if not has_request_context():
+            raise CannotDetermineSession()
+
+        if 'session' not in user_session:
+            raise CannotDetermineSession()
+        return user_session['session']
+
     @define_api
     def create_new_user_bot(self, state: State) -> JsonResponse:
         """

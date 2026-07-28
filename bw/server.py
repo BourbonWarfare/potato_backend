@@ -18,6 +18,7 @@ setup_log_config()
 
 app = Quart(__name__)
 app.config.update(TESTING=False, PROPAGATE_EXCEPTIONS=False)
+app.secret_key = ENVIRONMENT.signing_key()
 state = State()
 define_endpoints(app)
 
