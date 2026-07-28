@@ -37,6 +37,39 @@ def test__session_store__is_session_valid__with_session(state, db_session_1, tok
     assert SessionStore().is_session_active(state, token_1)
 
 
+def test__session_store__starting_unauthenticated_session_happy(mocker, token_1, expire_valid, state):
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.unauthenticated_session_length', return_value=expire_valid)
+
+    new_session = SessionStore().start_unauthenticated_session(state)
+    assert new_session['session_token'] == token_1
+    assert new_session['expire_time'] == datetime.fromisoformat(expire_valid)
+
+
+def test__session_store__starting_unauthenticated_session_is_active(mocker, token_1, expire_valid, state):
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.unauthenticated_session_length', return_value=expire_valid)
+
+    new_session = SessionStore().start_unauthenticated_session(state)
+    assert SessionStore().is_session_active(state, new_session['session_token'])
+
+
+def test__session_store__starting_unauthenticated_session_is_unauthed(mocker, token_1, expire_valid, state):
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.unauthenticated_session_length', return_value=expire_valid)
+
+    new_session = SessionStore().start_unauthenticated_session(state)
+    assert not SessionStore().is_session_authenticated(state, new_session['session_token'])
+
+
+def test__session_store__starting_unauthenticated_session_expired(mocker, token_1, expire_invalid, state):
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.unauthenticated_session_length', return_value=expire_invalid)
+
+    new_session = SessionStore().start_unauthenticated_session(state)
+    assert not SessionStore().is_session_active(state, new_session['session_token'])
+
+
 def test__session_store__starting_session_return_correct(mocker, token_1, expire_valid, state, db_user_1):
     mocker.patch('secrets.token_urlsafe', return_value=token_1)
     mocker.patch('bw.models.auth.Session.api_session_length', return_value=expire_valid)
@@ -52,6 +85,14 @@ def test__session_store__starting_session_activates(mocker, token_1, expire_vali
 
     new_session = SessionStore().start_api_session(state, db_user_1)
     assert SessionStore().is_session_active(state, new_session['session_token'])
+
+
+def test__session_store__starting_session_starts_authenticated_session(mocker, token_1, expire_valid, state, db_user_1):
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.api_session_length', return_value=expire_valid)
+
+    new_session = SessionStore().start_api_session(state, db_user_1)
+    assert SessionStore().is_session_authenticated(state, new_session['session_token'])
 
 
 def test__session_store__starting_session_activates_with_db_value(mocker, state, db_user_1):
@@ -213,6 +254,15 @@ def test__session_store__start_user_session_creates_active_session(mocker, token
 
     session_data = SessionStore().start_user_session(state, db_user_1)
     assert SessionStore().is_session_active(state, session_data['session_token'])
+
+
+def test__session_store__start_user_session_creates_authenticated_session(mocker, token_1, expire_valid, state, db_user_1):
+    """Test that start_user_session creates an active session"""
+    mocker.patch('secrets.token_urlsafe', return_value=token_1)
+    mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
+
+    session_data = SessionStore().start_user_session(state, db_user_1)
+    assert SessionStore().is_session_authenticated(state, session_data['session_token'])
 
 
 def test__session_store__start_user_session_does_not_expire_existing(mocker, token_1, token_2, expire_valid, state, db_user_1):

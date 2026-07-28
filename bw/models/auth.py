@@ -119,6 +119,10 @@ class Session(Base):
     def api_session_length(cls):
         return cls.now() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['api_session_length']))
 
+    @classmethod
+    def unauthenticated_session_length(cls):
+        return cls.now() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['unauthed_session_length']))
+
 
 class GroupPermission(Base):
     __tablename__ = 'group_permissions'
