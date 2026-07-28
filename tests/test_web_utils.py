@@ -1,5 +1,6 @@
 import io
 from contextlib import aclosing
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -11,6 +12,7 @@ from bw.web_utils import (
     chunk_json_response,
     chunk_text_response,
     define_api,
+    form_endpoint,
     html_endpoint,
     json_endpoint,
     sse_endpoint,
@@ -31,6 +33,11 @@ def mock_request(mocker):
     request_mock.get_json = AsyncMock(return_value=None)
     request_mock.headers = {}
     request_mock.accept_mimetypes = {'text/event-stream': 'text/event-stream'}
+
+    async def form():
+        return {}
+
+    request_mock.form = form()
 
     mocker.patch('bw.web_utils.request', request_mock)
     return request_mock
@@ -162,6 +169,84 @@ async def test__url_endpoint__type_error_in_function_is_not_caught(mock_request)
 @pytest.mark.asyncio
 async def test__url_endpoint__bad_arguments_return_bad_request(mock_request, mock_error):
     @url_endpoint
+    async def endpoint(my_arg: int):
+        return 'blah'
+
+    response = await endpoint(fake=400)
+    assert response.status == '400 BAD REQUEST'
+
+
+# ==============================================================================
+# UNIT UNDER TEST: form_endpoint
+# ==============================================================================
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__returns_expected_response(mock_request):
+    expected = MockWebResponse()
+
+    @form_endpoint
+    async def endpoint():
+        return expected
+
+    assert await endpoint() is expected
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__catches_bw_server_error(mock_error, mock_request):
+    @form_endpoint
+    async def endpoint():
+        raise mock_error
+
+    response = await endpoint()
+    assert isinstance(response, MockErrorResponse)
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__type_error_in_function_is_not_caught(mock_request):
+    @form_endpoint
+    async def endpoint():
+        raise TypeError()
+
+    with pytest.raises(TypeError):
+        await endpoint()
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__form_values_are_inserted(mock_request, mock_error):
+    expected = MockWebResponse()
+
+    @form_endpoint
+    async def endpoint(arg1: int, arg2: str):
+        assert arg1 == 52
+        assert arg2 == 'blah'
+        return expected
+
+    async def mock_form():
+        return {'arg1': 52, 'arg2': 'blah'}
+
+    mock_request.form = mock_form()
+    response = await endpoint()
+    assert response == expected
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__missing_arg_type_error(mock_request, mock_error):
+    @form_endpoint
+    async def endpoint(arg1: int, arg2: str, arg3: Any):
+        pass
+
+    async def mock_form():
+        return {'arg1': 52, 'arg2': 'blah'}
+
+    mock_request.form = mock_form()
+    response = await endpoint()
+    assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__bad_arguments_return_bad_request(mock_request, mock_error):
+    @form_endpoint
     async def endpoint(my_arg: int):
         return 'blah'
 
