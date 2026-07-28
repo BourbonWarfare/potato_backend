@@ -1,6 +1,7 @@
 # ruff: noqa: F811, F401
 
 import json
+import unittest.mock
 import uuid
 from datetime import datetime
 
@@ -33,6 +34,7 @@ from integrations.auth.fixtures import (
     db_role_2,
     db_session_1,
     db_session_2,
+    db_unauthenticated_session_1,
     db_user_1,
     db_user_2,
     discord_id_1,
@@ -799,3 +801,18 @@ def test__edit_permission__groups_using_permission_get_updated_permissions(
     # User should now have permission_2 grants
     perms_after = GroupStore().get_all_permissions_user_has(state, db_user_1)
     assert perms_after.as_dict() == permission_2.as_dict()
+
+
+def test__set_csrf_token__token_set_for_session(state, db_unauthenticated_session_1, token_1):
+    with unittest.mock.patch('bw.auth.api.secure_token_urlsafe', return_value=token_1):
+        response = AuthApi().set_csrf_token(state, db_unauthenticated_session_1.token)
+    assert response.status == '200 OK'
+    assert response.state == token_1
+
+
+def test__set_csrf_token__token_not_set_for_invalid_session(state, token_1):
+    with unittest.mock.patch('bw.auth.api.secure_token_urlsafe', return_value=token_1):
+        response = AuthApi().set_csrf_token(state, 'blah')
+
+    assert response.status == '200 OK'
+    assert response.state == token_1

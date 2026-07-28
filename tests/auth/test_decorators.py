@@ -2,10 +2,15 @@ import unittest
 
 import pytest
 
-from bw.auth.decorators import require_group_permission, require_local, require_session, require_user_role
+from bw.auth.decorators import require_group_permission, require_local, require_session, require_user_role, with_default_session
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.error.auth import CannotDetermineSession, NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions, SessionExpired
+
+
+@pytest.fixture
+def mock_token() -> str:
+    return 'blah'
 
 
 class MockUser:
@@ -767,3 +772,62 @@ class TestRequireUserRole:
                 await tester(mock_session_user)
         assert mock_getter.called
         assert not called
+
+
+class TestWithDefaultSession:
+    def test__have_cookie_token__no_session_starts(self, mock_token):
+        @with_default_session
+        def tester(session_token: str):
+            assert session_token == mock_token
+
+        with (
+            unittest.mock.patch('bw.auth.decorators.session_token_from_cookie', return_value=mock_token),
+            unittest.mock.patch('bw.auth.decorators.validate_session') as mock_validator,
+        ):
+            tester()
+        assert mock_validator.called
+
+    def test__have_bearer_token__no_session_starts(self, mock_token):
+        @with_default_session
+        def tester(session_token: str):
+            assert session_token == mock_token
+
+        with (
+            unittest.mock.patch('bw.auth.decorators.session_token_from_cookie', side_effect=CannotDetermineSession()),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+            unittest.mock.patch('bw.auth.decorators.validate_session'),
+        ):
+            mock_request.headers = {'Authorization': f'Bearer {mock_token}'}
+            tester()
+
+    def test__have_no_token__session_starts(self, mock_token):
+        @with_default_session
+        def tester(session_token: str):
+            assert session_token == mock_token
+
+        with (
+            unittest.mock.patch('bw.auth.decorators.session_token_from_cookie', side_effect=CannotDetermineSession()),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+            unittest.mock.patch(
+                'bw.auth.decorators.SessionStore.start_unauthenticated_session', return_value={'session_token': mock_token}
+            ),
+        ):
+            mock_request.headers = {'Authorization': 'Basic'}
+            tester()
+
+    def test__have_expired_token__session_starts(self, mock_token):
+        @with_default_session
+        def tester(session_token: str):
+            assert session_token == mock_token
+
+        with (
+            unittest.mock.patch('bw.auth.decorators.session_token_from_cookie', side_effect=CannotDetermineSession()),
+            unittest.mock.patch('bw.auth.decorators.request', new_callable=unittest.mock.PropertyMock) as mock_request,
+            unittest.mock.patch(
+                'bw.auth.decorators.SessionStore.start_unauthenticated_session', return_value={'session_token': mock_token}
+            ),
+            unittest.mock.patch('bw.auth.decorators.validate_session', side_effect=SessionExpired) as mock_validator,
+        ):
+            mock_request.headers = {'Authorization': f'Bearer {mock_token}ff'}
+            tester()
+        assert mock_validator.called

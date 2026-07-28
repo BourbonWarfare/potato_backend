@@ -284,3 +284,12 @@ class TestSessionStore:
 
         with pytest.raises(SessionExpired):
             SessionStore().start_user_session(state, db_user_1)
+
+    def test__set_csrf_token__token_is_set(self, mocker, state, db_session_1, token_1):
+        SessionStore().set_csrf_token(state, db_session_1.token, token_1)
+        token = SessionStore().get_csrf_token(state, db_session_1.token)
+        assert token == token_1
+
+    def test__get_csrf_token__invalid_session_returns_empty(self, mocker, state):
+        token = SessionStore().get_csrf_token(state, 'blah')
+        assert token == ''

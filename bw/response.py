@@ -60,6 +60,12 @@ class WebResponse(Response):
         )
 
 
+class WithState(WebResponse):
+    def __init__(self, state: Any, status: int = 200, data: str = '', headers: dict[str, str] | None = None):
+        self.state = state
+        super().__init__(status, headers=headers, response=data)
+
+
 class Ok(WebResponse):
     def __init__(self, data: str = ''):
         super().__init__(200, response=data)

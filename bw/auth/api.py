@@ -11,6 +11,7 @@ from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
 from bw.auth.types import DiscordSnowflake
 from bw.auth.user import UserStore
+from bw.auth.utils import secure_token_urlsafe
 from bw.environment import ENVIRONMENT
 from bw.error import (
     AuthError,
@@ -21,7 +22,7 @@ from bw.error import (
     SessionExpired,
 )
 from bw.models.auth import User
-from bw.response import DoesNotExist, Exists, JsonResponse, Ok, WebResponse
+from bw.response import DoesNotExist, Exists, JsonResponse, Ok, WebResponse, WithState
 from bw.state import State
 from bw.web_utils import define_api
 
@@ -39,6 +40,12 @@ class AuthApi:
         if 'session' not in user_session:
             raise CannotDetermineSession()
         return user_session['session']
+
+    @define_api
+    def set_csrf_token(self, state: State, session_token: str) -> WebResponse:
+        csrf_token = secure_token_urlsafe()
+        SessionStore().set_csrf_token(state, session_token, csrf_token)
+        return WithState(state=csrf_token)
 
     @define_api
     def create_new_user_bot(self, state: State) -> JsonResponse:

@@ -8,8 +8,9 @@ from sqlalchemy.exc import IntegrityError, NoResultFound, ProgrammingError
 from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
+from bw.auth.utils import secure_token_urlsafe
 from bw.error import AuthError, DbError, DiscordUserAlreadyExists, NoRoleWithName, NoUserWithGivenCredentials, RoleCreationFailed
-from bw.models.auth import SALT_LENGTH, TOKEN_LENGTH, BotUser, BourbonUser, DiscordUser, Role, User
+from bw.models.auth import SALT_LENGTH, BotUser, BourbonUser, DiscordUser, Role, User
 from bw.state import State
 
 
@@ -295,7 +296,7 @@ class UserStore:
         """
         with state.Session.begin() as session:
             try:
-                token = secrets.token_urlsafe()[:TOKEN_LENGTH]
+                token = secure_token_urlsafe()
                 bot_user = BotUser(user_id=user.id, bot_token=token)
                 session.add(bot_user)
                 session.flush()

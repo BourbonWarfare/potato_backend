@@ -9,8 +9,15 @@ from bw.auth.api import AuthApi
 from bw.auth.group import GroupStore
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
+from bw.auth.utils import session_token_from_bearer, session_token_from_cookie
 from bw.auth.validators import validate_local, validate_session
-from bw.error import CannotDetermineSession, NonLocalIpAccessingLocalOnlyAddress, NotEnoughPermissions
+from bw.error import (
+    CannotDetermineSession,
+    NeedsAuthenticatedSession,
+    NonLocalIpAccessingLocalOnlyAddress,
+    NotEnoughPermissions,
+    SessionExpired,
+)
 from bw.models.auth import User
 from bw.state import State
 
@@ -116,28 +123,12 @@ def require_session(func):
     ```
     """
 
-    def _session_token_from_bearer() -> str:
-        auth = request.headers.get('Authorization')
-        if auth is None:
-            logger.warning("'Session Token' not present in header")
-            raise CannotDetermineSession()
-
-        bearer_header = 'Bearer '
-        if not auth.startswith(bearer_header):
-            logger.warning("'Session Token' does not start with 'Bearer '")
-            raise CannotDetermineSession()
-
-        return auth[len(bearer_header) :]  # Remove 'Bearer ' prefix
-
-    def _session_token_from_cookie() -> str:
-        return AuthApi().get_session_cookie()
-
     @contextmanager
     def _session_user():
         try:
-            session_token = _session_token_from_cookie()
+            session_token = session_token_from_cookie(AuthApi())
         except CannotDetermineSession:
-            session_token = _session_token_from_bearer()
+            session_token = session_token_from_bearer(request.headers)
 
         validate_session(State.state, session_token)
         yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)
@@ -153,6 +144,61 @@ def require_session(func):
                 return afnc()
             else:
                 return func(session_user=session_user, **kwargs)
+
+    return wrapper
+
+
+def with_default_session(func):
+    """
+    ### Start an unauthenticated session with this request
+
+    Ensures a session is created for this user by starting an unauthenticated one if none are found
+    in the cookie
+
+    **Example:**
+    ```python
+    @with_default_session
+    def my_view(session_token: str, ...):
+        ...
+    ```
+    """
+
+    @contextmanager
+    def _session_token():
+        session_token: str | None = None
+        try:
+            session_token = session_token_from_cookie(AuthApi())
+        except CannotDetermineSession:
+            pass
+
+        if not session_token:
+            try:
+                session_token = session_token_from_bearer(headers=request.headers)
+            except CannotDetermineSession:
+                pass
+
+        try:
+            if not session_token:
+                raise NeedsAuthenticatedSession()
+
+            validate_session(State.state, session_token)
+        except (SessionExpired, NeedsAuthenticatedSession):
+            session = SessionStore().start_unauthenticated_session(State.state)
+            session_token = session['session_token']
+
+        yield session_token
+
+    @functools.wraps(func)
+    def wrapper(**kwargs):
+        with _session_token() as session_token:
+            if asyncio.iscoroutinefunction(func):
+
+                async def afnc():
+                    return await func(session_token=session_token, **kwargs)
+
+                return afnc()
+            else:
+                return func(session_token=session_token, **kwargs)
 
     return wrapper
 

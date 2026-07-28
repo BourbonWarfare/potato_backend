@@ -5,7 +5,7 @@ import uuid
 from quart import Blueprint, render_template_string, request
 
 from bw.auth.api import AuthApi
-from bw.auth.decorators import require_local, require_session, require_user_role, with_token
+from bw.auth.decorators import require_local, require_session, require_user_role, with_default_session, with_token
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.models.auth import User
@@ -824,18 +824,24 @@ def define_group(api: Blueprint):
 def define_html(frontend: Blueprint, parts: Blueprint):
     @frontend.get('/login')
     @html_endpoint(template_path='auth/login.html', title='Sign in to Bourbon Warfare')
-    async def login_page(html: str) -> str:
-        return await render_template_string(html, csrf_token='blah')
+    @with_default_session
+    async def login_page(session_token: str, html: str) -> str:
+        csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
+        return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/register')
     @html_endpoint(template_path='auth/create_account.html', title='Register a Bourbon Warfare account')
-    async def register_page(html: str) -> str:
-        return await render_template_string(html, csrf_token='blah')
+    @with_default_session
+    async def register_page(session_token: str, html: str) -> str:
+        csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
+        return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/forgot-password')
     @html_endpoint(template_path='auth/forgot_password.html', title='Recover your Bourbon Warfare account')
-    async def recover_page(html: str) -> str:
-        return await render_template_string(html, csrf_token='blah')
+    @with_default_session
+    async def recover_page(session_token: str, html: str) -> str:
+        csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
+        return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/login/discord')
     @html_endpoint(template_path='auth/oauth/discord.html', title='Logged in with Discord')

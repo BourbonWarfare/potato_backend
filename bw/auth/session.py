@@ -1,11 +1,11 @@
 import logging
-import secrets
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import NoResultFound
 
+from bw.auth.utils import secure_token_urlsafe
 from bw.error import NoAccessCodeFound, SessionExpired
-from bw.models.auth import TOKEN_LENGTH, DiscordOAuthCode, Session, User
+from bw.models.auth import DiscordOAuthCode, Session, User
 from bw.state import State
 
 logger = logging.getLogger('bw.auth')
@@ -65,7 +65,7 @@ class SessionStore:
         # {'session_token': 'abc123...', 'expire_time': '2024-12-31T23:59:59'}
         ```
         """
-        token = secrets.token_urlsafe()[:TOKEN_LENGTH]
+        token = secure_token_urlsafe()
         with state.Session.begin() as session:
             query = (
                 insert(Session)
@@ -106,7 +106,7 @@ class SessionStore:
         # {'session_token': 'abc123...', 'expire_time': '2024-12-31T23:59:59'}
         ```
         """
-        token = secrets.token_urlsafe()[:TOKEN_LENGTH]
+        token = secure_token_urlsafe()
         with state.Session.begin() as session:
             query = (
                 insert(Session)
@@ -150,7 +150,7 @@ class SessionStore:
         """
         self.expire_session_from_user(state, user)
 
-        token = secrets.token_urlsafe()[:TOKEN_LENGTH]
+        token = secure_token_urlsafe()
         with state.Session.begin() as session:
             query = (
                 insert(Session)
@@ -370,3 +370,16 @@ class SessionStore:
 
             session.commit()
             return result.code
+
+    def set_csrf_token(self, state: State, session_token: str, csrf_token: str):
+        with state.Session.begin() as session:
+            query = update(Session).where(Session.token == session_token).values(csrf_token=csrf_token)
+            session.execute(query)
+
+    def get_csrf_token(self, state: State, session_token: str):
+        with state.Session.begin() as session:
+            query = select(Session.csrf_token).where(Session.token == session_token)
+            csrf_token = session.scalar(query)
+            if not csrf_token:
+                csrf_token = ''
+        return csrf_token
