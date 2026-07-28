@@ -70,11 +70,7 @@ class SessionStore:
         with state.Session.begin() as session:
             query = (
                 insert(Session)
-                .values(
-                    user_id=user.id,
-                    token=token,
-                    expire_time=Session.human_session_length(),
-                )
+                .values(user_id=user.id, token=token, expire_time=Session.human_session_length(), authenticated=True)
                 .returning(Session.expire_time)
             )
             expire_time = session.scalar(query)
@@ -118,11 +114,7 @@ class SessionStore:
         with state.Session.begin() as session:
             query = (
                 insert(Session)
-                .values(
-                    user_id=user.id,
-                    token=token,
-                    expire_time=Session.api_session_length(),
-                )
+                .values(user_id=user.id, token=token, expire_time=Session.api_session_length(), authenticated=True)
                 .returning(Session.expire_time)
             )
             expire_time = session.scalar(query)
