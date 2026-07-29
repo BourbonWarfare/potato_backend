@@ -629,6 +629,36 @@ button:hover {
     text-decoration: underline;
 }
 
+.auth-error {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto 16px auto;
+    padding: 14px 18px;
+    background-color: var(--error-bg);
+    border-left: 4px solid var(--error);
+    color: var(--error-text);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    animation: slideDown 0.25s ease-out;
+}
+
+.auth-error:empty {
+    display: none;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Tablet Adjustments */
 @media screen and (max-width: 768px) {
     .container-card {
