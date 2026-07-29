@@ -1,3 +1,4 @@
+<div id="error-banner" class="auth-error"></div>
 <div class="container-card auth-card" id="auth-card">
     <div class="card-content" id="auth-card-content">
 
@@ -7,7 +8,8 @@
         </div>
 
         <!-- Normal POST — will redirect after server response -->
-        <form action="/api/v1/auth/login" method="POST" class="auth-form" autocomplete="on">
+        <form method="POST" hx-post="/api/v1/auth/login" hx-target="#error-banner" hx-trigger="submit" class="auth-form"
+            autocomplete="on">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
 
             <div class="form-group">

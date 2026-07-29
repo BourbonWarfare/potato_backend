@@ -1,8 +1,8 @@
 """bourbon user
 
-Revision ID: 9e7e33bf0d8e
-Revises: 1323f110de9a
-Create Date: 2026-07-28 00:32:03.461773
+Revision ID: f98172627490
+Revises: 80788732aaa0
+Create Date: 2026-07-28 17:30:01.149211
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '9e7e33bf0d8e'
-down_revision: Union[str, Sequence[str], None] = '1323f110de9a'
+revision: str = 'f98172627490'
+down_revision: Union[str, Sequence[str], None] = '80788732aaa0'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -24,6 +24,7 @@ def upgrade() -> None:
     op.create_table('bourbon_users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(length=64), nullable=False),
     sa.Column('email', sa.String(length=254), nullable=False),
     sa.Column('password_hashed', sa.String(), nullable=False),
     sa.Column('salt', sa.LargeBinary(length=64), nullable=False),
@@ -31,7 +32,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='linked_user_for_bw'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('user_id')
+    sa.UniqueConstraint('user_id'),
+    sa.UniqueConstraint('username')
     )
     # ### end Alembic commands ###
 

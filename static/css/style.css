@@ -10,6 +10,9 @@
     --discord-foreground: #ffffff;
     --steam-background: #1b2838;
     --steam-foreground: #ffffff;
+    --error: #dc2626;
+    --error-bg: rgba(220, 38, 38, 0.08);
+    --error-text: #fca5a5;
 }
 
 * {

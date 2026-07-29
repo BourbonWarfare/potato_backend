@@ -1,7 +1,7 @@
 """non auth sessions
 
 Revision ID: 80788732aaa0
-Revises: 9e7e33bf0d8e
+Revises: 1323f110de9a
 Create Date: 2026-07-28 02:47:53.010362
 
 """
@@ -16,7 +16,7 @@ import datetime
 
 # revision identifiers, used by Alembic.
 revision: str = '80788732aaa0'
-down_revision: Union[str, Sequence[str], None] = '9e7e33bf0d8e'
+down_revision: Union[str, Sequence[str], None] = '1323f110de9a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

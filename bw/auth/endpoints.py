@@ -9,6 +9,7 @@ from bw.auth.decorators import (
     require_local,
     require_session,
     require_user_role,
+    verify_csrf_from_form,
     with_default_session,
     with_token,
 )
@@ -17,7 +18,7 @@ from bw.auth.roles import Roles
 from bw.models.auth import User
 from bw.response import JsonResponse, WebResponse
 from bw.state import State
-from bw.web_utils import html_endpoint, json_endpoint, unwrap_headers, url_endpoint
+from bw.web_utils import form_endpoint, html_endpoint, json_endpoint, unwrap_headers, url_endpoint
 
 logger = logging.getLogger('bw.auth')
 
@@ -120,6 +121,45 @@ def define_auth(api: Blueprint):
         """
         logger.info('Creating new session (Discord)')
         return await AuthApi().login_with_discord(state=State.state, token=token)
+
+    @api.post('/login')
+    @form_endpoint
+    @verify_csrf_from_form('csrf_token')
+    async def login_bourbon(username: str, password: str, remember: str = 'off') -> WebResponse:
+        """
+        ### Log in with Bourbon Warfare account
+
+        Authenticates a Bourbon user using their username and password, then create a new session.
+        If the user doesnt exist, or a wrong password is given, returns 401.
+
+        **Args:**
+        - `username` (`str`): the username of the user.
+        - `password` (`str`): the password of the user.
+        - `remember` (`bool`): if we should store this session as a cookie.
+
+        **Returns:**
+        - `WebResponse`:
+          - **Success (302)**: if the user has successfully logged in
+          - **Error (40*)**: HTTP 40* response with error message
+
+        **Example:**
+        ```
+        POST /api/v1/auth/login
+        username: tcvm
+        password: hunter2
+        remember: False
+        ```
+        """
+        logger.info('Creating new session (Bourbon)')
+        response = AuthApi().login_with_bourbon(state=State.state, username=username, password=password, redirect='/')
+        if response.status_code >= 400:
+            return WebResponse(status=401, response='Password does not match login')
+
+        session_token = response.state['session_token']
+        if remember == 'on':
+            AuthApi().store_session_cookie(session_token)
+
+        return response
 
     @api.post('/login/bot')
     @json_endpoint

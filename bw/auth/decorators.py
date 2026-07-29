@@ -324,12 +324,12 @@ def verify_csrf_from_form(form_id: str = 'csrf_token'):
         @functools.wraps(func)
         async def wrapper(**kwargs):
             with _session_csrf() as csrf_token:
-                print(request.form)
                 form_token = (await request.form).get(form_id, '')
-                print(csrf_token, form_token)
                 if form_token != csrf_token:
                     raise CsrfTokenDoesntMatch()
 
+            if form_id in kwargs:
+                kwargs.pop(form_id)
             if asyncio.iscoroutinefunction(func):
                 return await func(**kwargs)
             else:

@@ -54,6 +54,7 @@ class BourbonUser(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_bw'), unique=True)
+    username: Mapped[str] = mapped_column(String(NAME_LENGTH), unique=True)
     email: Mapped[str] = mapped_column(String(EMAIL_LENGTH), unique=True)
     password_hashed: Mapped[str] = mapped_column(String())
     salt: Mapped[bytes] = mapped_column(LargeBinary(SALT_LENGTH))
