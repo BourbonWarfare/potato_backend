@@ -63,9 +63,9 @@ class Queue:
         from bw.realtime.event import EventStore
         from bw.state import State
 
-        while not self.dead:
-            await asyncio.sleep(self.delay)
+        SLEEP_CHECKS = 10
 
+        while not self.dead:
             self.queues = [worker for worker in self.queues if worker.alive]
 
             queued_events = []
@@ -77,3 +77,8 @@ class Queue:
                 queued_events.append(queued_event)
 
             RealtimeApi().publish_queued_events(State.state, queued_events)
+
+            for _ in range(SLEEP_CHECKS):
+                if self.dead:
+                    break
+                await asyncio.sleep(self.delay / SLEEP_CHECKS)

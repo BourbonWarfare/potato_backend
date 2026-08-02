@@ -2,12 +2,14 @@ import asyncio
 import datetime
 import importlib
 import logging
+import signal
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from heapq import heappop, heappush
 from pathlib import Path
-from types import ModuleType
+from types import FrameType, ModuleType
 from typing import Any
 
 import aiohttp
@@ -22,6 +24,8 @@ from bw.web_event import CronRun
 from crons.cron import Cron
 
 logger = logging.getLogger('bw.cron')
+
+IS_TERMINATED = False
 
 
 @dataclass
@@ -179,7 +183,7 @@ class Runner:
             if find_session:
                 sys.exit(1)
 
-            while True:
+            while not IS_TERMINATED:
                 try:
                     refresh_session()
                 except Exception as err:  # noqa: BLE001
@@ -221,14 +225,34 @@ class Runner:
                     async_runner.run(run_requests(async_requests))
                 except Exception as err:  # noqa: BLE001
                     logger.warning(f'A cron job has returned with an error: {err}')
-                finally:
-                    time.sleep(self.time_to_next_minute())
+
+                while not IS_TERMINATED and self.time_to_next_minute() > 0:
+                    time.sleep(0.5)
+
+
+ORIGINAL_SIGNAL_HANDERS: dict[int, Callable[[int, FrameType | None], Any] | int | None] = {}
+
+
+def on_kill(signum: int, frame: FrameType | None):
+    global IS_TERMINATED
+    IS_TERMINATED = True
+
+    handler = ORIGINAL_SIGNAL_HANDERS[signum]
+    if handler and not isinstance(handler, int):
+        handler(signum, frame)
 
 
 def spawn(bot_token: str):
     from bw import log
 
     log.setup_config()
+
+    if sys.platform == 'win32':
+        ORIGINAL_SIGNAL_HANDERS[signal.SIGINT] = signal.signal(signal.SIGINT, on_kill)
+    else:
+        ORIGINAL_SIGNAL_HANDERS[signal.SIGKILL] = signal.signal(signal.SIGKILL, on_kill)
+    ORIGINAL_SIGNAL_HANDERS[signal.SIGTERM] = signal.signal(signal.SIGTERM, on_kill)
+    ORIGINAL_SIGNAL_HANDERS[signal.SIGABRT] = signal.signal(signal.SIGABRT, on_kill)
 
     if bot_token != '':
         logger.info('Starting cron runner')

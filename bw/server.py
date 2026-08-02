@@ -1,6 +1,7 @@
 import asyncio
 import multiprocessing
 import os
+from asyncio.tasks import Task
 
 from quart import Quart
 
@@ -10,7 +11,6 @@ from bw.endpoints import define as define_endpoints
 from bw.environment import ENVIRONMENT
 from bw.log import log_config
 from bw.log import setup_config as setup_log_config
-from bw.realtime.queue import Queue
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.state import State
 
@@ -22,14 +22,19 @@ app.secret_key = ENVIRONMENT.signing_key()
 state = State()
 define_endpoints(app)
 
+EVENT_QUEUE_TASK: Task | None = None
 
-@app.while_serving
+
+@app.before_serving
 async def run_message_queue():
-    app.add_background_task(Queue.process_event_queue, state.queue)
+    global EVENT_QUEUE_TASK
+    EVENT_QUEUE_TASK = asyncio.ensure_future(state.queue.process_event_queue())
 
-    yield
 
-    state.queue.stop()
+@app.after_serving
+async def stop_message_queue():
+    if EVENT_QUEUE_TASK:
+        EVENT_QUEUE_TASK.cancel()
 
 
 def run():
@@ -50,14 +55,16 @@ def run():
 
     app.logger.info('starting BW backend')
     app.logger.info('-' * 50)
-    app.run(
-        host='0.0.0.0',
-        port=ENVIRONMENT.port(),
-        ca_certs=ssl_ca_certs_path,
-        certfile=ssl_certfile_path,
-        keyfile=ssl_keyfile_path,
-    )
-    cron_runner.kill()
+    try:
+        app.run(
+            host='0.0.0.0',
+            port=ENVIRONMENT.port(),
+            ca_certs=ssl_ca_certs_path,
+            certfile=ssl_certfile_path,
+            keyfile=ssl_keyfile_path,
+        )
+    finally:
+        cron_runner.kill()
     app.logger.info("that's all, folks")
 
 
