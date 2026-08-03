@@ -48,6 +48,10 @@ class AuthApi:
         return WithState(state=csrf_token)
 
     @define_api
+    def create_new_user_bourbon(self, state: State, existing_user: User) -> JsonResponse:
+        return JsonResponse({})
+
+    @define_api
     def create_new_user_bot(self, state: State) -> JsonResponse:
         """
         ### Create a new user and link a bot user
@@ -196,7 +200,11 @@ class AuthApi:
         bourbon_user = UserStore().bourbon_user_from_user(state, user)
         bourbon_user.verify_password(password)
 
-        return WithState(state=SessionStore().start_user_session(state, user), status=301, headers={'Location': redirect})
+        return WithState(
+            state=SessionStore().start_user_session(state, user),
+            status=301,
+            headers={'Location': redirect, 'HX-Redirect': redirect},
+        )
 
     @define_api
     def is_session_active(self, state: State, session_token: str) -> Exists:

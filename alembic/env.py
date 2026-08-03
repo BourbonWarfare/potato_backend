@@ -33,6 +33,7 @@ from bw.models.arma import *
 from bw.models.realtime import *
 from bw.models.session import *
 from bw.models.process import *
+from bw.models.tasks import *
 target_metadata = bw.models.Base.metadata
 
 # other values from the config, defined by the needs of env.py,

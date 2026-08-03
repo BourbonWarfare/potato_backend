@@ -294,6 +294,7 @@ class UserStore:
             salt = secrets.token_hex(SALT_LENGTH)
             hashed_password = BourbonUser.hashed_password(plaintext_password, salt)
             bourbon_user = BourbonUser(user_id=user.id, email=email, password_hashed=hashed_password, salt=salt)
+
             try:
                 session.add(bourbon_user)
                 session.flush()

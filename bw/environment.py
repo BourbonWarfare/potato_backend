@@ -13,6 +13,9 @@ class Environment:
     def has_nginx(self) -> bool:
         raise NotImplementedError()
 
+    def verify_immediately(self) -> bool:
+        raise NotImplementedError()
+
     def db_connection(self) -> str:
         GC.require('db_driver', 'db_username', 'db_password', 'db_address', 'db_name')
         return f'{GC["db_driver"]}://{GC["db_username"]}:{GC["db_password"]}@{GC["db_address"]}'
@@ -72,6 +75,11 @@ class Environment:
         assert isinstance(key, str)
         return key.encode('utf-8')
 
+    def resend_api_key(self) -> str:
+        key = GC.require('resend_api_key').get()
+        assert isinstance(key, str)
+        return key
+
 
 class Local(Environment):
     def port(self) -> int:
@@ -87,6 +95,9 @@ class Local(Environment):
         return False
 
     def use_subprocess(self) -> bool:
+        return True
+
+    def verify_immediately(self) -> bool:
         return True
 
 
@@ -109,6 +120,9 @@ class Test(Environment):
     def signing_key(self) -> bytes:
         return b'blah'
 
+    def verify_immediately(self) -> bool:
+        return False
+
 
 class Staging(Environment):
     def port(self) -> int:
@@ -126,6 +140,9 @@ class Staging(Environment):
     def use_subprocess(self) -> bool:
         return True
 
+    def verify_immediately(self) -> bool:
+        return False
+
 
 class Production(Environment):
     def port(self) -> int:
@@ -142,6 +159,9 @@ class Production(Environment):
 
     def use_subprocess(self) -> bool:
         return True
+
+    def verify_immediately(self) -> bool:
+        return False
 
 
 if GC.get('environment', 'local') == 'prod':

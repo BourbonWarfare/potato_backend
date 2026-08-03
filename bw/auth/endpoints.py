@@ -87,11 +87,6 @@ def define_auth(api: Blueprint):
         logger.info('Retrieving access code (Discord)')
         return AuthApi().retrieve_access_code(state=State.state, code_state=state)
 
-    @api.post('/register')
-    @url_endpoint
-    async def register() -> WebResponse:
-        return WebResponse(status=200)
-
     @api.post('/login/discord')
     @url_endpoint
     @with_token
@@ -225,6 +220,12 @@ def define_user(api: Blueprint, local: Blueprint):
         ```
         """
         return AuthApi().user_info(state=State.state, user=session_user)
+
+    @api.post('/register')
+    @url_endpoint
+    @require_session
+    async def register(session_user: User) -> WebResponse:
+        return WebResponse(status=200)
 
     @api.get('/list')
     @url_endpoint
@@ -867,8 +868,8 @@ def define_group(api: Blueprint):
     api.register_blueprint(permission_blueprint)
 
 
-def define_html(frontend: Blueprint, parts: Blueprint):
-    @frontend.get('/login')
+def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
+    @root.get('/login')
     @html_endpoint(template_path='auth/login.html', title='Sign in to Bourbon Warfare')
     @with_default_session
     async def login_page(session_token: str, html: str) -> str:
@@ -876,7 +877,12 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
-    @frontend.get('/register')
+    @root.get('/verify')
+    @html_endpoint(template_path='auth/verify.html', title='Verified your Bourbon Warfare account')
+    async def verify_page(html: str) -> str:
+        return await render_template_string(html)
+
+    @root.get('/register')
     @html_endpoint(template_path='auth/create_account.html', title='Register a Bourbon Warfare account')
     @with_default_session
     async def register_page(session_token: str, html: str) -> str:
@@ -884,7 +890,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
-    @frontend.get('/forgot-password')
+    @root.get('/forgot-password')
     @html_endpoint(template_path='auth/forgot_password.html', title='Recover your Bourbon Warfare account')
     @with_default_session
     async def recover_page(session_token: str, html: str) -> str:
