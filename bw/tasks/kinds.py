@@ -11,15 +11,16 @@ class MetaTask(type):
         cls = super().__new__(mcs, name, bases, attrs)
         return cls
 
-    def __init__(cls, name, bases, attrs):
+    def __init__(cls, name, bases, attrs, abstract: bool = False):
         super().__init__(name, bases, attrs)
+        if abstract:
+            return
+
         if not hasattr(cls, '_meta_name'):
             cls._meta_name = cls.__name__
 
-        # Only enforce/register on concrete subclasses, not the base
-        is_base = not bases  # BaseEvent has no bases
-        if is_base:
-            return
+        if cls._meta_name in GLOBAL_REGISTERED_TASKS:
+            raise KeyError('Task already exists in global registry')
 
         if cls not in GLOBAL_REGISTERED_TASKS.values():
             GLOBAL_REGISTERED_TASKS[cls._meta_name] = cast(type['Kind'], cls)
@@ -32,7 +33,7 @@ class BaseKind:
         self.to_run: Callable[..., dict[str, Any] | None] = to_run
 
 
-class Kind(BaseKind, metaclass=MetaTask):
+class Kind(BaseKind, metaclass=MetaTask, abstract=True):
     def __init__(self, *, task_executor: Callable[..., None], uuid: UUID | None = None, **kwargs):
         if not uuid:
             uuid = uuid4()

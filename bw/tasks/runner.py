@@ -10,19 +10,19 @@ class Runner:
     def __init__(self):
         self.delay: float = 0.25
 
-    def process_task(self):
+    def process_task(self) -> bool:
         try:
             task = TasksStore().pop_task_to_process(State.state)
         except NoTasksAvailable:
-            task = None
+            return False
 
-        if task:
-            try:
-                result = task()
-            except Exception as err:  # noqa: BLE001
-                TasksStore().fail_task(State.state, task, err)
-            else:
-                TasksStore().finish_task(State.state, task, result)
+        try:
+            result = task()
+        except Exception as err:  # noqa: BLE001
+            TasksStore().fail_task(State.state, task, err)
+        else:
+            TasksStore().finish_task(State.state, task, result)
+        return True
 
     def reap_stale_tasks(self):
         for task in TasksStore().get_stale_tasks(State.state):

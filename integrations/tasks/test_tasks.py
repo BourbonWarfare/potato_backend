@@ -15,6 +15,7 @@ from integrations.tasks.fixtures import (
     db_task_2,
     task_1,
     task_2,
+    task_changing,
 )
 
 
