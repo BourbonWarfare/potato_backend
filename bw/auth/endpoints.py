@@ -119,7 +119,7 @@ def define_auth(api: Blueprint):
 
     @api.post('/login')
     @form_endpoint
-    @verify_csrf_from_form('csrf_token')
+    @verify_csrf_from_form
     async def login_bourbon(username: str, password: str, remember: str = 'off') -> WebResponse:
         """
         ### Log in with Bourbon Warfare account
@@ -222,10 +222,11 @@ def define_user(api: Blueprint, local: Blueprint):
         return AuthApi().user_info(state=State.state, user=session_user)
 
     @api.post('/register')
-    @url_endpoint
-    @require_session
-    async def register(session_user: User) -> WebResponse:
-        return WebResponse(status=200)
+    @verify_csrf_from_form
+    @form_endpoint
+    @require_session(require_user=False, require_authenticated=False)
+    async def register(csrf_token: str, username: str, email: str, password: str) -> WebResponse:
+        return AuthApi().create_new_user_bourbon(State.state, username, email, password)
 
     @api.get('/list')
     @url_endpoint

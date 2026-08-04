@@ -61,15 +61,18 @@ class BourbonUser(Base):
     verified: Mapped[bool] = mapped_column(Boolean(), default=False)
 
     @staticmethod
-    def hashed_password(plaintext_password: str, salt: str) -> str:
-        unsalted_password = hashlib.sha512(plaintext_password.encode()).hexdigest()
-        salted_password = f'{unsalted_password}{salt}'
+    def salted_password(plaintext_password: str, salt: bytes) -> bytes:
+        unsalted_password = hashlib.sha512(plaintext_password.encode()).digest()
+        return unsalted_password + salt
+
+    @staticmethod
+    def hashed_password(plaintext_password: str, salt: bytes) -> str:
+        salted_password = BourbonUser.salted_password(plaintext_password, salt)
         hasher = argon2.PasswordHasher()
         return hasher.hash(password=salted_password)
 
     def verify_password(self, plaintext_password: str):
-        unsalted_password = hashlib.sha512(plaintext_password.encode()).hexdigest()
-        salted_password = f'{unsalted_password}{self.salt}'
+        salted_password = BourbonUser.salted_password(plaintext_password, self.salt)
         hasher = argon2.PasswordHasher()
         try:
             hasher.verify(self.password_hashed, salted_password)
@@ -161,6 +164,17 @@ class DiscordOAuthCode(Base):
 
     state: Mapped[str] = mapped_column(String(TOKEN_LENGTH), primary_key=True)
     code: Mapped[str] = mapped_column(String(TOKEN_LENGTH))
+    expire_time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
+    )
+
+
+class BourbonUserCode(Base):
+    __tablename__ = 'bourbon_user_codes'
+
+    code: Mapped[str] = mapped_column(String(TOKEN_LENGTH), primary_key=True)
+    email: Mapped[str] = mapped_column(String(EMAIL_LENGTH))
     expire_time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False),
         server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),

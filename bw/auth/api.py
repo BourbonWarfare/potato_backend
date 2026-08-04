@@ -1,4 +1,5 @@
 import logging
+import secrets
 import uuid
 
 import aiohttp
@@ -9,21 +10,25 @@ from bw.auth.group import GroupStore
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
+from bw.auth.tasks import TaskSendRegistrationEmail
 from bw.auth.types import DiscordSnowflake
 from bw.auth.user import UserStore
 from bw.auth.utils import secure_token_urlsafe
+from bw.converters import ALLOWED_PASSWORD_CHARACTERS
 from bw.environment import ENVIRONMENT
 from bw.error import (
     AuthError,
     BwServerError,
     CannotDetermineSession,
+    ForbiddenError,
     NoUserWithGivenCredentials,
     ReauthNeededError,
     SessionExpired,
 )
 from bw.models.auth import User
-from bw.response import DoesNotExist, Exists, JsonResponse, Ok, WebResponse, WithState
+from bw.response import BadRequest, Created, DoesNotExist, Exists, JsonResponse, Ok, WebResponse, WithState
 from bw.state import State
+from bw.tasks.tasks import TasksStore
 from bw.web_utils import define_api
 
 logger = logging.getLogger('bw.auth')
@@ -48,8 +53,57 @@ class AuthApi:
         return WithState(state=csrf_token)
 
     @define_api
-    def create_new_user_bourbon(self, state: State, existing_user: User) -> JsonResponse:
-        return JsonResponse({})
+    def send_verification_email(self, state: State, email: str) -> WebResponse:
+        """
+        ### Send verification email for the user
+
+        Create a new endpoint for email verification, and send the email to this location
+        """
+        logger.info('Enqueueing verification email')
+        if ENVIRONMENT.verify_immediately():
+            UserStore().verify_bourbon_user_from_email(state, email)
+            return Created()
+
+        authorization_token: str = secrets.token_urlsafe()
+        SessionStore().register_bourbon_code(state, access_code=authorization_token, email=email)
+        TasksStore().enqueue_task(state, TaskSendRegistrationEmail(email, authorization_token))
+        return Created()
+
+    @define_api
+    def verify_email(self, state: State, authorization_token: str) -> WebResponse:
+        """
+        ### Verify email via the authorization token provided
+
+        When called, this will verify the user associated with the authorization token
+        """
+
+        if not (email := SessionStore().verify_bourbon_code(state, authorization_token)):
+            raise ForbiddenError('invalid authorization token')
+        UserStore().verify_bourbon_user_from_email(state, email)
+        return Ok()
+
+    @define_api
+    def create_new_user_bourbon(self, state: State, username: str, email: str, password: str) -> WebResponse:
+        """
+        ### Create a new user and link a Bourbon user
+
+        Creates a new user and links a Bourbon user to it, returning the user session.
+        Also sends a verification email so that the user needs to verify themself.
+        """
+        logger.info(f'Creating new Bourbon user {username}')
+        if not ALLOWED_PASSWORD_CHARACTERS.issuperset(password):
+            return BadRequest('invalid characters in password')
+
+        with state.Session.begin() as session, session.begin_nested() as savepoint:
+            user = UserStore().create_user(state)
+            try:
+                UserStore().link_bourbon_user(state, username, email, password, user)
+            except BwServerError:
+                savepoint.rollback()
+                raise
+
+        self.send_verification_email(state, email)
+        return Created()
 
     @define_api
     def create_new_user_bot(self, state: State) -> JsonResponse:
@@ -201,8 +255,8 @@ class AuthApi:
         bourbon_user.verify_password(password)
 
         return WithState(
-            state=SessionStore().start_user_session(state, user),
-            status=301,
+            state=SessionStore().start_user_session(state, user, authenticated=bourbon_user.verified),
+            status=200,
             headers={'Location': redirect, 'HX-Redirect': redirect},
         )
 

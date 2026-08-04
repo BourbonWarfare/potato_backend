@@ -120,3 +120,11 @@ class PasswordDoesNotMatch(AuthError):
 class CsrfTokenDoesntMatch(AuthError):
     def __init__(self):
         super().__init__('csrf token does not match')
+
+
+class BourbonUserAlreadyExists(AuthError):
+    def status(self) -> int:
+        return 400
+
+    def __init__(self):
+        super().__init__('a user with these credentials already exists')

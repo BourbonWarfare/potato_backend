@@ -9,7 +9,15 @@ from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
 from bw.auth.utils import secure_token_urlsafe
-from bw.error import AuthError, DbError, DiscordUserAlreadyExists, NoRoleWithName, NoUserWithGivenCredentials, RoleCreationFailed
+from bw.error import (
+    AuthError,
+    BourbonUserAlreadyExists,
+    DbError,
+    DiscordUserAlreadyExists,
+    NoRoleWithName,
+    NoUserWithGivenCredentials,
+    RoleCreationFailed,
+)
 from bw.models.auth import SALT_LENGTH, BotUser, BourbonUser, DiscordUser, Role, User
 from bw.state import State
 
@@ -259,7 +267,7 @@ class UserStore:
             session.expunge(user)
         return user
 
-    def link_bourbon_user(self, state: State, email: str, plaintext_password: str, user: User) -> BourbonUser:
+    def link_bourbon_user(self, state: State, username: str, email: str, plaintext_password: str, user: User) -> BourbonUser:
         """
         ### Link a Bourbon user to an existing user
 
@@ -291,15 +299,17 @@ class UserStore:
         ```
         """
         with state.Session.begin() as session:
-            salt = secrets.token_hex(SALT_LENGTH)
+            salt = secrets.token_bytes(SALT_LENGTH)
             hashed_password = BourbonUser.hashed_password(plaintext_password, salt)
-            bourbon_user = BourbonUser(user_id=user.id, email=email, password_hashed=hashed_password, salt=salt)
+            bourbon_user = BourbonUser(
+                user_id=user.id, username=username, email=email, password_hashed=hashed_password, salt=salt
+            )
 
             try:
                 session.add(bourbon_user)
                 session.flush()
             except IntegrityError:
-                raise DbError()
+                raise BourbonUserAlreadyExists()
             session.expunge(bourbon_user)
         return bourbon_user
 
@@ -854,3 +864,8 @@ class UserStore:
             'page_size': page_size,
             'total_pages': total_pages,
         }
+
+    def verify_bourbon_user_from_email(self, state: State, email: str):
+        with state.Session.begin() as session:
+            query = update(BourbonUser).where(BourbonUser.email == email).values(verified=True)
+            session.execute(query)

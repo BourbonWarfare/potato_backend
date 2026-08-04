@@ -844,7 +844,7 @@ class TestWithDefaultSession:
 class TestVerifyCsrfFromForm:
     @pytest.mark.asyncio
     async def test__matching_csrf__passes(self, mock_token):
-        @verify_csrf_from_form('token')
+        @verify_csrf_from_form(form_id='token')
         async def tester():
             pass
 

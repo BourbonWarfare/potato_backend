@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 
 from quart import request
@@ -20,6 +21,7 @@ from bw.error import (
     SessionExpired,
 )
 from bw.models.auth import User
+from bw.response import WebResponse
 from bw.state import State
 
 logger = logging.getLogger('bw.auth')
@@ -106,7 +108,13 @@ def require_local(func):
     return wrapper
 
 
-def require_session(func):
+def require_session(
+    func: Callable[..., Awaitable[WebResponse]] | None = None,
+    /,
+    *,
+    require_authenticated: bool = True,
+    require_user: bool = True,
+):
     """
     ### Require a valid session token
 
@@ -125,28 +133,40 @@ def require_session(func):
     """
 
     @contextmanager
-    def _session_user():
+    def _session_user() -> Generator[User]:
         try:
             session_token = session_token_from_cookie(AuthApi())
         except CannotDetermineSession:
             session_token = session_token_from_bearer(request.headers)
 
-        validate_session(State.state, session_token)
+        validate_session(State.state, session_token, require_authentication=require_authenticated)
         yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)
 
-    @functools.wraps(func)
-    def wrapper(**kwargs):
-        with _session_user() as session_user:
+    def decorator(func):
+        def caller(func, **kwargs):
             if asyncio.iscoroutinefunction(func):
 
                 async def afnc():
-                    return await func(session_user=session_user, **kwargs)
+                    return await func(**kwargs)
 
                 return afnc()
             else:
-                return func(session_user=session_user, **kwargs)
+                return func(**kwargs)
 
-    return wrapper
+        @functools.wraps(func)
+        def wrapper(**kwargs):
+            if require_user:
+                with _session_user() as session_user:
+                    return caller(func, session_user=session_user, **kwargs)
+            else:
+                return caller(func, **kwargs)
+
+        return wrapper
+
+    if callable(func):
+        return decorator(func)
+
+    return decorator
 
 
 def with_default_session(func):
@@ -295,7 +315,7 @@ def require_user_role(*required_roles: bool):
     return decorator
 
 
-def verify_csrf_from_form(form_id: str = 'csrf_token'):
+def verify_csrf_from_form(func: Callable | None = None, /, *, form_id: str = 'csrf_token'):
     def decorator(func):
         @contextmanager
         def _session_csrf():
@@ -337,4 +357,6 @@ def verify_csrf_from_form(form_id: str = 'csrf_token'):
 
         return wrapper
 
+    if callable(func):
+        return decorator(func)
     return decorator

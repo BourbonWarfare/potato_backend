@@ -1,6 +1,8 @@
+import logging
 import os
 from typing import Any
 
+from bw.converters import sanitize_string_for_secrets
 from bw.environment import ENVIRONMENT, Local
 from bw.settings import GLOBAL_CONFIGURATION
 
@@ -22,12 +24,22 @@ PRODUCTION_LOG_CONFIG = {
 }
 
 
+class SecretSanitizerFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        original_message = super().format(record)
+        return sanitize_string_for_secrets(original_message)
+
+
 def log_config() -> dict[str, Any]:
     os.makedirs('./logs', exist_ok=True)
     log_config = {
         'version': 1,
         'formatters': {
-            'default': {'format': '[%(asctime)s] [%(module)s] %(levelname)s: %(message)s', 'datefmt': '%Y-%m-%d %H:%M:%S'}
+            'default': {
+                '()': SecretSanitizerFormatter,
+                'format': '[%(asctime)s] [%(module)s] %(levelname)s: %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S',
+            }
         },
         'handlers': {
             'wsgi': {
