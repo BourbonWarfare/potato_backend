@@ -113,6 +113,9 @@ class NoAccessCodeFound(NotFoundError):
 
 
 class PasswordDoesNotMatch(AuthError):
+    def status(self) -> int:
+        return 401
+
     def __init__(self):
         super().__init__('Password does not match user')
 

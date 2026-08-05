@@ -56,7 +56,7 @@ def state(test_database):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def session(state, request):
+def session(state):
     # temporarily create tables for test. downgrade immediately after
     alembic_cfg = alembic.config.Config(toml_file='./pyproject.toml')
     logger.debug('alembic upgrade head')

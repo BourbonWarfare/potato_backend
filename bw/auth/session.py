@@ -234,15 +234,15 @@ class SessionStore:
         """
         with state.Session.begin() as session:
             # First check if session exists at all
-            query = select(Session).where(Session.token == session_token)
+            query = select(Session.authenticated).where(Session.token == session_token)
 
             try:
-                session_record = session.execute(query).scalar_one()
+                is_authenticated = session.execute(query).scalar_one()
             except NoResultFound:
                 logger.info(f'Could not find existing session record for token {session_token}')
                 return False
 
-            return session_record.authenticated
+            return is_authenticated
 
     def get_user_from_session_token(self, state: State, session_token: str) -> User:
         """

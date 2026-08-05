@@ -47,7 +47,9 @@ class UserStore:
         ```
         """
         with state.Session.begin() as session:
-            user = session.execute(insert(User).returning(User)).one()[0]
+            user = User()
+            session.add(user)
+            session.flush()
             session.expunge(user)
         return user
 

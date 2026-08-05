@@ -133,14 +133,14 @@ def group_name_3() -> str:
 
 @pytest.fixture(scope='function')
 def non_db_user_1():
-    user = User(id=1)
+    user = User()
     yield user
 
 
 @pytest.fixture(scope='function')
 def db_user_1(state):
     with state.Session.begin() as session:
-        query = insert(User).values(id=1).returning(User)
+        query = insert(User).returning(User)
         user = session.execute(query).first()[0]
         session.expunge(user)
     yield user
@@ -149,7 +149,7 @@ def db_user_1(state):
 @pytest.fixture(scope='function')
 def db_user_2(state):
     with state.Session.begin() as session:
-        query = insert(User).values(id=2).returning(User)
+        query = insert(User).returning(User)
         user = session.execute(query).first()[0]
         session.expunge(user)
     yield user
@@ -158,7 +158,7 @@ def db_user_2(state):
 @pytest.fixture(scope='function')
 def db_session_1(state, db_user_1, token_1):
     with state.Session.begin() as session:
-        query = insert(Session).values(id=1, user_id=db_user_1.id, token=token_1, authenticated=True).returning(Session)
+        query = insert(Session).values(user_id=db_user_1.id, token=token_1, authenticated=True).returning(Session)
         user_session = session.execute(query).first()[0]
         session.expunge(user_session)
     yield user_session
@@ -167,7 +167,7 @@ def db_session_1(state, db_user_1, token_1):
 @pytest.fixture(scope='function')
 def db_session_2(state, db_user_2, token_2):
     with state.Session.begin() as session:
-        query = insert(Session).values(id=2, user_id=db_user_2.id, token=token_2, authenticated=True).returning(Session)
+        query = insert(Session).values(user_id=db_user_2.id, token=token_2, authenticated=True).returning(Session)
         user_session = session.execute(query).first()[0]
         session.expunge(user_session)
     yield user_session
@@ -178,7 +178,7 @@ def db_expired_session_1(state, db_user_1, token_1, expire_invalid):
     with state.Session.begin() as session:
         query = (
             insert(Session)
-            .values(id=1, user_id=db_user_1.id, token=token_1, expire_time=expire_invalid, authenticated=True)
+            .values(user_id=db_user_1.id, token=token_1, expire_time=expire_invalid, authenticated=True)
             .returning(Session)
         )
         user_session = session.execute(query).first()[0]
@@ -189,7 +189,7 @@ def db_expired_session_1(state, db_user_1, token_1, expire_invalid):
 @pytest.fixture(scope='function')
 def db_unauthenticated_session_1(state, db_user_1, token_1):
     with state.Session.begin() as session:
-        query = insert(Session).values(id=1, user_id=db_user_1.id, token=token_1, authenticated=False).returning(Session)
+        query = insert(Session).values(user_id=db_user_1.id, token=token_1, authenticated=False).returning(Session)
         user_session = session.execute(query).first()[0]
         session.expunge(user_session)
     yield user_session
@@ -198,7 +198,7 @@ def db_unauthenticated_session_1(state, db_user_1, token_1):
 @pytest.fixture(scope='function')
 def db_discord_user_1(state, db_user_1, discord_id_1):
     with state.Session.begin() as session:
-        query = insert(DiscordUser).values(id=1, user_id=db_user_1.id, discord_id=discord_id_1).returning(DiscordUser)
+        query = insert(DiscordUser).values(user_id=db_user_1.id, discord_id=discord_id_1).returning(DiscordUser)
         user = session.execute(query).first()[0]
         session.expunge(user)
     yield user
@@ -208,7 +208,6 @@ def db_discord_user_1(state, db_user_1, discord_id_1):
 def db_bourbon_user_1(state, db_user_1, email_1, username_1, password_1, salt_1):
     with state.Session.begin() as session:
         bourbon_user = BourbonUser(
-            id=1,
             user_id=db_user_1.id,
             username=username_1,
             email=email_1,
@@ -226,7 +225,6 @@ def db_bourbon_user_1(state, db_user_1, email_1, username_1, password_1, salt_1)
 def db_unverified_bourbon_user(state, db_user_2, email_2, username_2, password_1, salt_1):
     with state.Session.begin() as session:
         bourbon_user = BourbonUser(
-            id=2,
             user_id=db_user_2.id,
             username=username_2,
             email=email_2,
@@ -243,7 +241,7 @@ def db_unverified_bourbon_user(state, db_user_2, email_2, username_2, password_1
 @pytest.fixture(scope='function')
 def db_bot_user_1(state, db_user_1, token_1):
     with state.Session.begin() as session:
-        query = insert(BotUser).values(id=1, user_id=db_user_1.id, bot_token=token_1).returning(BotUser)
+        query = insert(BotUser).values(user_id=db_user_1.id, bot_token=token_1).returning(BotUser)
         user = session.execute(query).first()[0]
         session.expunge(user)
     yield user
@@ -252,7 +250,7 @@ def db_bot_user_1(state, db_user_1, token_1):
 @pytest.fixture(scope='function')
 def db_permission_1(state, permission_1, permission_name_1):
     with state.Session.begin() as session:
-        query = insert(GroupPermission).values(id=1, name=permission_name_1, **permission_1.as_dict()).returning(GroupPermission)
+        query = insert(GroupPermission).values(name=permission_name_1, **permission_1.as_dict()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
         session.expunge(perm)
     yield perm
@@ -261,7 +259,7 @@ def db_permission_1(state, permission_1, permission_name_1):
 @pytest.fixture(scope='function')
 def db_permission_2(state, permission_2, permission_name_2):
     with state.Session.begin() as session:
-        query = insert(GroupPermission).values(id=2, name=permission_name_2, **permission_2.as_dict()).returning(GroupPermission)
+        query = insert(GroupPermission).values(name=permission_name_2, **permission_2.as_dict()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
         session.expunge(perm)
     yield perm
@@ -270,7 +268,7 @@ def db_permission_2(state, permission_2, permission_name_2):
 @pytest.fixture(scope='function')
 def db_permission_3(state, permission_3, permission_name_3):
     with state.Session.begin() as session:
-        query = insert(GroupPermission).values(id=3, name=permission_name_3, **permission_3.as_dict()).returning(GroupPermission)
+        query = insert(GroupPermission).values(name=permission_name_3, **permission_3.as_dict()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
         session.expunge(perm)
     yield perm
@@ -279,7 +277,7 @@ def db_permission_3(state, permission_3, permission_name_3):
 @pytest.fixture(scope='function')
 def db_group_1(state, db_permission_1, group_name_1):
     with state.Session.begin() as session:
-        query = insert(Group).values(id=1, name=group_name_1, permissions=db_permission_1.id).returning(Group)
+        query = insert(Group).values(name=group_name_1, permissions=db_permission_1.id).returning(Group)
         group = session.execute(query).first()[0]
         session.expunge(group)
     yield group
@@ -288,7 +286,7 @@ def db_group_1(state, db_permission_1, group_name_1):
 @pytest.fixture(scope='function')
 def db_group_2(state, db_permission_2, group_name_2):
     with state.Session.begin() as session:
-        query = insert(Group).values(id=2, name=group_name_2, permissions=db_permission_2.id).returning(Group)
+        query = insert(Group).values(name=group_name_2, permissions=db_permission_2.id).returning(Group)
         group = session.execute(query).first()[0]
         session.expunge(group)
     yield group
@@ -297,7 +295,7 @@ def db_group_2(state, db_permission_2, group_name_2):
 @pytest.fixture(scope='function')
 def db_group_3(state, db_permission_3, group_name_3):
     with state.Session.begin() as session:
-        query = insert(Group).values(id=3, name=group_name_3, permissions=db_permission_3.id).returning(Group)
+        query = insert(Group).values(name=group_name_3, permissions=db_permission_3.id).returning(Group)
         group = session.execute(query).first()[0]
         session.expunge(group)
     yield group
@@ -306,7 +304,7 @@ def db_group_3(state, db_permission_3, group_name_3):
 @pytest.fixture(scope='function')
 def db_role_1(state, role_1, role_name_1):
     with state.Session.begin() as session:
-        query = insert(Role).values(id=1, name=role_name_1, **role_1.as_dict()).returning(Role)
+        query = insert(Role).values(name=role_name_1, **role_1.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -315,7 +313,7 @@ def db_role_1(state, role_1, role_name_1):
 @pytest.fixture(scope='function')
 def db_role_2(state, role_2, role_name_2):
     with state.Session.begin() as session:
-        query = insert(Role).values(id=2, name=role_name_2, **role_2.as_dict()).returning(Role)
+        query = insert(Role).values(name=role_name_2, **role_2.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -324,7 +322,7 @@ def db_role_2(state, role_2, role_name_2):
 @pytest.fixture(scope='function')
 def db_role_assigner(state, role_assigner):
     with state.Session.begin() as session:
-        query = insert(Role).values(id=666, name='role-assigner', **role_assigner.as_dict()).returning(Role)
+        query = insert(Role).values(name='role-assigner', **role_assigner.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -333,7 +331,7 @@ def db_role_assigner(state, role_assigner):
 @pytest.fixture(scope='function')
 def db_group_assigner(state, group_assigner):
     with state.Session.begin() as session:
-        query = insert(Role).values(id=777, name='group-assigner', **group_assigner.as_dict()).returning(Role)
+        query = insert(Role).values(name='group-assigner', **group_assigner.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -342,7 +340,7 @@ def db_group_assigner(state, group_assigner):
 @pytest.fixture(scope='function')
 def db_server_manager(state, server_manager, server_manager_name):
     with state.Session.begin() as session:
-        query = insert(Role).values(id=1, name=server_manager_name, **server_manager.as_dict()).returning(Role)
+        query = insert(Role).values(name=server_manager_name, **server_manager.as_dict()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role

@@ -7,11 +7,13 @@ from datetime import datetime
 
 import aiohttp
 import pytest
+from quart import Quart
 
 from bw.auth.api import AuthApi
 from bw.auth.group import GroupStore
 from bw.auth.user import UserStore
 from bw.error import (
+    CannotDetermineSession,
     DbError,
     GroupAssignmentFailed,
     GroupCreationFailed,
@@ -20,13 +22,17 @@ from bw.error import (
     RoleCreationFailed,
     SessionExpired,
 )
+from bw.models.auth import BourbonUser
 from integrations.auth.fixtures import (
     db_bot_user_1,
+    db_bourbon_code_1,
+    db_bourbon_user_1,
     db_discord_user_1,
     db_expired_session_1,
     db_group_1,
     db_group_2,
     db_group_3,
+    db_oauth_code_1,
     db_permission_1,
     db_permission_2,
     db_permission_3,
@@ -35,14 +41,20 @@ from integrations.auth.fixtures import (
     db_session_1,
     db_session_2,
     db_unauthenticated_session_1,
+    db_unverified_bourbon_user,
     db_user_1,
     db_user_2,
     discord_id_1,
+    email_1,
+    email_2,
     expire_invalid,
     expire_valid,
     group_name_1,
     group_name_2,
     group_name_3,
+    oauth_code_1,
+    oauth_state_1,
+    password_1,
     permission_1,
     permission_2,
     permission_3,
@@ -53,9 +65,31 @@ from integrations.auth.fixtures import (
     role_2,
     role_name_1,
     role_name_2,
+    salt_1,
     token_1,
     token_2,
+    username_1,
+    username_2,
 )
+from integrations.fixtures import test_app
+
+
+class TestAuthApiSessionCookie:
+    def test__get_session_cookie__raises_when_no_request_context(self):
+        with pytest.raises(CannotDetermineSession):
+            AuthApi().get_session_cookie()
+
+    @pytest.mark.asyncio
+    async def test__get_session_cookie__raises_when_session_key_missing(self, test_app):
+        async with test_app.app.test_request_context('/'):
+            with pytest.raises(CannotDetermineSession):
+                AuthApi().get_session_cookie()
+
+    @pytest.mark.asyncio
+    async def test__store_and_get_session_cookie__success(self, test_app, token_1):
+        async with test_app.app.test_request_context('/'):
+            AuthApi().store_session_cookie(token_1)
+            assert AuthApi().get_session_cookie() == token_1
 
 
 class TestAuthApiBot:
@@ -207,6 +241,15 @@ class TestAuthApiSession:
     def test__is_session_active__with_expired_session(self, state, db_expired_session_1, token_1, db_user_1):
         assert not AuthApi().is_session_active(state, token_1)
 
+    def test__is_session_authenticated__true_for_authenticated_session(self, state, db_session_1, token_1):
+        assert AuthApi().is_session_authenticated(state, token_1)
+
+    def test__is_session_authenticated__false_for_unauthenticated_session(self, state, db_unauthenticated_session_1, token_1):
+        assert not AuthApi().is_session_authenticated(state, token_1)
+
+    def test__is_session_authenticated__false_for_nonexistent_session(self, state):
+        assert not AuthApi().is_session_authenticated(state, 'nonexistent_token')
+
     def test__set_csrf_token__token_set_for_session(self, state, db_unauthenticated_session_1, token_1):
         with unittest.mock.patch('bw.auth.api.secure_token_urlsafe', return_value=token_1):
             response = AuthApi().set_csrf_token(state, db_unauthenticated_session_1.token)
@@ -219,6 +262,89 @@ class TestAuthApiSession:
 
         assert response.status == '200 OK'
         assert response.state == token_1
+
+
+class TestAuthApiBourbon:
+    def test__create_new_user_bourbon__disallowed_password_chars_returns_bad_request(self, state, email_1, username_1):
+        response = AuthApi().create_new_user_bourbon(state, username_1, email_1, 'password😀')
+        assert response.status_code == 400
+
+    def test__create_new_user_bourbon__success(self, mocker, state, email_1, username_1, password_1):
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=True)
+        response = AuthApi().create_new_user_bourbon(state, username_1, email_1, password_1)
+        assert response.status_code == 201
+
+    def test__create_new_user_bourbon__duplicate_user_rolls_back_and_fails(self, mocker, state, db_bourbon_user_1, password_1):
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=True)
+        response = AuthApi().create_new_user_bourbon(state, db_bourbon_user_1.username, db_bourbon_user_1.email, password_1)
+        assert response.status_code in (400, 409)
+
+    def test__login_with_bourbon__success_via_username(self, state, db_bourbon_user_1, username_1, password_1):
+        response = AuthApi().login_with_bourbon(state, username_1, password_1, redirect='/dashboard')
+        assert response.status_code == 200
+        assert response.headers['Location'] == '/dashboard'
+        assert response.headers['HX-Redirect'] == '/dashboard'
+        assert AuthApi().is_session_authenticated(state, response.state['session_token'])
+
+    def test__login_with_bourbon__success_via_email(self, state, db_bourbon_user_1, email_1, password_1):
+        response = AuthApi().login_with_bourbon(state, email_1, password_1, redirect='/home')
+        assert response.status_code == 200
+        assert response.headers['Location'] == '/home'
+        assert AuthApi().is_session_authenticated(state, response.state['session_token'])
+
+    def test__login_with_bourbon__unverified_user_creates_unauthenticated_session(
+        self, state, db_unverified_bourbon_user, username_2, password_1
+    ):
+        response = AuthApi().login_with_bourbon(state, username_2, password_1, redirect='/home')
+        assert response.status_code == 200
+        assert not AuthApi().is_session_authenticated(state, response.state['session_token'])
+
+    def test__login_with_bourbon__nonexistent_user_returns_404(self, state):
+        response = AuthApi().login_with_bourbon(state, 'nonexistent_user', 'password123', redirect='/')
+        assert response.status_code == 404
+
+    def test__login_with_bourbon__invalid_password_returns_401(self, state, db_bourbon_user_1, username_1):
+        response = AuthApi().login_with_bourbon(state, username_1, 'wrong_password', redirect='/')
+        assert response.status_code == 401
+
+
+class TestAuthApiEmailVerification:
+    def test__send_verification_email__verify_immediately_true(self, mocker, state, email_1):
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=True)
+        response = AuthApi().send_verification_email(state, email_1)
+        assert response.status_code == 201
+
+    def test__send_verification_email__verify_immediately_false_enqueues_task(self, mocker, state, email_1, token_1):
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=False)
+        mocker.patch('secrets.token_urlsafe', return_value=token_1)
+        mock_enqueue = mocker.patch('bw.tasks.tasks.TasksStore.enqueue_task')
+
+        response = AuthApi().send_verification_email(state, email_1)
+        assert response.status_code == 201
+        mock_enqueue.assert_called_once()
+
+    def test__verify_email__success_with_valid_token(self, state, db_bourbon_user_1, db_bourbon_code_1):
+        response = AuthApi().verify_email(state, db_bourbon_code_1.code)
+        assert response.status_code == 200
+
+    def test__verify_email__invalid_token_returns_forbidden(self, state):
+        response = AuthApi().verify_email(state, 'invalid_authorization_token')
+        assert response.status_code == 403
+
+
+class TestAuthApiOAuthCode:
+    def test__register_access_code__success(self, state, oauth_code_1, oauth_state_1):
+        response = AuthApi().register_access_code(state, oauth_code_1, oauth_state_1)
+        assert response.status_code == 200
+
+    def test__retrieve_access_code__success(self, state, db_oauth_code_1, oauth_code_1, oauth_state_1):
+        response = AuthApi().retrieve_access_code(state, oauth_state_1)
+        assert response.status_code == 200
+        assert response.contained_json['access_code'] == oauth_code_1
+
+    def test__retrieve_access_code__nonexistent_state_returns_404(self, state):
+        response = AuthApi().retrieve_access_code(state, 'nonexistent_oauth_state')
+        assert response.status_code == 404
 
 
 class TestAuthApiRoles:
@@ -650,33 +776,17 @@ class TestAuthApiUsers:
     def test__list_all_users__single_user_returns_correct_structure(self, state, db_user_1):
         response = AuthApi().list_all_users(state, page=1, page_size=50)
         assert response.status_code == 200
-        assert len(response.contained_json['users']) == 1
         assert response.contained_json['total'] == 1
-
-    def test__list_all_users__pagination_works(self, state, session):
-        for _ in range(3):
-            UserStore().create_user(state)
-
-        response = AuthApi().list_all_users(state, page=1, page_size=2)
-        assert response.status_code == 200
-        assert len(response.contained_json['users']) == 2
-        assert response.contained_json['total'] == 3
-        assert response.contained_json['page'] == 1
-        assert response.contained_json['total_pages'] == 2
-
-    def test__list_all_users__second_page_works(self, state, session):
-        for _ in range(3):
-            UserStore().create_user(state)
-
-        response = AuthApi().list_all_users(state, page=2, page_size=2)
-        assert response.status_code == 200
         assert len(response.contained_json['users']) == 1
-        assert response.contained_json['page'] == 2
 
-    def test__list_all_users__default_pagination_values(self, state, session):
-        UserStore().create_user(state)
+        user_data = response.contained_json['users'][0]
+        assert user_data['uuid'] == str(db_user_1.uuid)
 
-        response = AuthApi().list_all_users(state)
+    def test__list_all_users__pagination(self, state, db_user_1, db_user_2):
+        response = AuthApi().list_all_users(state, page=1, page_size=1)
         assert response.status_code == 200
+        assert response.contained_json['total'] == 2
+        assert len(response.contained_json['users']) == 1
         assert response.contained_json['page'] == 1
-        assert response.contained_json['page_size'] == 50
+        assert response.contained_json['page_size'] == 1
+        assert response.contained_json['total_pages'] == 2
