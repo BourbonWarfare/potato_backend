@@ -40,9 +40,11 @@ class WebResponse(Response):
 
         self.exception = from_exception
         headers.update(self.headers())  # ty: ignore [call-non-callable]
+
         lower_headers = {key.lower(): value for key, value in headers.items()}
+        content_type = lower_headers.get('content-type', self.content_type())
         if 'content-type' not in lower_headers:
-            lower_headers['content-type'] = self.content_type()
+            headers['Content-Type'] = content_type
 
         if isgenerator(response) or isasyncgen(response):
             pass
@@ -54,8 +56,8 @@ class WebResponse(Response):
         super().__init__(
             response=response,
             status=status,
-            headers=Headers([(k, v) for k, v in lower_headers.items()]),
-            mimetype=lower_headers['content-type'],
+            headers=Headers([(k, v) for k, v in headers.items()]),
+            mimetype=content_type,
             **kwargs,
         )
 

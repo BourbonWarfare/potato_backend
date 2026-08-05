@@ -18,7 +18,15 @@ from bw.auth.roles import Roles
 from bw.models.auth import User
 from bw.response import JsonResponse, WebResponse
 from bw.state import State
-from bw.web_utils import form_endpoint, html_endpoint, json_endpoint, unwrap_headers, url_endpoint
+from bw.web_utils import (
+    chunk_text_response,
+    form_endpoint,
+    html_endpoint,
+    json_endpoint,
+    load_template_from_disk,
+    unwrap_headers,
+    url_endpoint,
+)
 
 logger = logging.getLogger('bw.auth')
 
@@ -226,7 +234,15 @@ def define_user(api: Blueprint, local: Blueprint):
     @form_endpoint
     @require_session(require_user=False, require_authenticated=False)
     async def register(csrf_token: str, username: str, email: str, password: str) -> WebResponse:
-        return AuthApi().create_new_user_bourbon(State.state, username, email, password)
+        response = AuthApi().create_new_user_bourbon(State.state, username, email, password)
+        if response.status_code >= 400:
+            return response
+
+        html = await load_template_from_disk(template_path='auth/registration_success.html')
+        final_html = await render_template_string(html, username=username, email=email)
+        return chunk_text_response(
+            final_html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        )
 
     @api.get('/list')
     @url_endpoint
