@@ -1,10 +1,24 @@
+import secrets
+
 import pytest
 from sqlalchemy import insert
 
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
-from bw.models.auth import BotUser, BourbonUserCode, DiscordOAuthCode, DiscordUser, Group, GroupPermission, Role, Session, User
+from bw.models.auth import (
+    SALT_LENGTH,
+    BotUser,
+    BourbonUser,
+    BourbonUserCode,
+    DiscordOAuthCode,
+    DiscordUser,
+    Group,
+    GroupPermission,
+    Role,
+    Session,
+    User,
+)
 
 
 @pytest.fixture(scope='session')
@@ -188,6 +202,42 @@ def db_discord_user_1(state, db_user_1, discord_id_1):
         user = session.execute(query).first()[0]
         session.expunge(user)
     yield user
+
+
+@pytest.fixture(scope='function')
+def db_bourbon_user_1(state, db_user_1, email_1, username_1, password_1, salt_1):
+    with state.Session.begin() as session:
+        bourbon_user = BourbonUser(
+            id=1,
+            user_id=db_user_1.id,
+            username=username_1,
+            email=email_1,
+            password_hashed=BourbonUser.hashed_password(password_1, salt_1),
+            salt=salt_1,
+            verified=True,
+        )
+        session.add(bourbon_user)
+        session.flush()
+        session.expunge(bourbon_user)
+    yield bourbon_user
+
+
+@pytest.fixture(scope='function')
+def db_unverified_bourbon_user(state, db_user_2, email_2, username_2, password_1, salt_1):
+    with state.Session.begin() as session:
+        bourbon_user = BourbonUser(
+            id=2,
+            user_id=db_user_2.id,
+            username=username_2,
+            email=email_2,
+            password_hashed=BourbonUser.hashed_password(password_1, salt_1),
+            salt=salt_1,
+            verified=False,
+        )
+        session.add(bourbon_user)
+        session.flush()
+        session.expunge(bourbon_user)
+    yield bourbon_user
 
 
 @pytest.fixture(scope='function')
@@ -496,6 +546,26 @@ def email_1():
 @pytest.fixture
 def email_2():
     return 'def@example.com'
+
+
+@pytest.fixture
+def username_1():
+    return 'tcvm'
+
+
+@pytest.fixture
+def username_2():
+    return 'lambda'
+
+
+@pytest.fixture
+def password_1():
+    return 'hunter2'
+
+
+@pytest.fixture
+def salt_1():
+    return secrets.token_bytes(SALT_LENGTH)
 
 
 @pytest.fixture(scope='function')

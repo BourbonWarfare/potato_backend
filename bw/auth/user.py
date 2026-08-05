@@ -387,11 +387,12 @@ class UserStore:
         with state.Session.begin() as session:
             try:
                 query = select(DiscordUser).where(DiscordUser.discord_id == discord_id)
-                discord_user = session.execute(query).one_or_none()
-                if discord_user is not None:
-                    raise DiscordUserAlreadyExists(discord_id, discord_user[0].user_id)
-                query = insert(DiscordUser).values(user_id=user.id, discord_id=discord_id).returning(DiscordUser)
-                discord_user = session.execute(query).one()[0]
+                discord_user = session.scalars(query).one_or_none()
+                if discord_user:
+                    raise DiscordUserAlreadyExists(discord_id, discord_user.user_id)
+                discord_user = DiscordUser(user_id=user.id, discord_id=discord_id)
+                session.add(discord_user)
+                session.flush()
             except IntegrityError:
                 raise DbError()
             except ProgrammingError:
