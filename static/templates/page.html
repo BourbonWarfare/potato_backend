@@ -24,12 +24,6 @@
                 <li><a href="/missions" hx-get="/missions">Missions</a></li>
             </ul>
             <div class="nav-profile">
-                {% if logged_in %}
-                <a href="/profile" hx-get="/profile">Profile</a>
-                {% else %}
-                <a href="/auth/register" hx-get="/auth/register">Register</a>
-                <a href="/auth/login" hx-get="/auth/login">Login</a>
-                {% endif %}
             </div>
         </nav>
     </header>
