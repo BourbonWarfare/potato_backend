@@ -1,16 +1,14 @@
 import asyncio
-import multiprocessing
 import os
+from asyncio.tasks import Task
 
 from quart import Quart
 
 import bw.response  # noqa: F401
-from bw.cron import runner
 from bw.endpoints import define as define_endpoints
 from bw.environment import ENVIRONMENT
 from bw.log import log_config
 from bw.log import setup_config as setup_log_config
-from bw.realtime.queue import Queue
 from bw.settings import GLOBAL_CONFIGURATION
 from bw.state import State
 
@@ -22,14 +20,24 @@ app.secret_key = ENVIRONMENT.signing_key()
 state = State()
 define_endpoints(app)
 
+EVENT_QUEUE_TASK: Task | None = None
 
-@app.while_serving
+
+@app.before_serving
 async def run_message_queue():
-    app.add_background_task(Queue.process_event_queue, state.queue)
+    global EVENT_QUEUE_TASK
 
-    yield
+    app.logger.info('starting event queue')
+    EVENT_QUEUE_TASK = asyncio.ensure_future(state.queue.process_event_queue())
 
-    state.queue.stop()
+
+@app.after_serving
+async def stop_message_queue():
+    if EVENT_QUEUE_TASK:
+        app.logger.info('stopping event queue')
+        EVENT_QUEUE_TASK.cancel()
+
+    app.logger.info('all runners stopped')
 
 
 def run():
@@ -44,10 +52,6 @@ def run():
         ssl_certfile_path = None
         ssl_keyfile_path = None
 
-    app.logger.info('starting cron runner')
-    cron_runner = multiprocessing.Process(target=runner.spawn, args=(ENVIRONMENT.cron_token(),))
-    cron_runner.start()
-
     app.logger.info('starting BW backend')
     app.logger.info('-' * 50)
     app.run(
@@ -57,7 +61,6 @@ def run():
         certfile=ssl_certfile_path,
         keyfile=ssl_keyfile_path,
     )
-    cron_runner.kill()
     app.logger.info("that's all, folks")
 
 
@@ -74,18 +77,6 @@ def production():
 
         await serve(app, config)
 
-    print('Starting cron runner')
-    cron_runner = multiprocessing.Process(
-        target=runner.spawn,
-        args=(ENVIRONMENT.cron_token(),),
-    )
-    cron_runner.start()
-
     print('Starting BW backend')
-
-    try:
-        asyncio.run(run_server())
-    finally:
-        cron_runner.kill()
-
+    asyncio.run(run_server())
     print("that's all, folks")
