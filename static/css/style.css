@@ -90,7 +90,7 @@ a:hover {
     padding: 0px;
 }
 
-#view:has(.auth-form) {
+#view:has(.auth-card) {
     justify-content: center;
 }
 

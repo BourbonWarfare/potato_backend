@@ -222,6 +222,23 @@ def db_bourbon_user_1(state, db_user_1, email_1, username_1, password_1, salt_1)
 
 
 @pytest.fixture(scope='function')
+def db_bourbon_user_2(state, db_user_2, email_2, username_2, password_2, salt_2):
+    with state.Session.begin() as session:
+        bourbon_user = BourbonUser(
+            user_id=db_user_2.id,
+            username=username_2,
+            email=email_2,
+            password_hashed=BourbonUser.hashed_password(password_2, salt_2),
+            salt=salt_2,
+            verified=True,
+        )
+        session.add(bourbon_user)
+        session.flush()
+        session.expunge(bourbon_user)
+    yield bourbon_user
+
+
+@pytest.fixture(scope='function')
 def db_unverified_bourbon_user(state, db_user_2, email_2, username_2, password_1, salt_1):
     with state.Session.begin() as session:
         bourbon_user = BourbonUser(
@@ -562,7 +579,17 @@ def password_1():
 
 
 @pytest.fixture
+def password_2():
+    return '12345'
+
+
+@pytest.fixture
 def salt_1():
+    return secrets.token_bytes(SALT_LENGTH)
+
+
+@pytest.fixture
+def salt_2():
     return secrets.token_bytes(SALT_LENGTH)
 
 

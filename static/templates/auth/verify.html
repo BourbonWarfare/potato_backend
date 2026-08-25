@@ -1,0 +1,28 @@
+<div class="container-card auth-card" id="auth-card">
+    <div class="card-content" id="auth-card-content">
+        <div class="auth-header">
+            <h2>
+                {% if verified %}
+                Successfully registered your account
+                {% else %}
+                An error has occured
+                {% endif %}
+            </h2>
+            {% if verified %}
+            <p>
+                You may now close this page and login.
+            </p>
+            {% else %}
+            <p>
+                You will have to re-verify.
+            </p>
+            <p>
+                <a href="/recover" class="forgot-link" hx-get="/recover" hx-target="#auth-card" hx-swap="outerHTML"
+                    hx-push-url="true" hx-browser-indicator="true">
+                    Click here to recover your account.
+                </a>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>

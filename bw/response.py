@@ -61,6 +61,9 @@ class WebResponse(Response):
             **kwargs,
         )
 
+    def __bool__(self):
+        return self.status_code >= 200 and self.status_code < 300
+
 
 class WithState(WebResponse):
     def __init__(self, state: Any, status: int = 200, data: str = '', headers: dict[str, str] | None = None):

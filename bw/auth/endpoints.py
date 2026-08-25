@@ -229,6 +229,13 @@ def define_user(api: Blueprint, local: Blueprint):
         """
         return AuthApi().user_info(state=State.state, user=session_user)
 
+    @api.get('/recover')
+    @verify_csrf_from_form
+    @form_endpoint
+    @require_session(require_user=False, require_authenticated=False)
+    async def recover(session_user: User, email: str) -> WebResponse:
+        pass
+
     @api.post('/register')
     @verify_csrf_from_form
     @form_endpoint
@@ -897,7 +904,12 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
     @root.get('/verify')
     @html_endpoint(template_path='auth/verify.html', title='Verified your Bourbon Warfare account')
     async def verify_page(html: str) -> str:
-        return await render_template_string(html)
+        token = request.args.get('token')
+        if token:
+            verified = AuthApi().verify_email(State.state, token)
+        else:
+            verified = False
+        return await render_template_string(html, verified=verified)
 
     @root.get('/register')
     @html_endpoint(template_path='auth/create_account.html', title='Register a Bourbon Warfare account')
@@ -907,8 +919,8 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
         AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
-    @root.get('/forgot-password')
-    @html_endpoint(template_path='auth/forgot_password.html', title='Recover your Bourbon Warfare account')
+    @root.get('/recover')
+    @html_endpoint(template_path='auth/recover.html', title='Recover your Bourbon Warfare account')
     @with_default_session
     async def recover_page(session_token: str, html: str) -> str:
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state

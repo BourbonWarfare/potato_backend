@@ -21,6 +21,7 @@ from bw.models.auth import BotUser, BourbonUser, DiscordUser, Role, User, UserGr
 from integrations.auth.fixtures import (
     db_bot_user_1,
     db_bourbon_user_1,
+    db_bourbon_user_2,
     db_discord_user_1,
     db_group_1,
     db_group_2,
@@ -37,6 +38,7 @@ from integrations.auth.fixtures import (
     group_name_2,
     non_db_user_1,
     password_1,
+    password_2,
     permission_1,
     permission_2,
     permission_name_1,
@@ -46,7 +48,9 @@ from integrations.auth.fixtures import (
     role_name_1,
     role_name_2,
     salt_1,
+    salt_2,
     token_1,
+    token_2,
     username_1,
     username_2,
 )
@@ -218,6 +222,10 @@ class TestUserStoreBourbonUser:
     def test__bourbon_user_from_user__raises(self, state, db_user_1):
         with pytest.raises(NoUserWithGivenCredentials):
             UserStore().bourbon_user_from_user(state, db_user_1)
+
+    def test__bourbon_user_from_user__multiple_users_exist(self, state, db_user_1, db_bourbon_user_1, db_bourbon_user_2):
+        retrieved = UserStore().bourbon_user_from_user(state, db_user_1)
+        assert retrieved.user_id == db_user_1.id
 
     def test__verify_bourbon_user_from_email(self, state, db_user_1, email_1, db_bourbon_user_1):
         UserStore().verify_bourbon_user_from_email(state, email_1)

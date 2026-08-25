@@ -10,7 +10,7 @@ from bw.auth.group import GroupStore
 from bw.auth.permissions import Permissions
 from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
-from bw.auth.tasks import TaskSendRegistrationEmail
+from bw.auth.tasks import TaskSendRecoveryEmail, TaskSendRegistrationEmail
 from bw.auth.types import DiscordSnowflake
 from bw.auth.user import UserStore
 from bw.auth.utils import secure_token_urlsafe
@@ -51,6 +51,22 @@ class AuthApi:
         csrf_token = secure_token_urlsafe()
         SessionStore().set_csrf_token(state, session_token, csrf_token)
         return WithState(state=csrf_token)
+
+    @define_api
+    def send_recovery_email(self, state: State, email: str) -> WebResponse:
+        """
+        ### Send recovery email for the user
+
+        Create a new endpoint for email recovery, and send the email to this location
+        """
+        logger.info('Enqueueing recovery email')
+        if ENVIRONMENT.verify_immediately():
+            return Created()
+
+        recovery_token: str = secrets.token_urlsafe()
+        SessionStore().register_bourbon_recovery_code(state, recovery_code=recovery_token, email=email)
+        TasksStore().enqueue_task(state, TaskSendRecoveryEmail(email, recovery_token))
+        return Created()
 
     @define_api
     def send_verification_email(self, state: State, email: str) -> WebResponse:

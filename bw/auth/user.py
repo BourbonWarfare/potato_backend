@@ -427,7 +427,7 @@ class UserStore:
         ```
         """
         with state.Session.begin() as session:
-            query = select(BourbonUser).join(User, User.id == BourbonUser.user_id)
+            query = select(BourbonUser).join(User, User.id == BourbonUser.user_id).where(User.id == user.id)
             try:
                 bourbon_user = session.scalars(query).one()
             except NoResultFound:
@@ -869,6 +869,11 @@ class UserStore:
         }
 
     def verify_bourbon_user_from_email(self, state: State, email: str):
+        with state.Session.begin() as session:
+            query = update(BourbonUser).where(BourbonUser.email == email).values(verified=True)
+            session.execute(query)
+
+    def recover_bourbon_user_from_email(self, state: State, email: str):
         with state.Session.begin() as session:
             query = update(BourbonUser).where(BourbonUser.email == email).values(verified=True)
             session.execute(query)
