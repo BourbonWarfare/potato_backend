@@ -20,7 +20,7 @@ dependencies = [
     "psutil",
     "aiofiles>=24.1.0",
     "argon2-cffi>=25.1.0",
-    "pywin32"
+    "pywin32",
 ]
 authors = [
     {name="Bailey Danyluk"}

@@ -42,7 +42,7 @@ class MockServer:
 
 
 class MockSubprocess:
-    """Simulates a subprocess returned by psutil.Popen or Process.into_process()."""
+    """Simulates a subprocess returned by bw.server_ops.process.launcher.launch_process or Process.into_process()."""
 
     def __init__(self, pid=1234, running=True, status_val='running'):
         self.pid = pid
@@ -107,7 +107,7 @@ def mock_psutil(mocker, mock_subprocess_factory):
         launched_subprocesses.append(subproc)
         return subproc
 
-    mocker.patch('psutil.Popen', side_effect=mock_popen)
+    mocker.patch('bw.server_ops.process.launcher.launch_process', side_effect=mock_popen)
     return launched_subprocesses
 
 
@@ -252,7 +252,7 @@ def test__arma3_api__start_server__creates_and_starts_processes(state, mock_subp
 
 
 def test__arma3_api__start_server__os_error_handling(state, mocker):
-    mocker.patch('psutil.Popen', side_effect=OSError('Failed to spawn process'))
+    mocker.patch('bw.server_ops.process.launcher.launch_process', side_effect=OSError('Failed to spawn process'))
 
     server = MockServer(name='server_fail', headless_count=1)
     api = Arma3Api()
@@ -270,7 +270,7 @@ def test__arma3_api__start_server__headless_client_os_error_handling(state, mock
 
     server_subproc = mock_subprocess_factory(pid=2000)
 
-    popen_mock = mocker.patch('psutil.Popen')
+    popen_mock = mocker.patch('bw.server_ops.process.launcher.launch_process')
     popen_mock.side_effect = [server_subproc, OSError('Failed to start headless client')]
 
     response = api.start_server(state, server)
