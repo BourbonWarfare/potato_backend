@@ -31,7 +31,8 @@ maintainers = [
 
 [project.optional-dependencies]
 development = [
-    "pre-commit"
+    "pre-commit",
+    "types-pywin32"
 ]
 tests = [
     "pytest>=9.0",
