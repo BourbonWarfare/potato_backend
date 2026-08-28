@@ -51,3 +51,4 @@ from bw.web_event.mission import (
 from bw.web_event.mission import (
     MissionUploadEvent as MissionUploadEvent,
 )
+from bw.web_event.monitor import RemoteConnectionEvent as RemoteConnectionEvent
