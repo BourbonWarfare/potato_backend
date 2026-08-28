@@ -42,8 +42,8 @@ class Runner:
         while self.running_:
             time.sleep(1.0)
             with asyncio.Runner() as runner:
-                while event := EVENT_QUEUE.pop():
-                    runner.run(self._post_event(event))
+                while EVENT_QUEUE:
+                    runner.run(self._post_event(EVENT_QUEUE.pop()))
 
     def run(self):
         def refresh_session():
