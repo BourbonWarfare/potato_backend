@@ -119,12 +119,12 @@ class Runner:
 
         for cron in self.cron_queue_:
             assert issubclass(cron.cron_class, Cron)
-            with open(schedule_dir / f'{cron.path.stem}.schedule.txt', 'w') as file:
+            with open(schedule_dir / f'{cron.path.stem}.schedule.txt', 'w', encoding='utf-8') as file:
                 file.write(ascii_cron_schedule(cron.cron_class.cron_str(), title=f'{cron.path.stem} schedule'))
 
         if datetime.datetime.now(TIMEZONE) - self.last_schedule_print_ >= datetime.timedelta(hours=24):
             self.last_schedule_print_ = datetime.datetime.now(TIMEZONE)
-            with open(schedule_dir / 'daily.schedule.txt', 'w') as file:
+            with open(schedule_dir / 'daily.schedule.txt', 'w', encoding='utf-8') as file:
                 file.write(
                     build_daily_timeline_from_classes(
                         [cron.cron_class for cron in self.cron_queue_ if issubclass(cron.cron_class, Cron)]
