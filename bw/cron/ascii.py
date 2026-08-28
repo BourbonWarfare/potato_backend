@@ -156,33 +156,6 @@ def ascii_cron_schedule(
         lines.append(row('   (no upcoming executions)'))
     lines.append(mid_rule('─'))
 
-    # 24-hour heat-map
-    lines.append(row('🌡️  24-HOUR HEAT MAP'))
-    lines.append(mid_rule('─'))
-    lines.append(row('    00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23'))
-    lines.append(row('   ┌' + '──┬' * 23 + '──┐'))
-
-    for m in range(0, 60, 10):
-        cells = []
-        for h in range(24):
-            active = '██' if (h in hours and m in minutes) else '  '
-            cells.append(active)
-        lines.append(row(f'{m:02d} │' + '│'.join(cells) + '│'))
-        if m < 50:
-            lines.append(row('   ├' + '──┼' * 23 + '──┤'))
-    lines.append(row('   └' + '──┴' * 23 + '──┘'))
-    lines.append(mid_rule('─'))
-
-    # Minute distribution
-    lines.append(row('📊  MINUTE DISTRIBUTION'))
-    lines.append(mid_rule('─'))
-    buckets = [(0, 14), (15, 29), (30, 44), (45, 59)]
-    for lo, hi in buckets:
-        cnt = len([m for m in minutes if lo <= m <= hi])
-        bar = '█' * cnt
-        lines.append(row(f'   {lo:02d}-{hi:02d}  {bar:<30} {cnt}'))
-    lines.append(mid_rule('─'))
-
     # Parsed fields summary
     lines.append(row('📝  PARSED FIELDS'))
     lines.append(mid_rule('─'))
@@ -313,34 +286,6 @@ def build_daily_timeline(
         if len(all_events) > timeline_limit:
             lines.append(row(f'        └─ ... and {len(all_events) - timeline_limit} more'))
 
-    lines.append(mid_rule('─'))
-
-    # ── Hourly activity grid ────────────────────────────────────
-    lines.append(row('🕐  HOURLY ACTIVITY GRID'))
-    lines.append(mid_rule('─'))
-
-    hour_labels = ' '.join(f'{(start_time.hour + h) % 24:02d}' for h in range(24))
-    lines.append(row(f'Hour: {hour_labels}'))
-    lines.append(row('─' * (width - 4)))
-
-    name_width = 6
-    for name, stats in sorted(job_stats.items()):
-        trunc = name[:name_width].ljust(name_width)
-        cells: list[str] = []
-        for h in range(24):
-            hour = (start_time.hour + h) % 24
-            active = any(dt.hour == hour for dt in stats['executions'])
-            cells.append('██ ' if active else '·  ')
-        lines.append(row(f'{trunc}  {"".join(cells)}'))
-
-    # Total row
-    total_cells: list[str] = []
-    for h in range(24):
-        hour = (start_time.hour + h) % 24
-        count = sum(1 for _, stats in job_stats.items() if any(dt.hour == hour for dt in stats['executions']))
-        total_cells.append(f'{count:2d} ' if count > 0 else '·  ')
-    lines.append(row('─' * (width - 4)))
-    lines.append(row(f'Total  {"".join(total_cells)}'))
     lines.append(mid_rule('─'))
 
     # ── Job summary ─────────────────────────────────────────────
