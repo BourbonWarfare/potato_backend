@@ -11,19 +11,31 @@ from bw.monitor.windows import RemoteConnectionMonitor
 
 @pytest.fixture
 def event_xml():
-    return """<Event>
-    <System>
-        <Provider Name="Microsoft-Windows-TerminalServices-RemoteConnectionManager" />
-        <EventID>1149</EventID>
-        <TimeCreated SystemTime="2026-08-25T20:15:30+00:00" />
-    </System>
-    <UserData>
-        <EventXML>
-            <Param1>test-user</Param1>
-            <Param2>TEST-DOMAIN</Param2>
-            <Param3>192.168.1.42</Param3>
-        </EventXML>
-    </UserData>
+    return """<?xml version="1.0"?>
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-TerminalServices-RemoteConnectionManager" Guid="{00000000-0000-0000-0000-000000000000}"/>
+    <EventID>1149</EventID>
+    <Version>0</Version>
+    <Level>4</Level>
+    <Task>0</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x0000000000000000</Keywords>
+    <TimeCreated SystemTime="2026-08-28T03:44:47.915229300Z"/>
+    <EventRecordID>51175961</EventRecordID>
+    <Correlation ActivityID="{00000000-0000-0000-0000-000000000000}"/>
+    <Execution ProcessID="872" ThreadID="375024"/>
+    <Channel>Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational</Channel>
+    <Computer>Bourbon Warfare Computer Server</Computer>
+    <Security UserID="0-0-0-00"/>
+  </System>
+  <UserData>
+    <EventXML xmlns="Event_NS">
+      <Param1>test-user</Param1>
+      <Param2>TEST-DOMAIN</Param2>
+      <Param3>192.168.1.42</Param3>
+    </EventXML>
+  </UserData>
 </Event>
 """
 

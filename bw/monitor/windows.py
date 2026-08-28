@@ -52,14 +52,22 @@ class RemoteConnectionMonitor(Monitor):
         except ElementTree.ParseError as error:
             raise RemoteConnectionEventParseError(f'Invalid XML: {error}') from error
 
-        print(xml)
-        print(root)
+        # ElementTree represents a namespaced tag as:
+        # {namespace}tag
+        #
+        # Use the namespace from the document when one is present,
+        # otherwise use ordinary unqualified element names. This allows
+        # the parser to handle both real Windows event XML and the
+        # minimal unnamespaced XML used by the validation tests.
+        namespace = ''
+        if root.tag.startswith('{'):
+            namespace = root.tag.split('}', 1)[0] + '}'
 
-        event_id = root.findtext('./System/EventID')
+        event_id = root.findtext(f'./{namespace}System/{namespace}EventID')
         if event_id is None:
             raise RemoteConnectionEventMissingField('EventID')
 
-        time_created = root.find('./System/TimeCreated')
+        time_created = root.find(f'./{namespace}System/{namespace}TimeCreated')
         if time_created is None:
             raise RemoteConnectionEventMissingField('TimeCreated')
 
@@ -67,7 +75,15 @@ class RemoteConnectionMonitor(Monitor):
         if system_time is None:
             raise RemoteConnectionEventMissingField('SystemTime')
 
-        params = {element.tag.rsplit('}', 1)[-1]: element.text for element in root.findall('./UserData/EventXML/*')}
+        params = {}
+
+        user_data = root.find(f'./{namespace}UserData')
+        if user_data is not None:
+            for element in user_data.iter():
+                if element.tag.rsplit('}', 1)[-1] == 'EventXML':
+                    for param in element:
+                        params[param.tag.rsplit('}', 1)[-1]] = param.text
+                    break
 
         try:
             parsed_event_id = int(event_id)
@@ -89,9 +105,9 @@ class RemoteConnectionMonitor(Monitor):
             timestamp=timestamp,
             protocol='rdp',
             action='authentication_success',
-            username=params.get('Param1'),
-            domain=params.get('Param2'),
-            source_ip=params.get('Param3'),
+            username=params.get('Param1', 'Unknown'),
+            domain=params.get('Param2', 'Unknown'),
+            source_ip=params.get('Param3', 'Unknown'),
             source='windows',
             source_event_id=parsed_event_id,
         )
