@@ -5,6 +5,7 @@ import aiohttp
 
 from bw.cron.utils import backoff
 from bw.environment import ENVIRONMENT
+from bw.settings import TIMEZONE
 
 
 @dataclass
@@ -12,6 +13,10 @@ class Session:
     token: str
     expire_time: datetime.datetime
     session: None | str = None
+
+    @property
+    def expired(self) -> bool:
+        return datetime.datetime.now(TIMEZONE) >= self.expire_time
 
     @backoff(delay=2, retries=5, max_delay=10)
     async def refresh(self):

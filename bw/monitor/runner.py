@@ -39,16 +39,9 @@ class Runner:
                 logger.warning(f'Could not publish event: {err}')
 
     def drain(self):
-        while self.running_:
-            time.sleep(1.0)
-            with asyncio.Runner() as runner:
-                while EVENT_QUEUE:
-                    runner.run(self._post_event(EVENT_QUEUE.pop()))
-
-    def run(self):
-        def refresh_session():
+        async def refresh_session():
             try:
-                asyncio.run(self.session_token_.refresh())
+                await self.session_token_.refresh()
             except aiohttp.ClientResponseError as e:
                 if e.status == 301:
                     logger.error('Cannot run monitor without bot token!')
@@ -59,6 +52,15 @@ class Runner:
                 logger.error(f'Failed to refresh: {e}')
                 raise
 
+        while self.running_:
+            time.sleep(1.0)
+            with asyncio.Runner() as runner:
+                if self.session_token_.expired:
+                    runner.run(refresh_session())
+                while EVENT_QUEUE:
+                    runner.run(self._post_event(EVENT_QUEUE.pop()))
+
+    def run(self):
         drain = threading.Thread(target=Runner.drain, args=(self,))
         drain.start()
 
