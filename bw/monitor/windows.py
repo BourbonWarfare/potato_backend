@@ -52,6 +52,9 @@ class RemoteConnectionMonitor(Monitor):
         except ElementTree.ParseError as error:
             raise RemoteConnectionEventParseError(f'Invalid XML: {error}') from error
 
+        print(xml)
+        print(root)
+
         event_id = root.findtext('./System/EventID')
         if event_id is None:
             raise RemoteConnectionEventMissingField('EventID')
