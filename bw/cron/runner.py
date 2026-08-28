@@ -15,6 +15,7 @@ import cron_converter
 
 from bw.bw_session import Session
 from bw.converters import make_json_safe
+from bw.cron.ascii import ascii_cron_schedule
 from bw.cron.stdout_capture import OutCapture
 from bw.environment import ENVIRONMENT
 from bw.settings import TIMEZONE
@@ -109,6 +110,15 @@ class Runner:
             )
             if cron in new_crons or new_cron > self.cron_queue_[-1]:
                 heappush(self.cron_queue_, new_cron)
+
+        schedule_dir = root_dir / 'schedule'
+        if not schedule_dir.exists():
+            schedule_dir.mkdir()
+
+        for cron in self.cron_queue_:
+            assert issubclass(cron.cron_class, Cron)
+            with open(schedule_dir / f'{cron.path.stem}.schedule.txt', 'w') as file:
+                file.write(ascii_cron_schedule(cron.cron_class.cron_str(), title=f'{cron.path.stem} schedule'))
 
     async def push_cron_run_event(self, cron: ScheduledCron):
         event = CronRun(cron=cron.path.stem)
