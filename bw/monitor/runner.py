@@ -63,8 +63,11 @@ class Runner:
         drain.start()
 
         monitor = RemoteConnectionMonitor.subscribe()
-        while self.running_:
-            time.sleep(1.0)
+        try:
+            while self.running_:
+                time.sleep(1.0)
+        except KeyboardInterrupt:
+            self.running_ = False
 
         monitor.close()
         drain.join()
