@@ -3,6 +3,8 @@ from typing import Self
 
 from bw.web_event import BaseEvent
 
+EVENT_QUEUE: list[BaseEvent] = []
+
 
 class Monitor(ABC):
     @classmethod
@@ -11,4 +13,4 @@ class Monitor(ABC):
         pass
 
     def publish(self, event: BaseEvent):
-        pass
+        EVENT_QUEUE.append(event)

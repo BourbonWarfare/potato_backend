@@ -47,6 +47,11 @@ class Environment:
         assert isinstance(token, str)
         return token
 
+    def monitor_token(self) -> str:
+        token = GC.require('monitor_token').get()
+        assert isinstance(token, str)
+        return token
+
     def cron_path(self) -> Path:
         path = GC.require('cron_path').get()
         assert isinstance(path, str)
