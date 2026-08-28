@@ -5,10 +5,12 @@ Integrates with the existing bw.cron runner.
 """
 
 import datetime
+from typing import Any
 
 import cron_converter
 
 from bw.settings import TIMEZONE
+from crons.cron import Cron
 
 
 def get_next_executions(
@@ -196,3 +198,193 @@ def ascii_cron_schedule(
 
     lines.append(footer())
     return '\n'.join(lines)
+
+
+def get_executions_in_window(
+    cron_str: str,
+    start: datetime.datetime,
+    end: datetime.datetime,
+) -> list[datetime.datetime]:
+    """Return every execution time for a cron that falls inside [start, end]."""
+    schedule = cron_converter.Cron(cron_str).schedule(start_date=start)
+    executions: list[datetime.datetime] = []
+    current = start
+    while True:
+        nxt = schedule.next()
+        if nxt > end:
+            break
+        if nxt <= current:
+            break
+        executions.append(nxt)
+        current = nxt
+    return executions
+
+
+def build_daily_timeline(
+    cron_specs: list[tuple[str, str]],
+    start_time: datetime.datetime | None = None,
+) -> str:
+    """
+    Build an ASCII calendar / timeline of all cron executions in the next 24 hours.
+
+    Args:
+        cron_specs: List of (cron_str, job_name) tuples.
+        start_time: Window start (default: now in TIMEZONE).
+
+    Returns:
+        A multi-line ASCII string showing a merged timeline and hourly grid.
+
+    Example:
+        >>> specs = [("*/15 * * * *", "Heartbeat"), ("0 22 * * *", "DailyReport")]
+        >>> print(build_daily_timeline(specs))
+    """
+    if start_time is None:
+        start_time = datetime.datetime.now(tz=TIMEZONE)
+
+    end_time = start_time + datetime.timedelta(hours=24)
+
+    # ── Collect executions ──────────────────────────────────────
+    all_events: list[tuple[datetime.datetime, str, str]] = []
+    job_stats: dict[str, dict[str, Any]] = {}
+
+    for cron_str, name in cron_specs:
+        executions = get_executions_in_window(cron_str, start_time, end_time)
+        job_stats[name] = {
+            'cron_str': cron_str,
+            'executions': executions,
+            'count': len(executions),
+        }
+        for dt in executions:
+            all_events.append((dt, name, cron_str))
+
+    all_events.sort(key=lambda x: x[0])
+
+    # ── ASCII helpers ───────────────────────────────────────────
+    width = 86
+
+    def row(content: str) -> str:
+        pad = width - 2 - len(content)
+        return '║ ' + content + ' ' * pad + '║'
+
+    def rule(char: str = '═') -> str:
+        return '╔' + char * (width - 2) + '╗'
+
+    def mid_rule(char: str = '─') -> str:
+        return '╠' + char * (width - 2) + '╣'
+
+    def footer() -> str:
+        return '╚' + '═' * (width - 2) + '╝'
+
+    lines: list[str] = []
+
+    # ── Header ──────────────────────────────────────────────────
+    start_fmt = start_time.strftime('%a %Y-%m-%d %H:%M')
+    end_fmt = end_time.strftime('%a %Y-%m-%d %H:%M')
+    lines.append(rule())
+    lines.append(row('📅  DAILY CRON TIMELINE — Next 24 Hours'))
+    lines.append(row(f'    {start_fmt} → {end_fmt}'))
+    lines.append(mid_rule())
+
+    # ── Chronological timeline ──────────────────────────────────
+    lines.append(row('⏱️  CHRONOLOGICAL TIMELINE'))
+    lines.append(mid_rule('─'))
+
+    if not all_events:
+        lines.append(row('   (no executions scheduled in this window)'))
+    else:
+        from itertools import groupby
+
+        timeline_limit = 30
+        current_date: datetime.date | None = None
+        shown = 0
+
+        for dt, group in groupby(all_events[:timeline_limit], key=lambda x: x[0]):
+            if dt.date() != current_date:
+                lines.append(row(f'  ── {dt.strftime("%a %m/%d")} ──'))
+                current_date = dt.date()
+
+            time_str = dt.strftime('%H:%M')
+            group_list = list(group)
+            for i, (_, name, _) in enumerate(group_list):
+                prefix = f'  {time_str}  ├─ ' if i == 0 else '        ├─ '
+                lines.append(row(f'{prefix}{name}'))
+            shown += len(group_list)
+
+        if len(all_events) > timeline_limit:
+            lines.append(row(f'        └─ ... and {len(all_events) - timeline_limit} more'))
+
+    lines.append(mid_rule('─'))
+
+    # ── Hourly activity grid ────────────────────────────────────
+    lines.append(row('🕐  HOURLY ACTIVITY GRID'))
+    lines.append(mid_rule('─'))
+
+    hour_labels = ' '.join(f'{(start_time.hour + h) % 24:02d}' for h in range(24))
+    lines.append(row(f'Hour: {hour_labels}'))
+    lines.append(row('─' * (width - 4)))
+
+    name_width = 6
+    for name, stats in sorted(job_stats.items()):
+        trunc = name[:name_width].ljust(name_width)
+        cells: list[str] = []
+        for h in range(24):
+            hour = (start_time.hour + h) % 24
+            active = any(dt.hour == hour for dt in stats['executions'])
+            cells.append('██ ' if active else '·  ')
+        lines.append(row(f'{trunc}  {"".join(cells)}'))
+
+    # Total row
+    total_cells: list[str] = []
+    for h in range(24):
+        hour = (start_time.hour + h) % 24
+        count = sum(1 for _, stats in job_stats.items() if any(dt.hour == hour for dt in stats['executions']))
+        total_cells.append(f'{count:2d} ' if count > 0 else '·  ')
+    lines.append(row('─' * (width - 4)))
+    lines.append(row(f'Total  {"".join(total_cells)}'))
+    lines.append(mid_rule('─'))
+
+    # ── Job summary ─────────────────────────────────────────────
+    lines.append(row('📊  JOB SUMMARY'))
+    lines.append(mid_rule('─'))
+
+    for name, stats in sorted(job_stats.items()):
+        cron = stats['cron_str']
+        count = stats['count']
+        execs = stats['executions']
+
+        if count == 0:
+            freq = 'no runs'
+        elif count == 1:
+            freq = 'once'
+        elif count >= 1440:
+            freq = 'every minute'
+        else:
+            if len(execs) >= 2:
+                interval = (execs[-1] - execs[0]) / (len(execs) - 1)
+                freq = f'{_humanize_delta(interval)} avg'
+            else:
+                freq = f'{count}× in 24h'
+
+        name_pad = name[:12].ljust(12)
+        cron_pad = cron[:22].ljust(22)
+        lines.append(row(f'   {name_pad} {cron_pad} {count:4d} runs  ({freq})'))
+
+    lines.append(footer())
+    return '\n'.join(lines)
+
+
+def build_daily_timeline_from_classes(
+    cron_classes: list[type[Cron]],
+    start_time: datetime.datetime | None = None,
+) -> str:
+    """
+    Convenience wrapper that accepts loaded Cron classes directly.
+
+    Usage inside Runner.gather_crons():
+        loaded = [m.cron_class for m in self.loaded_crons_.values()]
+        chart = build_daily_timeline_from_classes(loaded)
+        for line in chart.splitlines():
+            logger.info(line)
+    """
+    specs = [(cls.cron_str(), cls.__name__) for cls in cron_classes]
+    return build_daily_timeline(specs, start_time)

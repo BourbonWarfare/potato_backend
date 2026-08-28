@@ -15,7 +15,7 @@ import cron_converter
 
 from bw.bw_session import Session
 from bw.converters import make_json_safe
-from bw.cron.ascii import ascii_cron_schedule
+from bw.cron.ascii import ascii_cron_schedule, build_daily_timeline_from_classes
 from bw.cron.stdout_capture import OutCapture
 from bw.environment import ENVIRONMENT
 from bw.settings import TIMEZONE
@@ -51,6 +51,7 @@ class Runner:
     crons_: set[Path]
     loaded_crons_: dict[Path, Module]
     cron_queue_: list[ScheduledCron]
+    last_schedule_print_: datetime.datetime
 
     def __init__(self, bot_token: str):
         self.session_token_ = Session(token=bot_token, expire_time=datetime.datetime.now(tz=TIMEZONE))
@@ -58,6 +59,7 @@ class Runner:
         self.crons_ = set()
         self.loaded_crons_ = {}
         self.cron_queue_ = []
+        self.last_schedule_print_ = datetime.datetime.fromtimestamp(0, tz=TIMEZONE)
         self.gather_crons()
 
     @staticmethod
@@ -119,6 +121,15 @@ class Runner:
             assert issubclass(cron.cron_class, Cron)
             with open(schedule_dir / f'{cron.path.stem}.schedule.txt', 'w') as file:
                 file.write(ascii_cron_schedule(cron.cron_class.cron_str(), title=f'{cron.path.stem} schedule'))
+
+        if datetime.datetime.now(TIMEZONE) - self.last_schedule_print_ >= datetime.timedelta(hours=24):
+            self.last_schedule_print_ = datetime.datetime.now(TIMEZONE)
+            with open(schedule_dir / 'daily.schedule.txt', 'w') as file:
+                file.write(
+                    build_daily_timeline_from_classes(
+                        [cron.cron_class for cron in self.cron_queue_ if issubclass(cron.cron_class, Cron)]
+                    )
+                )
 
     async def push_cron_run_event(self, cron: ScheduledCron):
         event = CronRun(cron=cron.path.stem)
