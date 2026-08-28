@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from datetime import datetime
 from typing import Self
@@ -16,6 +17,8 @@ from bw.web_event.monitor import RemoteConnectionEvent
 _RDP_AUTH_CHANNEL = 'Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational'
 
 _RDP_SESSION_CHANNEL = 'Microsoft-Windows-TerminalServices-LocalSessionManager/Operational'
+
+logger = logging.getLogger('bw.monitor')
 
 
 def _parse_xml(xml: str) -> ElementTree.Element:

@@ -19,6 +19,7 @@ PRODUCTION_LOG_CONFIG = {
     'bw.cron': 'INFO',
     'bw.realtime': 'INFO',
     'bw.session': 'DEBUG',
+    'bw.monitor': 'INFO',
 }
 
 
@@ -54,6 +55,13 @@ def log_config() -> dict[str, Any]:
                 'backupCount': int(GLOBAL_CONFIGURATION.get('log_backup_count', 3)),
                 'maxBytes': int(GLOBAL_CONFIGURATION.get('single_log_size', 1 * 1024 * 1024)),
             },
+            'file_monitor': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'default',
+                'filename': 'logs/monitor.log',
+                'backupCount': int(GLOBAL_CONFIGURATION.get('log_backup_count', 3)),
+                'maxBytes': int(GLOBAL_CONFIGURATION.get('single_log_size', 1 * 1024 * 1024)),
+            },
         },
         'root': {
             'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['root'],
@@ -68,6 +76,7 @@ def log_config() -> dict[str, Any]:
     }
 
     log_config['loggers']['bw.cron']['handlers'] = ['stdout', 'file_cron']  # ty:ignore[invalid-assignment]
+    log_config['loggers']['bw.monitor']['handlers'] = ['stdout', 'file_monitor']  # ty:ignore[invalid-assignment]
     return log_config
 
 
