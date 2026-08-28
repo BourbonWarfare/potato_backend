@@ -16,7 +16,7 @@ class Session:
 
     @property
     def expired(self) -> bool:
-        return datetime.datetime.now(TIMEZONE) >= self.expire_time
+        return datetime.datetime.now(TIMEZONE) >= self.expire_time.astimezone(TIMEZONE)
 
     @backoff(delay=2, retries=5, max_delay=10)
     async def refresh(self):
