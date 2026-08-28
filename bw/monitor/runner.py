@@ -57,6 +57,9 @@ class Runner:
             with asyncio.Runner() as runner:
                 if self.session_token_.expired:
                     runner.run(refresh_session())
+
+                if EVENT_QUEUE:
+                    logger.info(f'Pushing {len(EVENT_QUEUE)} events')
                 while EVENT_QUEUE:
                     runner.run(self._post_event(EVENT_QUEUE.pop()))
 
