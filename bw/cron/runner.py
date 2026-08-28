@@ -13,38 +13,15 @@ from typing import Any
 import aiohttp
 import cron_converter
 
+from bw.bw_session import Session
 from bw.converters import make_json_safe
 from bw.cron.stdout_capture import OutCapture
-from bw.cron.utils import backoff
 from bw.environment import ENVIRONMENT
 from bw.settings import TIMEZONE
 from bw.web_event import CronRun
 from crons.cron import Cron
 
 logger = logging.getLogger('bw.cron')
-
-
-@dataclass
-class Session:
-    token: str
-    expire_time: datetime.datetime
-    session: None | str = None
-
-    @backoff(delay=2, retries=5, max_delay=10)
-    async def refresh(self):
-        adjusted_expire = self.expire_time - datetime.timedelta(seconds=15)
-        now = datetime.datetime.now(tz=adjusted_expire.tzinfo)
-        if self.session is not None and now < adjusted_expire:
-            return
-
-        async with aiohttp.ClientSession() as session:
-            payload = {'bot_token': self.token}
-            async with session.post(f'http://localhost:{ENVIRONMENT.port()}/api/v1/auth/login/bot', json=payload) as response:
-                response.raise_for_status()
-                logger.info('Successfully refreshed session')
-                json = await response.json()
-                self.session = json['session_token']
-                self.expire_time = datetime.datetime.fromisoformat(json['expire_time'])
 
 
 @dataclass
