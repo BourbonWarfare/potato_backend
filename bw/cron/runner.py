@@ -29,10 +29,9 @@ logger = logging.getLogger('bw.cron')
 class ScheduledCron:
     path: Path
     init_time: datetime.datetime
-    cron_class: type
+    cron_class: type[Cron]
 
     def next(self) -> datetime.datetime:
-        assert issubclass(self.cron_class, Cron)
         return cron_converter.Cron(self.cron_class.cron_str()).schedule(start_date=self.init_time).next()
 
     def __lt__(self, rhs: 'ScheduledCron') -> bool:
@@ -54,8 +53,10 @@ class Runner:
     last_schedule_print_: datetime.datetime
 
     def __init__(self, bot_token: str):
-        self.session_token_ = Session(token=bot_token, expire_time=datetime.datetime.now(tz=TIMEZONE))
-
+        self.session_token_ = Session(
+            token=bot_token,
+            expire_time=datetime.datetime.now(tz=TIMEZONE),
+        )
         self.crons_ = set()
         self.loaded_crons_ = {}
         self.cron_queue_ = []
@@ -64,72 +65,111 @@ class Runner:
 
     @staticmethod
     def time_to_next_minute() -> float:
-        next_minute_in = 60 - datetime.datetime.now(TIMEZONE).second
-        return next_minute_in
+        return 60 - datetime.datetime.now(TIMEZONE).second
 
     def gather_crons(self):
         root_dir = ENVIRONMENT.cron_path()
+        found_crons = set(root_dir.rglob(pattern='cron_*.py'))
 
-        found_crons: set[Path] = set()
-        for file_path in root_dir.rglob(pattern='cron_*.py'):
-            found_crons.add(file_path)
+        new_crons = found_crons - self.crons_
+        removed_crons = self.crons_ - found_crons
 
-        new_crons = {cron for cron in found_crons if cron not in self.crons_}
         if new_crons:
-            logger.info(f'{len(new_crons)} new crons found: {", ".join([str(cron) for cron in new_crons])}')
-            t0 = time.time()
-            importlib.invalidate_caches()
-            for cron in new_crons:
-                modified_time = cron.stat().st_mtime
-                if cron in self.loaded_crons_:
-                    if modified_time > self.loaded_crons_[cron].last_modified:
-                        importlib.reload(self.loaded_crons_[cron].module)
-                        self.loaded_crons_[cron].last_modified = modified_time
-                else:
-                    relative_cron = Path(ENVIRONMENT.cron_path().stem) / cron.relative_to(ENVIRONMENT.cron_path())
-                    package = '.'.join((*relative_cron.parts[:-1], relative_cron.stem))
-                    module = importlib.import_module(package)
-                    classes = {name: cls for name, cls in module.__dict__.items() if isinstance(cls, type)}
+            logger.info(f'{len(new_crons)} new crons found: {", ".join(str(cron) for cron in new_crons)}')
+            self.load_crons(new_crons)
 
-                    for name, classtype in classes.items():
-                        if issubclass(classtype, Cron) and classtype != Cron:
-                            logger.info(f'Loaded cron job "{name}"')
-                            self.loaded_crons_[cron] = Module(module=module, last_modified=modified_time, cron_class=classtype)
-                            break
-            logger.debug(f'Loaded {len(new_crons)} modules in {time.time() - t0:.2f} second(s)')
-
-        removed_crons = {cron for cron in self.crons_ if cron not in found_crons}
         if removed_crons:
-            logger.info(f'{len(removed_crons)} crons removed: {", ".join([str(cron) for cron in removed_crons])}')
+            logger.info(f'{len(removed_crons)} crons removed: {", ".join(str(cron) for cron in removed_crons)}')
 
         self.crons_ = found_crons
-        for cron in self.crons_:
-            if cron not in self.loaded_crons_:
+
+        for cron in new_crons:
+            loaded = self.loaded_crons_.get(cron)
+            if loaded is None:
                 logger.warning(f'We found the cron file but no class is within: {cron}')
                 continue
-            new_cron = ScheduledCron(
-                path=cron, cron_class=self.loaded_crons_[cron].cron_class, init_time=datetime.datetime.now(TIMEZONE)
-            )
-            if cron in new_crons or new_cron > self.cron_queue_[-1]:
-                heappush(self.cron_queue_, new_cron)
 
+            self.schedule_cron(cron, loaded.cron_class)
+
+        self.write_schedules(root_dir)
+
+    def load_crons(self, crons: set[Path]):
+        t0 = time.time()
+        importlib.invalidate_caches()
+
+        for cron in crons:
+            modified_time = cron.stat().st_mtime
+
+            if cron in self.loaded_crons_:
+                loaded = self.loaded_crons_[cron]
+                if modified_time > loaded.last_modified:
+                    importlib.reload(loaded.module)
+                    loaded.last_modified = modified_time
+                continue
+
+            relative_cron = Path(ENVIRONMENT.cron_path().stem) / cron.relative_to(ENVIRONMENT.cron_path())
+            package = '.'.join((*relative_cron.parts[:-1], relative_cron.stem))
+            module = importlib.import_module(package)
+
+            for name, classtype in module.__dict__.items():
+                if isinstance(classtype, type) and issubclass(classtype, Cron) and classtype != Cron:
+                    logger.info(f'Loaded cron job "{name}"')
+                    self.loaded_crons_[cron] = Module(
+                        module=module,
+                        last_modified=modified_time,
+                        cron_class=classtype,
+                    )
+                    break
+
+        logger.debug(f'Loaded {len(crons)} modules in {time.time() - t0:.2f} second(s)')
+
+    def schedule_cron(self, path: Path, cron_class: type[Cron]):
+        heappush(
+            self.cron_queue_,
+            ScheduledCron(
+                path=path,
+                cron_class=cron_class,
+                init_time=datetime.datetime.now(TIMEZONE),
+            ),
+        )
+
+    def reschedule(self, cron: ScheduledCron):
+        self.schedule_cron(cron.path, cron.cron_class)
+
+    def write_schedules(self, root_dir: Path):
         schedule_dir = root_dir / 'schedule'
-        if not schedule_dir.exists():
-            schedule_dir.mkdir()
+        schedule_dir.mkdir(exist_ok=True)
 
         for cron in self.cron_queue_:
             assert issubclass(cron.cron_class, Cron)
-            with open(schedule_dir / f'{cron.path.stem}.schedule.txt', 'w', encoding='utf-8') as file:
-                file.write(ascii_cron_schedule(cron.cron_class.cron_str(), title=f'{cron.path.stem} schedule'))
-
-        if datetime.datetime.now(TIMEZONE) - self.last_schedule_print_ >= datetime.timedelta(hours=3):
-            self.last_schedule_print_ = datetime.datetime.now(TIMEZONE)
-            with open(schedule_dir / 'daily.schedule.txt', 'w', encoding='utf-8') as file:
+            with open(
+                schedule_dir / f'{cron.path.stem}.schedule.txt',
+                'w',
+                encoding='utf-8',
+            ) as file:
                 file.write(
-                    build_daily_timeline_from_classes(
-                        [cron.cron_class for cron in self.cron_queue_ if issubclass(cron.cron_class, Cron)]
+                    ascii_cron_schedule(
+                        cron.cron_class.cron_str(),
+                        title=f'{cron.path.stem} schedule',
                     )
                 )
+
+        now = datetime.datetime.now(TIMEZONE)
+        if now - self.last_schedule_print_ < datetime.timedelta(hours=3):
+            return
+
+        self.last_schedule_print_ = now
+
+        with open(
+            schedule_dir / 'daily.schedule.txt',
+            'w',
+            encoding='utf-8',
+        ) as file:
+            file.write(
+                build_daily_timeline_from_classes(
+                    [cron.cron_class for cron in self.cron_queue_ if issubclass(cron.cron_class, Cron)]
+                )
+            )
 
     async def push_cron_run_event(self, cron: ScheduledCron):
         event = CronRun(cron=cron.path.stem)
@@ -141,12 +181,71 @@ class Runner:
 
         async with (
             aiohttp.ClientSession(headers=auth_headers) as session,
-            session.post(f'{ENVIRONMENT.server_url()}/api/v1/realtime/', json=make_json_safe(payload)) as request,
+            session.post(
+                f'{ENVIRONMENT.server_url()}/api/v1/realtime/',
+                json=make_json_safe(payload),
+            ) as request,
         ):
             try:
                 request.raise_for_status()
             except Exception as err:  # noqa: BLE001
                 logger.warning(f'Could not publish event: {err}')
+
+    def run_due_crons(self, async_runner: asyncio.Runner, now: datetime.datetime):
+        async_crons = []
+        async_requests = []
+
+        while self.cron_queue_ and self.cron_queue_[0].next() <= now:
+            scheduled = heappop(self.cron_queue_)
+            assert issubclass(scheduled.cron_class, Cron)
+
+            async_runner.run(self.push_cron_run_event(scheduled))
+
+            cron = scheduled.cron_class(self.push_event)
+
+            with OutCapture():
+                cron.run()
+
+            async_crons.append(cron.async_run)
+            async_requests.append(cron.request)
+
+            # Every executed cron gets its next occurrence.
+            self.reschedule(scheduled)
+
+        for cron in async_crons:
+            with OutCapture():
+                async_runner.run(cron())
+
+        return async_requests
+
+    def run_requests(
+        self,
+        async_runner: asyncio.Runner,
+        async_requests,
+    ):
+        async def run_all():
+            assert isinstance(self.session_token_.session, str)
+
+            auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
+            timeout = aiohttp.ClientTimeout(
+                total=300,
+                connect=300,
+                sock_read=300,
+                sock_connect=300,
+            )
+
+            async with aiohttp.ClientSession(
+                headers=auth_headers,
+                timeout=timeout,
+            ) as session:
+                for request in async_requests:
+                    with OutCapture():
+                        await request(session)
+
+        try:
+            async_runner.run(run_all())
+        except Exception as err:  # noqa: BLE001
+            logger.warning(f'A cron job has returned with an error: {err}')
 
     def run(self):
         with asyncio.Runner() as async_runner:
@@ -182,45 +281,14 @@ class Runner:
                     refresh_session()
                 except Exception as err:  # noqa: BLE001
                     logger.warning(f'Could not refresh session: {err}')
+
                 self.gather_crons()
-                for cron in self.cron_queue_:
-                    assert issubclass(cron.cron_class, Cron)
 
                 now = datetime.datetime.now(TIMEZONE)
-                async_crons = []
-                async_requests = []
-                while len(self.cron_queue_) > 0 and self.cron_queue_[0].next() <= now:
-                    front = heappop(self.cron_queue_)
-                    assert issubclass(front.cron_class, Cron)
+                async_requests = self.run_due_crons(async_runner, now)
+                self.run_requests(async_runner, async_requests)
 
-                    async_runner.run(self.push_cron_run_event(front))
-
-                    cron = front.cron_class(self.push_event)
-                    with OutCapture():
-                        cron.run()
-
-                    async_crons.append(cron.async_run)
-                    async_requests.append(cron.request)
-
-                for cron in async_crons:
-                    with OutCapture():
-                        async_runner.run(cron())
-
-                async def run_requests(async_requests):
-                    assert isinstance(self.session_token_.session, str)
-                    auth_headers = {'Authorization': f'Bearer {self.session_token_.session}'}
-                    timeout = aiohttp.ClientTimeout(total=300, connect=300, sock_read=300, sock_connect=300)
-                    async with aiohttp.ClientSession(headers=auth_headers, timeout=timeout) as session:
-                        for cron in async_requests:
-                            with OutCapture():
-                                await cron(session)
-
-                try:
-                    async_runner.run(run_requests(async_requests))
-                except Exception as err:  # noqa: BLE001
-                    logger.warning(f'A cron job has returned with an error: {err}')
-                finally:
-                    time.sleep(self.time_to_next_minute())
+                time.sleep(self.time_to_next_minute())
 
 
 def spawn(bot_token: str):
@@ -233,4 +301,5 @@ def spawn(bot_token: str):
         Runner(bot_token).run()
     else:
         logger.error('Cannot run cron runner without a bot token!')
+
     logger.info('Thats all, folks!')
