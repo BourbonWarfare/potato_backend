@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterable
 
 from sqlalchemy import delete, or_, select
@@ -170,7 +171,7 @@ class ModStore:
                     .where(DbMod.workshop_id == mod.workshop_id)
                     .where(or_(DbMod.last_update_date == None, DbMod.last_update_date < int(mod.last_update.timestamp())))
                 )
-                print(query)
+                logging.info(str(query))  # noqa: LOG015
                 out_of_date_mods.extend(session.scalars(query).all())
             session.expunge_all()
         return out_of_date_mods
