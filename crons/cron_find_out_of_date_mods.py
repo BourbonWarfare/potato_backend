@@ -25,7 +25,7 @@ class FindOutOfDateMods(Cron):
                 response = await request.json()
             except Exception as e:  # noqa: BLE001
                 print(f'Failed to get configured mods: {e}')
-            mods_to_check = [mod['name'] for mod in response['mods']]
+            mods_to_check = [mod['config_name'] for mod in response['mods']]
 
         print(f'Found {len(mods_to_check)} mods to check')
 

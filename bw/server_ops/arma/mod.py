@@ -347,6 +347,7 @@ async def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False
             directory=directory,
             manual_install=mod_data.get('manual_install', False),
             name=mod_name,
+            config_name=mod_name,
         )
         MODS[mod_name] = mod
         mods_added[mod_name] = mod
@@ -607,6 +608,7 @@ class Kind(StrEnum):
 @dataclass
 class Mod:
     directory: Path = Path('')
+    config_name: str = ''
     name: str = ''
     filename: str = ''
     workshop_id: WorkshopId | None = None
@@ -616,6 +618,7 @@ class Mod:
     def to_json(self) -> dict[str, Any]:
         return {
             'name': self.name,
+            'config_name': self.config_name,
             'filename': self.filename,
             'workshop_id': str(self.workshop_id),
             'manual_install': self.manual_install,
