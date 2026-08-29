@@ -7,7 +7,7 @@ from bw.auth.decorators import require_session, require_user_role
 from bw.auth.roles import Roles
 from bw.environment import ENVIRONMENT
 from bw.models.auth import User
-from bw.response import ChunkedResponse, JsonResponse, WebResponse
+from bw.response import ChunkedResponse, JsonResponse, NotFound, WebResponse
 from bw.server_ops.arma.api import ArmaApi
 from bw.server_ops.arma.mod import MODS, Mod
 from bw.server_ops.arma.types import WorkshopId
@@ -314,6 +314,42 @@ def define_arma(api: Blueprint):
         server = urllib.parse.unquote_plus(server)
         logger.info(f'User {session_user.id} is trying to update the mods of {server}')
         return await ArmaApi().update_server_mods(State.state, server)
+
+    @api.post('/mod/<int:workshop_id>/update')
+    @url_endpoint
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def update_specific_mod(session_user: User, workshop_id: int) -> WebResponse:
+        """
+        ### Update specific mod
+
+        Updates the mod specified by the workshop ID
+
+        **Args:**
+        - `workshop_id` (`int`): The specific Workshop ID to update.
+
+        **Returns:**
+        - `WebResponse`: HTTP response indicating mod update status
+          - **Success (200)**: Mods updated successfully for the server
+          - **Error (404)**: HTTP 404 response if mod not found
+          - **Error (500)**: HTTP 500 response for other server errors
+
+        **Example:**
+        ```
+        POST /api/v1/server_ops/arma/mod/128094723985/update
+
+        OK (200)
+        ```
+        """
+        logger.info(f'User {session_user.id} is trying to update {workshop_id}')
+        mod: Mod | None = None
+        for check_mod in MODS.values():
+            if check_mod.workshop_id == workshop_id:
+                mod = check_mod
+                break
+        if not mod:
+            return NotFound(f'Mod with id {workshop_id} is not registered')
+        return await ArmaApi().update_mods(State.state, [mod])
 
     @api.get('/<string:server>/healthcheck')
     @url_endpoint
