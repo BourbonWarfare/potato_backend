@@ -344,7 +344,7 @@ def define_arma(api: Blueprint):
         logger.info(f'User {session_user.id} is trying to update {workshop_id}')
         mod: Mod | None = None
         for check_mod in MODS.values():
-            if check_mod.workshop_id == workshop_id:
+            if check_mod.workshop_id == WorkshopId(workshop_id):
                 mod = check_mod
                 break
         if not mod:
