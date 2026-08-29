@@ -152,6 +152,7 @@ async def fetch_mod_details_from_workshop(
     url = request_url
     logger.info('Fetching mod names from Steam Workshop')
     logger.debug(f'Using URL: {url}')
+    logger.debug(f'With params {params}')
 
     details: dict[WorkshopId, SteamWorkshopDetails] = {}
     async with aiohttp.ClientSession() as session, session.post(url, data=params) as response:
