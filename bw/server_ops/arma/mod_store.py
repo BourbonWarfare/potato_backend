@@ -170,6 +170,7 @@ class ModStore:
                     .where(DbMod.workshop_id == mod.workshop_id)
                     .where(or_(DbMod.last_update_date == None, DbMod.last_update_date < int(mod.last_update.timestamp())))
                 )
+                print(query)
                 out_of_date_mods.extend(session.scalars(query).all())
             session.expunge_all()
         return out_of_date_mods
