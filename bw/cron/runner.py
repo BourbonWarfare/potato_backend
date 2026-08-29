@@ -32,7 +32,9 @@ class ScheduledCron:
     cron_class: type[Cron]
 
     def next(self) -> datetime.datetime:
-        return cron_converter.Cron(self.cron_class.cron_str()).schedule(start_date=self.init_time).next()
+        cron = cron_converter.Cron(self.cron_class.cron_str())
+        scheduled = cron.schedule(start_date=self.init_time)
+        return scheduled.next()
 
     def __lt__(self, rhs: 'ScheduledCron') -> bool:
         return self.next() < rhs.next()
@@ -133,8 +135,19 @@ class Runner:
             ),
         )
 
-    def reschedule(self, cron: ScheduledCron):
-        self.schedule_cron(cron.path, cron.cron_class)
+    def reschedule(
+        self,
+        cron: ScheduledCron,
+        init_time: datetime.datetime,
+    ):
+        heappush(
+            self.cron_queue_,
+            ScheduledCron(
+                path=cron.path,
+                cron_class=cron.cron_class,
+                init_time=init_time,
+            ),
+        )
 
     def write_schedules(self, root_dir: Path):
         schedule_dir = root_dir / 'schedule'
@@ -195,6 +208,7 @@ class Runner:
         async_crons = []
         async_requests = []
 
+        to_schedule = []
         while self.cron_queue_ and self.cron_queue_[0].next() <= now:
             scheduled = heappop(self.cron_queue_)
             assert issubclass(scheduled.cron_class, Cron)
@@ -209,8 +223,10 @@ class Runner:
             async_crons.append(cron.async_run)
             async_requests.append(cron.request)
 
-            # Every executed cron gets its next occurrence.
-            self.reschedule(scheduled)
+            to_schedule.append(scheduled)
+
+        for cron in to_schedule:
+            self.reschedule(cron, now)
 
         for cron in async_crons:
             with OutCapture():
