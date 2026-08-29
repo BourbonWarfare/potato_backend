@@ -13,7 +13,7 @@ class FindOutOfDateMods(Cron):
         """
         Returns a cron-encoded string defining when this job will be run next
         """
-        return '*/15 * * * *'
+        return '*/45 6-22 * * *'
 
     async def request(self, session: aiohttp.ClientSession) -> None:
         print('Looking for out-of-date workshop mods')
