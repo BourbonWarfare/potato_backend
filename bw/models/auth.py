@@ -164,3 +164,15 @@ class DiscordOAuthCode(Base):
         DateTime(timezone=False),
         server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
     )
+
+
+class Remark(Base):
+    __tablename__ = 'remarks'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_remark'))
+
+    profile_name: Mapped[str] = mapped_column(String())
+    nickname: Mapped[str | None] = mapped_column(String())
+    steam_id: Mapped[str] = mapped_column(String())
+    remark: Mapped[str | None] = mapped_column(String())
