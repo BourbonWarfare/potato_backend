@@ -120,3 +120,8 @@ class PasswordDoesNotMatch(AuthError):
 class CsrfTokenDoesntMatch(AuthError):
     def __init__(self):
         super().__init__('csrf token does not match')
+
+
+class RemarkDoesNotExist(NotFoundError):
+    def __init__(self):
+        super().__init__('User remark does not exist.')

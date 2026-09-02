@@ -169,8 +169,11 @@ class DiscordOAuthCode(Base):
 class Remark(Base):
     __tablename__ = 'remarks'
 
-    user_id: Mapped[int] = mapped_column(ForeignKey(User.id, name='linked_user_for_remark'), primary_key=True)
     profile_name: Mapped[str] = mapped_column(String(), primary_key=True)
-    nickname: Mapped[str | None] = mapped_column(String())
     steam_id: Mapped[str] = mapped_column(String(), primary_key=True)
+
+    user_id: Mapped[int | None] = mapped_column(ForeignKey(User.id, name='linked_user_for_remark'))
+    nickname: Mapped[str | None] = mapped_column(String())
     remark: Mapped[str | None] = mapped_column(String())
+
+    creation_date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=False), server_default=func.current_timestamp())
