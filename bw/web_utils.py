@@ -271,16 +271,18 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
     return wrapper
 
 
-async def load_template_from_disk(*, template_path: Path | str) -> str:
+async def load_template_from_disk(*, template_path: Path | str, base_path: str = 'templates') -> str:
     if isinstance(template_path, str):
         template_path = Path(template_path)
-    templates_path = Path('./static') / 'templates'
+    templates_path = Path('./static') / base_path
     template_path = templates_path / template_path
     async with aiofiles.open(template_path, encoding='utf-8') as file:
         return await file.read()
 
 
-def html_endpoint(*, template_path: Path | str, title: str | None = None, only_allow_partial: bool = False):
+def html_endpoint(
+    *, template_path: Path | str, title: str | None = None, return_partial: bool = False, mimetype: str = 'text/html'
+):
     """
     ### Decorator for HTML endpoint functions with template caching and rendering
 
@@ -316,7 +318,10 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, only_a
     def decorator(func: Callable[..., Awaitable[str | WebResponse]]):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            html = await load_template_from_disk(template_path=template_path)
+            if mimetype == 'text/xml':
+                html = await load_template_from_disk(template_path=template_path, base_path='xml')
+            else:
+                html = await load_template_from_disk(template_path=template_path)
             kwargs['html'] = html
             try:
                 inner_html = await func(*args, **kwargs)
@@ -330,7 +335,13 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, only_a
                 headers = {}
             if 'HX-Request' in headers:
                 if isinstance(inner_html, str):
-                    return chunk_text_response(inner_html, mimetype='text/html')
+                    return chunk_text_response(inner_html, mimetype=mimetype)
+                else:
+                    return inner_html
+
+            if return_partial:
+                if isinstance(inner_html, str):
+                    return chunk_text_response(inner_html, mimetype=mimetype)
                 else:
                     return inner_html
 
@@ -350,7 +361,7 @@ def html_endpoint(*, template_path: Path | str, title: str | None = None, only_a
             )
 
             if isinstance(inner_html, str):
-                return chunk_text_response(full_page, mimetype='text/html')
+                return chunk_text_response(full_page, mimetype=mimetype)
             else:
                 return inner_html
 

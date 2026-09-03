@@ -30,8 +30,25 @@ def define(app: Quart):
         @app.get('/static/svg/<string:path>')
         @url_endpoint
         async def static_svg(path: str) -> WebResponse:
-            file = await aiofiles.open(f'static/svg/{path}')
+            file = await aiofiles.open(f'static/svg/{path}', mode='rb')
             return chunk_file_response(file, mimetype='image/svg+xml')
+
+        @app.get('/static/xml/<string:path>')
+        @url_endpoint
+        async def static_xml(path: str) -> WebResponse:
+            file = await aiofiles.open(f'static/xml/{path}', mode='rb')
+            return chunk_file_response(file, mimetype='text/xml')
+
+        @app.get('/static/img/<string:path>')
+        @url_endpoint
+        async def static_image(path: str) -> WebResponse:
+            filetype, _, _ = (s.lower() for s in path.rpartition('.'))
+            if filetype == 'jpg' or filetype == 'jpeg':
+                mimetype = 'image/jpeg'
+            else:
+                mimetype = 'image/png'
+            file = await aiofiles.open(f'static/img/{path}', mode='rb')
+            return chunk_file_response(file, mimetype=mimetype)
 
     api_blueprint = Blueprint('bw_api', __name__, url_prefix='/api/v1')
     local_blueprint = Blueprint('bw_api_local', __name__, url_prefix='/api/local')

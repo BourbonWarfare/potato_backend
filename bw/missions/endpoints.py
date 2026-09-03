@@ -176,7 +176,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         return await render_template_string(html, mission_count=mission_count)
 
     @parts.get('/list')
-    @html_endpoint(template_path='missions/mission_card.bundle.html', only_allow_partial=True)
+    @html_endpoint(template_path='missions/mission_card.bundle.html')
     async def list(html: str) -> str | WebResponse:
         current_page = int(request.args.get('page', '1'))
         current_page = max(1, current_page)

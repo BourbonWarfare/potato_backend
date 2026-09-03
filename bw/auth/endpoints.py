@@ -1,3 +1,4 @@
+import json
 import logging
 import secrets
 import uuid
@@ -913,3 +914,12 @@ def define_html(frontend: Blueprint, parts: Blueprint):
             AuthApi().register_access_code(state=State.state, code=code, code_state=state)
         finally:
             return html  # noqa: B012
+
+    @frontend.get('/remarks')
+    @html_endpoint(template_path='squad.xml', title='Bourbon Warfare Squad XML', return_partial=True, mimetype='text/xml')
+    async def squad_xml(html: str) -> str:
+        data = (await AuthApi().all_remarks(State.state).get_data()).decode('utf-8')
+        remarks_json = [json.loads(remark) for remark in data.split('\n') if remark]
+        remarks = [Remark(**remark) for remark in remarks_json]
+        final = await render_template_string(html, remarks=remarks)
+        return final

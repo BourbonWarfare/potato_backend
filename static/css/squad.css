@@ -1,0 +1,140 @@
+html {
+	background-color: #CCCCCC;
+	background-image: url(/static/img/altis-blur-bg.jpg);
+	background-position: center center;
+	background-size: contain;
+}
+
+body {
+	margin: 0px;
+	padding: 0px;
+	background-color: #COCOCO;
+	font-family: Arial;
+}
+
+a {
+	text-decoration: none;
+}
+
+div.centeringHeader {
+	width: 100%;
+	margin: 0px;
+	padding: 0px;
+	display: flex;
+	justify-content: center;
+	position: fixed;
+}
+
+div.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background-color: #000000;
+	height: 90px;
+	width: 800px;
+	vertical-align: middle;
+	text-align: center;
+	margin-top: -10px;
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+}
+
+span.headerItem {}
+
+img.logo {
+	max-height: 80px;
+}
+
+span.squadTag {
+	font-weight: bold;
+	font-size: 300%;
+	color: #FFFFFF;
+}
+
+span.bracket {
+	color: #B30000;
+}
+
+span.squadName {
+	font-weight: bold;
+	font-size: 200%;
+}
+
+div.centeringMemberList {
+	width: 100%;
+	margin: 0px;
+	padding: 0px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+div.memberInfo {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	background-color: #33331A;
+	width: 790px;
+	padding: 5px;
+	margin-bottom: 15px;
+	border-radius: 5px;
+}
+
+div.memberTop {
+	display: flex;
+	justify-content: space-between;
+}
+
+div.memberBottom {
+	margin-top: 10px;
+}
+
+span.memberNick {
+	color: #FFFFFF;
+	font-weight: bold;
+}
+
+span.linkedNick {
+	font-weight: bold;
+}
+
+span.memberName {
+	color: #FFFFFF;
+}
+
+span.memberRemark {
+	color: #FFFFFF;
+	quotes: "\201c" "\201D" "\2018" "\2019";
+}
+
+span.memberRemark:before {
+	color: #FFFFFF;
+	content: open-quote;
+	font-size: 4em;
+	line-height: 0.1em;
+	margin-right: 0.15em;
+	vertical-align: -0.4em;
+}
+
+span.memberRemark:after {
+	color: #FFFFFF;
+	content: close-quote;
+	font-size: 4em;
+	line-height: 0.0em;
+	margin-left: 0.15em;
+	vertical-align: -0.6em;
+}
+
+div.spacer {
+	padding-top: 90px;
+}
+
+a.textLink:link,
+a.textLink:visited {
+	color: #FFFFFF;
+}
+
+a.textLink:hover {
+	color: #FF1A1A;
+}
