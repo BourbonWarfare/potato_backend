@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import insert
 
 from bw.auth.permissions import Permissions
+from bw.auth.remarks import Remark
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
 from bw.models.auth import BotUser, DiscordUser, Group, GroupPermission, Role, Session, User
@@ -492,3 +493,96 @@ def make_mock_discord_response():
         return MockSessionObject()
 
     return _make_response
+
+
+# ---------------------------------------------------------------------------
+# Remark fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope='session')
+def steam_id_1() -> str:
+    return '76561197960287930'
+
+
+@pytest.fixture(scope='session')
+def steam_id_2() -> str:
+    return '76561197960287931'
+
+
+@pytest.fixture(scope='session')
+def profile_name_1() -> str:
+    return 'CoolGamer99'
+
+
+@pytest.fixture(scope='session')
+def profile_name_2() -> str:
+    return 'Speedrunner42'
+
+
+@pytest.fixture(scope='session')
+def nickname_1() -> str:
+    return 'The Sniper'
+
+
+@pytest.fixture(scope='session')
+def nickname_2() -> str:
+    return 'Speedy'
+
+
+@pytest.fixture(scope='session')
+def remark_text_1() -> str:
+    return 'Great teammate, always covers objectives.'
+
+
+@pytest.fixture(scope='session')
+def remark_text_2() -> str:
+    return 'Tends to rush ahead of the squad.'
+
+
+@pytest.fixture(scope='session')
+def remark_1(profile_name_1, nickname_1, steam_id_1, remark_text_1) -> Remark:
+    return Remark(profile_name=profile_name_1, nickname=nickname_1, steam_id=steam_id_1, remark=remark_text_1)
+
+
+@pytest.fixture(scope='session')
+def remark_2(profile_name_2, nickname_2, steam_id_2, remark_text_2) -> Remark:
+    return Remark(profile_name=profile_name_2, nickname=nickname_2, steam_id=steam_id_2, remark=remark_text_2)
+
+
+@pytest.fixture(scope='session')
+def remark_1_updated(profile_name_1, steam_id_1) -> Remark:
+    """Same profile_name/steam_id as remark_1, but different nickname/remark text.
+
+    Used to test that update_remark claims/overwrites an existing unclaimed remark rather than
+    creating a duplicate entry.
+    """
+    return Remark(
+        profile_name=profile_name_1, nickname='Reformed Sniper', steam_id=steam_id_1, remark='Actually pretty chill now.'
+    )
+
+
+@pytest.fixture(scope='session')
+def remark_no_nickname(profile_name_2, steam_id_2) -> Remark:
+    """A remark exercising the nullable nickname/remark fields."""
+    return Remark(profile_name=profile_name_2, nickname=None, steam_id=steam_id_2, remark=None)
+
+
+@pytest.fixture(scope='function')
+def db_unclaimed_remark_1(state, profile_name_1, steam_id_1):
+    """An "unclaimed" remark (no associated user) matching remark_1's profile_name/steam_id.
+
+    Mirrors a remark left before a player has linked their account. Used to test that
+    update_remark claims this row (sets user_id) instead of inserting a duplicate.
+    """
+    from bw.models.auth import Remark as RemarkDb
+
+    with state.Session.begin() as session:
+        query = (
+            insert(RemarkDb)
+            .values(profile_name=profile_name_1, steam_id=steam_id_1, nickname='Unclaimed', remark='Pending claim')
+            .returning(RemarkDb)
+        )
+        remark = session.execute(query).first()[0]
+        session.expunge(remark)
+    yield remark

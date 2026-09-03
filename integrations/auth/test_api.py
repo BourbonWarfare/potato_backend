@@ -35,6 +35,7 @@ from integrations.auth.fixtures import (
     db_session_1,
     db_session_2,
     db_unauthenticated_session_1,
+    db_unclaimed_remark_1,
     db_user_1,
     db_user_2,
     discord_id_1,
@@ -43,16 +44,28 @@ from integrations.auth.fixtures import (
     group_name_1,
     group_name_2,
     group_name_3,
+    nickname_1,
+    nickname_2,
     permission_1,
     permission_2,
     permission_3,
     permission_name_1,
     permission_name_2,
     permission_name_3,
+    profile_name_1,
+    profile_name_2,
+    remark_1,
+    remark_1_updated,
+    remark_2,
+    remark_no_nickname,
+    remark_text_1,
+    remark_text_2,
     role_1,
     role_2,
     role_name_1,
     role_name_2,
+    steam_id_1,
+    steam_id_2,
     token_1,
     token_2,
 )
@@ -816,3 +829,133 @@ def test__set_csrf_token__token_not_set_for_invalid_session(state, token_1):
 
     assert response.status == '200 OK'
     assert response.state == token_1
+
+
+# Tests for update_remark
+
+
+def test__update_remark__returns_ok(state, db_user_1, remark_1):
+    """Test that submitting a new remark returns a 200 OK response."""
+    response = AuthApi().update_remark(state, db_user_1, remark_1)
+    assert response.status_code == 200
+
+
+def test__update_remark__creates_new_remark_when_none_exists(state, db_user_1, remark_1):
+    """Test that the submitted remark can be read back with all its fields intact."""
+    AuthApi().update_remark(state, db_user_1, remark_1)
+
+    response = AuthApi().get_remark(state, db_user_1)
+    assert response.status_code == 200
+    assert response.contained_json['profile_name'] == remark_1.profile_name
+    assert response.contained_json['nickname'] == remark_1.nickname
+    assert response.contained_json['steam_id'] == remark_1.steam_id
+    assert response.contained_json['remark'] == remark_1.remark
+
+
+def test__update_remark__supports_null_nickname_and_remark(state, db_user_1, remark_no_nickname):
+    """Test that nickname and remark are optional and round-trip as null."""
+    AuthApi().update_remark(state, db_user_1, remark_no_nickname)
+
+    response = AuthApi().get_remark(state, db_user_1)
+    assert response.contained_json['nickname'] is None
+    assert response.contained_json['remark'] is None
+
+
+@pytest.mark.asyncio
+async def test__update_remark__claims_existing_unclaimed_remark_instead_of_duplicating(
+    state, db_user_1, db_unclaimed_remark_1, remark_1_updated
+):
+    """Test that submitting a remark matching an existing unclaimed remark (same profile_name/steam_id,
+    no associated user) updates that row in place rather than inserting a duplicate."""
+    AuthApi().update_remark(state, db_user_1, remark_1_updated)
+
+    response = AuthApi().get_remark(state, db_user_1)
+    assert response.contained_json['nickname'] == remark_1_updated.nickname
+    assert response.contained_json['remark'] == remark_1_updated.remark
+
+    all_response = AuthApi().all_remarks(state)
+    assert len(await all_response.as_json_list()) == 1
+
+
+@pytest.mark.asyncio
+async def test__update_remark__second_remark_for_different_profile_creates_additional_entry(state, db_user_1, remark_1, remark_2):
+    """Test that a user leaving remarks about two different profiles ends up with two stored remarks."""
+    AuthApi().update_remark(state, db_user_1, remark_1)
+    AuthApi().update_remark(state, db_user_1, remark_2)
+
+    all_response = AuthApi().all_remarks(state)
+    assert len(await all_response.as_json_list()) == 2
+
+
+def test__update_remark__does_not_affect_other_users_remarks(state, db_user_1, db_user_2, remark_1, remark_2):
+    """Test that one user's remark doesn't clobber another user's remark."""
+    AuthApi().update_remark(state, db_user_1, remark_1)
+    AuthApi().update_remark(state, db_user_2, remark_2)
+
+    response_1 = AuthApi().get_remark(state, db_user_1)
+    response_2 = AuthApi().get_remark(state, db_user_2)
+    assert response_1.contained_json['steam_id'] == remark_1.steam_id
+    assert response_2.contained_json['steam_id'] == remark_2.steam_id
+
+
+# Tests for get_remark
+
+
+def test__get_remark__no_remark_returns_404(state, db_user_1):
+    """Test that fetching a remark for a user who has none returns a 404."""
+    response = AuthApi().get_remark(state, db_user_1)
+    assert response.status_code == 404
+
+
+def test__get_remark__does_not_return_other_users_remark(state, db_user_1, db_user_2, remark_1):
+    """Test that a user with no remark gets a 404 even when another user has one."""
+    AuthApi().update_remark(state, db_user_1, remark_1)
+
+    response = AuthApi().get_remark(state, db_user_2)
+    assert response.status_code == 404
+
+
+def test__get_remark__returns_most_recently_created_remark_for_user(state, db_user_1, remark_1, remark_2):
+    """Test that when a user has left remarks on multiple profiles, the most recently created one is returned."""
+    AuthApi().update_remark(state, db_user_1, remark_1)
+    AuthApi().update_remark(state, db_user_1, remark_2)
+
+    response = AuthApi().get_remark(state, db_user_1)
+    assert response.contained_json['steam_id'] == remark_2.steam_id
+
+
+# Tests for all_remarks
+
+
+@pytest.mark.asyncio
+async def test__all_remarks__empty_database_returns_empty_list(state, session):
+    """Test that all_remarks returns an empty list when no remarks exist."""
+    response = AuthApi().all_remarks(state)
+    assert response.status_code == 200
+    assert await response.as_json_list() == []
+
+
+@pytest.mark.asyncio
+async def test__all_remarks__returns_remarks_from_all_users(state, db_user_1, db_user_2, remark_1, remark_2):
+    """Test that remarks from every user are included."""
+    AuthApi().update_remark(state, db_user_1, remark_1)
+    AuthApi().update_remark(state, db_user_2, remark_2)
+
+    response = AuthApi().all_remarks(state)
+    assert response.status_code == 200
+    remarks = await response.as_json_list()
+    steam_ids = {remark['steam_id'] for remark in remarks}
+    assert steam_ids == {remark_1.steam_id, remark_2.steam_id}
+
+
+@pytest.mark.asyncio
+async def test__all_remarks__reflects_claimed_remark_update_without_duplicating(
+    state, db_user_1, db_unclaimed_remark_1, remark_1_updated
+):
+    """Test that claiming an existing unclaimed remark updates it in the full list rather than adding a new entry."""
+    AuthApi().update_remark(state, db_user_1, remark_1_updated)
+
+    response = AuthApi().all_remarks(state)
+    remarks = await response.as_json_list()
+    assert len(remarks) == 1
+    assert remarks[0]['nickname'] == remark_1_updated.nickname

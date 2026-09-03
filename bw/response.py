@@ -193,6 +193,18 @@ class ChunkedResponse(WebResponse):
         response.timeout = None  # Disable timeout for large chunks
         return response
 
+    async def as_json_list(self) -> list[dict[str, Any]]:
+        data = await self.get_data()
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        return [json.loads(row) for row in data.split('\n') if row]
+
+    async def as_str_list(self) -> list[str]:
+        data = await self.get_data()
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        return [row for row in data.split('\n') if row]
+
 
 class ServerSentResponseError(ServerSentEventResponse):
     def __init__(self, status: int):

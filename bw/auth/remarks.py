@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 from sqlalchemy import select, update
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from bw.error import RemarkDoesNotExist
+from bw.error import RemarkDoesNotExist, RemarkOwnedByDifferentUser
 from bw.models.auth import Remark as RemarkDb
 from bw.models.auth import User
 from bw.state import State
@@ -20,18 +20,33 @@ class Remark:
 class RemarkStore:
     def update_remark(self, state: State, user: User, remark: Remark):
         with state.Session.begin() as session:
-            query = (
-                update(RemarkDb)
-                .where(
-                    RemarkDb.user_id == None, RemarkDb.steam_id == remark.steam_id, RemarkDb.profile_name == remark.profile_name
-                )
-                .values(user_id=user.id, nickname=remark.nickname, remark=remark.remark)
-                .returning(RemarkDb)
+            base_query = (
+                update(RemarkDb).values(user_id=user.id, nickname=remark.nickname, remark=remark.remark).returning(RemarkDb)
             )
+            try:
+                session.scalars(
+                    base_query.where(
+                        RemarkDb.user_id == None,
+                        RemarkDb.steam_id == remark.steam_id,
+                        RemarkDb.profile_name == remark.profile_name,
+                    )
+                ).one()
+                return
+            except NoResultFound:
+                pass
+            try:
+                session.scalars(
+                    base_query.where(
+                        RemarkDb.user_id == user.id,
+                        RemarkDb.steam_id == remark.steam_id,
+                        RemarkDb.profile_name == remark.profile_name,
+                    )
+                ).one()
+                return
+            except NoResultFound:
+                pass
 
             try:
-                session.scalars(query).one()
-            except NoResultFound:
                 session.add(
                     RemarkDb(
                         user_id=user.id,
@@ -41,6 +56,8 @@ class RemarkStore:
                         remark=remark.remark,
                     )
                 )
+            except IntegrityError:
+                raise RemarkOwnedByDifferentUser()
 
     def user_remark(self, state: State, user: User) -> Remark:
         with state.Session.begin() as session:

@@ -125,3 +125,8 @@ class CsrfTokenDoesntMatch(AuthError):
 class RemarkDoesNotExist(NotFoundError):
     def __init__(self):
         super().__init__('User remark does not exist.')
+
+
+class RemarkOwnedByDifferentUser(ForbiddenError):
+    def __init__(self):
+        super().__init__('Remark belongs to different user.')
