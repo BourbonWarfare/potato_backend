@@ -7,8 +7,8 @@
     <web>http://www.BourbonWarfare.com</web>
     <picture>/static/img/BWLogov2.paa</picture>
     <title>Bourbon Warfare</title>{% for remark in remarks %}
-    <member id="{{remark.steam_id}}" nick="{{remark.nickname if remark.nickname else ''}}">
-        <name>{{remark.profile_name}}</name>
+    <member id="{{remark.steam_id}}" nick="{{remark.profile_name}}">
+        <name>{{remark.nickname if remark.nickname else ''}}</name>
         <email></email>
         <remark>{{remark.remark if remark.remark else ''}}</remark>
     </member>{% endfor %}
