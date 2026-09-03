@@ -11,6 +11,7 @@
             <head>
                 <title><xsl:value-of select="/squad/name"/></title>
                 <link REL="stylesheet" TYPE="text/css" HREF="/static/css/squad.css" />
+                <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico" />
             </head>
             <body>
                 <div class="centeringHeader">
