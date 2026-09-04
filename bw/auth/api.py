@@ -866,13 +866,16 @@ class AuthApi:
 
     @define_api
     def update_remark(self, state: State, user: User, remark: Remark) -> WebResponse:
+        logger.info(f'Updating user #{user.id} remark')
         RemarkStore().update_remark(state, user, remark)
         return Ok()
 
     @define_api
     def get_remark(self, state: State, user: User) -> JsonResponse:
+        logger.info(f'Getting user #{user.id} remark')
         return JsonResponse(RemarkStore().user_remark(state, user))
 
     @define_api
     def all_remarks(self, state: State) -> ChunkedResponse:
+        logger.info('Getting all remarks')
         return chunk_json_response([make_json_safe(remark) for remark in RemarkStore().all_remarks(state)])
