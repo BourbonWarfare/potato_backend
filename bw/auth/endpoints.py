@@ -18,7 +18,7 @@ from bw.auth.roles import Roles
 from bw.models.auth import User
 from bw.response import ChunkedResponse, JsonResponse, WebResponse
 from bw.state import State
-from bw.web_utils import html_endpoint, json_endpoint, unwrap_headers, url_endpoint
+from bw.web_utils import form_endpoint, html_endpoint, json_endpoint, unwrap_headers, url_endpoint
 
 logger = logging.getLogger('bw.auth')
 
@@ -512,13 +512,11 @@ def define_user(api: Blueprint, local: Blueprint):
         return AuthApi().assign_role(State.state, role_name=role_name, user_uuid=uuid.UUID(hex=user_uuid))
 
     @remark_blueprint.post('/')
-    @url_endpoint
+    @form_endpoint
     @require_session
-    async def update_remark(session_user: User) -> WebResponse:
-        profile_name = request.args['profile-name']
-        steam_id = request.args['steam-id']
-        nickname = request.args.get('nickname', None)
-        remark = request.args.get('remark', None)
+    async def update_remark(
+        session_user: User, profile_name: str, steam_id: str, nickname: str | None, remark: str | None
+    ) -> WebResponse:
         return AuthApi().update_remark(
             State.state, session_user, Remark(profile_name=profile_name, nickname=nickname, steam_id=steam_id, remark=remark)
         )
