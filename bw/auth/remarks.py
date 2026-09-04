@@ -72,7 +72,8 @@ class RemarkStore:
 
     def all_remarks(self, state: State) -> tuple[Remark, ...]:
         with state.Session.begin() as session:
-            remarks = session.scalars(select(RemarkDb)).fetchall()
+            query = select(RemarkDb).order_by(RemarkDb.creation_date.desc(), RemarkDb.nickname.asc())
+            remarks = session.scalars(query).fetchall()
             return tuple(
                 Remark(profile_name=remark.profile_name, nickname=remark.nickname, steam_id=remark.steam_id, remark=remark.remark)
                 for remark in remarks
