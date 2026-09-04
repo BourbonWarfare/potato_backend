@@ -183,6 +183,7 @@ def form_endpoint(func: Callable[..., Awaitable[WebResponse]]):
     async def wrapper(*args, **kwargs):
         form_values = await request.form
         kwargs.update(form_values)
+        kwargs = {key.replace('-', '_'): value for key, value in kwargs}
         try:
             result = func(*args, **kwargs)
         except TypeError as e:
