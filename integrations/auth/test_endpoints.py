@@ -134,7 +134,7 @@ class TestUserEndpoints:
 
 class TestProfileEndpoints:
     @pytest.mark.asyncio
-    async def test__profile_page__renders_account_forms(self, test_app, token_1, db_session_1, db_bourbon_user_1):
+    async def test__profile_page__renders_account_forms(self, test_app, token_1, db_session_1, db_user_1, db_bourbon_user_1):
         response = await test_app.get('/user/profile', headers={'Authorization': f'Bearer {token_1}'})
         html = await response.get_data(as_text=True)
 
@@ -142,6 +142,7 @@ class TestProfileEndpoints:
         assert 'Your profile' in html
         assert db_bourbon_user_1.username in html
         assert db_bourbon_user_1.email in html
+        assert db_user_1.creation_date.strftime('%Y-%m-%d %H:%M') in html
         assert 'Change email' in html
         assert 'Change password' in html
         assert 'Update remark' in html

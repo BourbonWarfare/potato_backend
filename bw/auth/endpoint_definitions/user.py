@@ -3,6 +3,7 @@
 import logging
 import secrets
 import uuid
+from datetime import datetime
 
 from quart import Blueprint, render_template_string, request
 
@@ -497,12 +498,19 @@ def define_user(api: Blueprint, local: Blueprint):
     local.register_blueprint(local_role_blueprint)
 
 
+def _format_display_datetime(value: str | datetime) -> str:
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M')
+    return datetime.fromisoformat(value).strftime('%Y-%m-%d %H:%M')
+
+
 def define_profile_html(frontend: Blueprint):
     @frontend.get('/profile')
     @html_endpoint(template_path='user/profile.html', title='Your Bourbon Warfare profile')
     @require_session
     async def profile_page(html: str, session_user: User) -> str:
         profile = AuthApi().profile_info(State.state, session_user)
+        profile['creation_date_display'] = _format_display_datetime(profile['creation_date'])
         try:
             remark = RemarkStore().user_remark(State.state, session_user)
         except RemarkDoesNotExist:
