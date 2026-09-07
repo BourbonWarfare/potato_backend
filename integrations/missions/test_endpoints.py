@@ -61,6 +61,11 @@ class TestMissionFrontendEndpoints:
         assert response.status_code == 200
         assert 'Mission information' in html
         assert str(db_mission_1.uuid) in html
+        assert db_mission_1.creation_date.strftime('%Y-%m-%d %H:%M') in html
+        assert 'Author UUID' not in html
+        assert 'TVT' in html
+        assert 'signoff needed' in html
+        assert 'is_night' in html
         assert 'Iteration #1' in html
         assert db_iteration_1.file_name in html
         assert 'Reviews' in html

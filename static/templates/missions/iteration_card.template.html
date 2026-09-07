@@ -1,14 +1,14 @@
 <article class="mission-iteration-card" id="iteration-{{ iteration.uuid }}">
     <header>
         <h3>Iteration #{{ iteration.iteration }}</h3>
-        <p><b>{{ passed_signoffs }}</b> passed, <b>{{ failed_signoffs }}</b> failed; {{ needed_signoffs }} required</p>
-        <a href="/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">Test this iteration</a>
+        <p class="mission-signoff-line"><b>{{ passed_signoffs }}</b> passed, <b>{{ failed_signoffs }}</b> failed; {{ needed_signoffs }} required</p>
+        <a class="mission-action" href="/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">Test this iteration</a>
     </header>
 
     <dl>
-        <dt>UUID</dt><dd>{{ iteration.uuid }}</dd>
+        <dt>UUID</dt><dd class="mission-muted-id">{{ iteration.uuid }}</dd>
         <dt>Filename</dt><dd>{{ iteration.filename }}</dd>
-        <dt>Uploaded</dt><dd>{{ iteration.upload_date }}</dd>
+        <dt>Uploaded</dt><dd>{{ iteration.upload_date_display }}</dd>
         <dt>BWMF</dt><dd>{{ iteration.bwmf_version }}</dd>
         <dt>Players</dt><dd>{{ iteration.min_player_count }}–{{ iteration.max_player_count }} (desired {{ iteration.desired_player_count }})</dd>
         <dt>Safe start</dt><dd>{{ iteration.safe_start_length }} minutes</dd>
@@ -21,7 +21,7 @@
     <h4>Reviews</h4>
     {% if reviews %}
         {% for review in reviews %}
-            <div class="mission-review-card">
+            <div class="mission-review-card mission-review-card-{{ review.status|lower }}">
                 <p><b>{{ review.status }}</b> on {{ review.date_tested }}</p>
                 <p>{{ review.cosigns }} cosign{% if review.cosigns != 1 %}s{% endif %}</p>
                 {% if review.notes %}
@@ -40,7 +40,7 @@
                     <p><i>You cosigned this review.</i></p>
                 {% else %}
                     <form method="post" action="/api/v1/html/missions/reviews/{{ review.uuid }}/cosign?next=/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}">
-                        <button type="submit">Cosign this review</button>
+                        <button class="mission-action" type="submit">Cosign this review</button>
                     </form>
                 {% endif %}
             </div>

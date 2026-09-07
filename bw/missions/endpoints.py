@@ -1,5 +1,6 @@
 import logging
 import urllib.parse
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -205,6 +206,12 @@ def _signoff_counts(reviews: list[dict[str, Any]]) -> tuple[int, int]:
     return passes, fails
 
 
+def _format_display_datetime(value: str | datetime) -> str:
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M')
+    return datetime.fromisoformat(value).strftime('%Y-%m-%d %H:%M')
+
+
 def define_html(frontend: Blueprint, parts: Blueprint):
     @frontend.get('/')
     @html_endpoint(template_path='missions/index.html', title='BW Missions')
@@ -217,6 +224,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     @require_session
     async def mission_page(html: str, mission_uuid: UUID, session_user: User) -> str:
         mission = await MissionsApi().get_mission_information(State.state, mission_uuid)
+        mission['creation_date_display'] = _format_display_datetime(mission['creation_date'])
         iteration_template = await load_template_from_disk(template_path='missions/iteration_card.template.html')
         iteration_cards = []
         iterations = sorted(
@@ -225,6 +233,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
             reverse=True,
         )
         for iteration in iterations:
+            iteration.upload_date_display = _format_display_datetime(iteration.upload_date)
             reviews: list[dict[str, Any]] = (await TestApi().reviews(State.state, iteration.uuid, viewer=session_user))['reviews']
             passes, fails = _signoff_counts(reviews)
             iteration_cards.append(
@@ -246,6 +255,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     @require_session
     async def test_iteration_page(html: str, mission_uuid: UUID, iteration_uuid: UUID, session_user: User) -> str:
         iteration = await MissionsApi().get_iteration_information(State.state, iteration_uuid)
+        iteration['upload_date_display'] = _format_display_datetime(iteration['upload_date'])
         return await render_template_string(
             html,
             mission=iteration['mission'],

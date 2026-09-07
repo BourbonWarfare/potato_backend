@@ -294,9 +294,10 @@ button:hover {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    margin-bottom: 12px;
-    width: 100%;
-    max-width: 900px;
+    margin-bottom: 16px;
+    width: min(100%, 1180px);
+    max-width: 1180px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
 .mission-header {
@@ -351,16 +352,17 @@ button:hover {
 }
 
 .mission-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) repeat(2, max-content);
+    gap: 8px 28px;
+    align-items: center;
     width: 100%;
-    max-width: 900px;
+    max-width: 1180px;
     box-sizing: border-box;
-    padding: 12px 60px;
-    line-height: 0.8;
-    border: 3px var(--accent) solid;
+    padding: 18px 32px;
+    line-height: 1.2;
+    border: 1px solid var(--border);
+    border-left: 6px solid var(--accent);
     background-color: var(--surface);
 }
 
@@ -380,7 +382,7 @@ button:hover {
     justify-content: flex-start;
     box-sizing: border-box;
     width: 100%;
-    max-width: 900px;
+    max-width: 1180px;
     line-height: 1.2;
 }
 
@@ -393,6 +395,127 @@ button:hover {
     width: 100%;
     line-height: inherit;
     font-weight: 400;
+}
+
+.mission-detail,
+.mission-test-page {
+    width: min(100%, 1180px);
+    margin: 0 auto;
+}
+
+.mission-detail-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 32px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-top: 5px solid var(--accent);
+    background: linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--accent) 10%, var(--surface)));
+}
+
+.mission-kicker,
+.mission-muted-id {
+    color: var(--text-secondary);
+}
+
+.mission-muted-id {
+    opacity: 0.58;
+    font-size: 0.82rem;
+}
+
+.mission-detail-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    min-width: 180px;
+    color: var(--text-secondary);
+}
+
+.mission-detail-summary strong {
+    color: var(--accent);
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.mission-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.mission-detail-section,
+.mission-iteration-card,
+.mission-review-card {
+    padding: 22px 26px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.mission-detail-section h2,
+.mission-iteration-card h3,
+.mission-iteration-card h4 {
+    color: var(--accent);
+}
+
+.mission-facts dl,
+.mission-iteration-card dl,
+.mission-test-page dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 18px;
+}
+
+.mission-facts dt,
+.mission-iteration-card dt,
+.mission-test-page dt {
+    color: var(--text-secondary);
+}
+
+.mission-facts dd,
+.mission-iteration-card dd,
+.mission-test-page dd {
+    margin: 0;
+}
+
+.mission-facts ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0;
+    list-style: none;
+}
+
+.mission-facts li {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mission-facts li span,
+.mission-signoff-line {
+    color: var(--text-secondary);
+}
+
+.mission-action {
+    display: inline-block;
+    padding: 8px 12px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--text-primary);
+}
+
+.mission-action:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
 }
 
 .auth-card {
@@ -714,6 +837,25 @@ button:hover {
 
     .mission-header>.mission-tag {
         font-size: 8px;
+    }
+
+    .mission-info {
+        grid-template-columns: 1fr;
+    }
+
+    .mission-detail-header {
+        flex-direction: column;
+        padding: 20px 16px;
+    }
+
+    .mission-detail-summary {
+        align-items: flex-start;
+    }
+
+    .mission-facts dl,
+    .mission-iteration-card dl,
+    .mission-test-page dl {
+        grid-template-columns: 1fr;
     }
 
     .auth-card {
