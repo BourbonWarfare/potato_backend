@@ -13,7 +13,7 @@ class FindOutOfDateMods(Cron):
         """
         Returns a cron-encoded string defining when this job will be run next
         """
-        return '0-59/15 * * * *'
+        return '*/20 6-22 * * *'
 
     async def request(self, session: aiohttp.ClientSession) -> None:
         print('Looking for out-of-date workshop mods')
@@ -25,7 +25,7 @@ class FindOutOfDateMods(Cron):
                 response = await request.json()
             except Exception as e:  # noqa: BLE001
                 print(f'Failed to get configured mods: {e}')
-            mods_to_check = [mod['name'] for mod in response['mods']]
+            mods_to_check = [mod['config_name'] for mod in response['mods']]
 
         print(f'Found {len(mods_to_check)} mods to check')
 
