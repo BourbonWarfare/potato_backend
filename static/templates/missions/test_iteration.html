@@ -1,11 +1,21 @@
 <div class="mission-test-page">
     <p><a href="/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}">← Back to {{ mission.title }}</a></p>
 
-    <h1>Test {{ mission.title }}</h1>
-    <h2>Iteration #{{ iteration.iteration }}</h2>
+    <section class="mission-test-hero">
+        <div>
+            <p class="mission-kicker">Testing iteration</p>
+            <h1>{{ mission.title }}</h1>
+            <p class="mission-muted-id">{{ iteration.uuid }}</p>
+        </div>
+        <div class="mission-detail-summary">
+            <span class="mission-pill">Iteration #{{ iteration.iteration }}</span>
+            <strong>{{ iteration.desired_player_count }}</strong>
+            <span>desired players</span>
+        </div>
+    </section>
 
-    <section>
-        <h3>Iteration information</h3>
+    <section class="mission-test-info-card">
+        <h2>Iteration information</h2>
         <dl>
             <dt>Filename</dt><dd>{{ iteration.filename }}</dd>
             <dt>Uploaded</dt><dd>{{ iteration.upload_date_display }}</dd>
@@ -16,21 +26,51 @@
         </dl>
     </section>
 
-    <section>
-        <h3>Review form</h3>
-        <p><i>Mission-specific test forms will be injected here later. This generic form is a temporary stub.</i></p>
-        <form method="post" action="/api/v1/html/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">
-            <label for="status">Result</label>
-            <select id="status" name="status">
-                {% for status in statuses %}
-                    <option value="{{ status }}">{{ status }}</option>
-                {% endfor %}
-            </select>
+    <section class="mission-test-form-card">
+        <div class="mission-test-form-intro">
+            <h2>Review form</h2>
+            <p><i>Mission-specific test forms will be injected here later. These dummy fields are a temporary stub.</i></p>
+        </div>
 
-            <label for="notes">Notes</label>
-            <textarea id="notes" name="notes" rows="8" placeholder="Testing notes"></textarea>
+        <form class="mission-test-form" method="post" action="/api/v1/html/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">
+            <div class="mission-form-grid">
+                <label>
+                    Result
+                    <select name="status">
+                        {% for status in statuses %}
+                            <option value="{{ status }}">{{ status }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
 
-            <button type="submit">Submit review</button>
+                <label>
+                    Briefing clarity
+                    <select name="briefing_clarity" disabled>
+                        <option>Clear</option>
+                        <option>Needs work</option>
+                    </select>
+                </label>
+
+                <label>
+                    Balance impression
+                    <select name="balance" disabled>
+                        <option>Looks balanced</option>
+                        <option>Needs another pass</option>
+                    </select>
+                </label>
+
+                <label>
+                    Technical issues
+                    <input name="technical_issues" disabled placeholder="Dummy field" />
+                </label>
+            </div>
+
+            <label class="mission-form-wide">
+                Notes
+                <textarea name="notes" rows="7" placeholder="Testing notes"></textarea>
+            </label>
+
+            <button class="mission-action" type="submit">Submit review</button>
         </form>
     </section>
 </div>

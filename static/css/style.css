@@ -403,7 +403,14 @@ button:hover {
     margin: 0 auto;
 }
 
-.mission-detail-header {
+.mission-test-page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.mission-detail-header,
+.mission-test-hero {
     display: flex;
     justify-content: space-between;
     gap: 24px;
@@ -451,16 +458,28 @@ button:hover {
 
 .mission-detail-section,
 .mission-iteration-card,
-.mission-review-card {
+.mission-review-card,
+.mission-test-info-card,
+.mission-test-form-card {
     padding: 22px 26px;
     margin-bottom: 18px;
     border: 1px solid var(--border);
     background: var(--surface);
 }
 
+.mission-test-info-card {
+    border-left: 5px solid var(--accent);
+}
+
+.mission-test-form-card {
+    padding: 30px;
+}
+
 .mission-detail-section h2,
 .mission-iteration-card h3,
-.mission-iteration-card h4 {
+.mission-iteration-card h4,
+.mission-test-info-card h2,
+.mission-test-form-card h2 {
     color: var(--accent);
 }
 
@@ -516,6 +535,57 @@ button:hover {
 .mission-action:hover {
     background: var(--accent-hover);
     border-color: var(--accent-hover);
+}
+
+.mission-test-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.mission-test-form-intro p {
+    max-width: none;
+}
+
+.mission-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.mission-test-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.mission-test-form input,
+.mission-test-form select,
+.mission-test-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-primary);
+}
+
+.mission-test-form input:focus,
+.mission-test-form select:focus,
+.mission-test-form textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.mission-test-form input:disabled,
+.mission-test-form select:disabled {
+    opacity: 0.55;
+}
+
+.mission-form-wide {
+    width: 100%;
 }
 
 .auth-card {
@@ -843,7 +913,8 @@ button:hover {
         grid-template-columns: 1fr;
     }
 
-    .mission-detail-header {
+    .mission-detail-header,
+    .mission-test-hero {
         flex-direction: column;
         padding: 20px 16px;
     }
@@ -854,8 +925,13 @@ button:hover {
 
     .mission-facts dl,
     .mission-iteration-card dl,
-    .mission-test-page dl {
+    .mission-test-page dl,
+    .mission-form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .mission-test-form-card {
+        padding: 20px 16px;
     }
 
     .auth-card {
