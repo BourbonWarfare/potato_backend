@@ -589,41 +589,65 @@ def make_mock_discord_response():
 @pytest.fixture
 def email_1():
     return 'abc@example.com'
+# ---------------------------------------------------------------------------
+# Remark fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def email_2():
     return 'def@example.com'
+@pytest.fixture(scope='session')
+def steam_id_1() -> str:
+    return '76561197960287930'
 
 
 @pytest.fixture
 def username_1():
     return 'tcvm'
+@pytest.fixture(scope='session')
+def steam_id_2() -> str:
+    return '76561197960287931'
 
 
 @pytest.fixture
 def username_2():
     return 'lambda'
+@pytest.fixture(scope='session')
+def profile_name_1() -> str:
+    return 'CoolGamer99'
 
 
 @pytest.fixture
 def password_1():
     return 'hunter2'
+@pytest.fixture(scope='session')
+def profile_name_2() -> str:
+    return 'Speedrunner42'
 
 
 @pytest.fixture
 def password_2():
     return '12345'
+@pytest.fixture(scope='session')
+def nickname_1() -> str:
+    return 'The Sniper'
 
 
 @pytest.fixture
 def salt_1():
     return secrets.token_bytes(SALT_LENGTH)
+@pytest.fixture(scope='session')
+def nickname_2() -> str:
+    return 'Speedy'
 
 
 @pytest.fixture
 def salt_2():
     return secrets.token_bytes(SALT_LENGTH)
+@pytest.fixture(scope='session')
+def remark_text_1() -> str:
+    return 'Great teammate, always covers objectives.'
 
 
 @pytest.fixture(scope='function')
@@ -634,6 +658,9 @@ def db_bourbon_code_1(state, oauth_code_1, email_1, expire_valid):
         db_session.flush()
         db_session.expunge(bourbon_code)
     yield bourbon_code
+@pytest.fixture(scope='session')
+def remark_text_2() -> str:
+    return 'Tends to rush ahead of the squad.'
 
 
 @pytest.fixture(scope='function')
@@ -644,6 +671,32 @@ def db_bourbon_code_2(state, oauth_code_2, email_2, expire_valid):
         db_session.flush()
         db_session.expunge(bourbon_code)
     yield bourbon_code
+@pytest.fixture(scope='session')
+def remark_1(profile_name_1, nickname_1, steam_id_1, remark_text_1) -> Remark:
+    return Remark(profile_name=profile_name_1, nickname=nickname_1, steam_id=steam_id_1, remark=remark_text_1)
+
+
+@pytest.fixture(scope='session')
+def remark_2(profile_name_2, nickname_2, steam_id_2, remark_text_2) -> Remark:
+    return Remark(profile_name=profile_name_2, nickname=nickname_2, steam_id=steam_id_2, remark=remark_text_2)
+
+
+@pytest.fixture(scope='session')
+def remark_1_updated(profile_name_1, steam_id_1) -> Remark:
+    """Same profile_name/steam_id as remark_1, but different nickname/remark text.
+
+    Used to test that update_remark claims/overwrites an existing unclaimed remark rather than
+    creating a duplicate entry.
+    """
+    return Remark(
+        profile_name=profile_name_1, nickname='Reformed Sniper', steam_id=steam_id_1, remark='Actually pretty chill now.'
+    )
+
+
+@pytest.fixture(scope='session')
+def remark_no_nickname(profile_name_2, steam_id_2) -> Remark:
+    """A remark exercising the nullable nickname/remark fields."""
+    return Remark(profile_name=profile_name_2, nickname=None, steam_id=steam_id_2, remark=None)
 
 
 @pytest.fixture(scope='function')
@@ -654,3 +707,21 @@ def db_bourbon_code_expired(state, oauth_code_1, email_1, expire_invalid):
         db_session.flush()
         db_session.expunge(bourbon_code)
     yield bourbon_code
+@pytest.fixture(scope='function')
+def db_unclaimed_remark_1(state, profile_name_1, steam_id_1):
+    """An "unclaimed" remark (no associated user) matching remark_1's profile_name/steam_id.
+
+    Mirrors a remark left before a player has linked their account. Used to test that
+    update_remark claims this row (sets user_id) instead of inserting a duplicate.
+    """
+    from bw.models.auth import Remark as RemarkDb
+
+    with state.Session.begin() as session:
+        query = (
+            insert(RemarkDb)
+            .values(profile_name=profile_name_1, steam_id=steam_id_1, nickname='Unclaimed', remark='Pending claim')
+            .returning(RemarkDb)
+        )
+        remark = session.execute(query).first()[0]
+        session.expunge(remark)
+    yield remark
