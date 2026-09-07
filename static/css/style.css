@@ -1142,7 +1142,36 @@ button:hover {
 }
 
 /* Tablet Adjustments */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 900px) {
+    header {
+        padding: 14px 16px;
+    }
+
+    .navbar,
+    .nav-links,
+    .nav-profile {
+        width: 100%;
+    }
+
+    .navbar {
+        gap: 12px;
+    }
+
+    .nav-links,
+    .nav-profile {
+        justify-content: center;
+    }
+
+    .nav-profile {
+        display: flex;
+        gap: 16px;
+        margin-left: 0;
+    }
+
+    #view {
+        margin: 12px;
+    }
+
     .container-card {
         padding: 40px 16px;
     }
@@ -1151,84 +1180,42 @@ button:hover {
         padding: 48px 20px;
     }
 
-    .mission-info {
-        padding: 12px 24px;
+    .mission-card,
+    .mission-detail,
+    .mission-test-page,
+    .profile-page {
+        width: 100%;
     }
 
-    .mission-header>h2 {
-        font-size: 14px;
-    }
-}
-
-/* Mobile Adjustments */
-@media screen and (max-width: 480px) {
-    header {
-        padding: 16px;
-        display: flex;
-        justify-content: center;
-    }
-
-    nav ul {
-        justify-content: center;
-        gap: 12px;
-    }
-
-    #view {
-        margin: 10px;
-    }
-
-    .mission-info {
-        padding: 12px 16px;
-    }
-
-    .mission-card>a {
-        max-width: 100%;
-    }
-
-    .mission-header>h2 {
-        font-size: 12px;
-    }
-
-    .mission-header>a {
-        min-width: 50px;
-        max-width: 100px;
-    }
-
-    .mission-header>.mission-tag {
-        font-size: 8px;
-    }
-
-    .mission-info {
+    .mission-info,
+    .mission-form-grid,
+    .mission-test-result-card,
+    .profile-card-row,
+    .profile-stat-grid,
+    .profile-link-options,
+    .profile-form {
         grid-template-columns: 1fr;
+    }
+
+    .mission-info {
+        padding: 16px 20px;
+    }
+
+    .mission-header>h2 {
+        font-size: 16px;
     }
 
     .mission-detail-header,
-    .mission-test-hero {
+    .mission-test-hero,
+    .profile-header {
         flex-direction: column;
-        padding: 20px 16px;
+        padding: 22px 18px;
     }
 
-    .mission-detail-summary {
+    .mission-detail-summary,
+    .profile-summary {
         align-items: flex-start;
-    }
-
-    .mission-facts dl,
-    .mission-iteration-card dl,
-    .mission-test-page dl,
-    .mission-form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .mission-test-form-card {
-        padding: 20px 16px;
-    }
-
-    .mission-test-result-card {
-        grid-template-columns: 1fr;
-    }
-
-    .mission-submit-action {
-        align-self: stretch;
+        text-align: left;
     }
 
     .profile-page {
@@ -1238,29 +1225,142 @@ button:hover {
     .profile-gutter-nav {
         position: static;
         flex-direction: row;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px;
+        scrollbar-width: thin;
     }
 
-    .profile-header {
+    .profile-gutter-nav a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    .profile-card,
+    .mission-detail-section,
+    .mission-iteration-card,
+    .mission-review-card,
+    .mission-test-info-card,
+    .mission-test-form-card {
+        padding: 20px 18px;
+    }
+
+    .mission-submit-action {
+        align-self: stretch;
+    }
+}
+
+/* Mobile Adjustments */
+@media screen and (max-width: 560px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    header {
+        padding: 12px;
+    }
+
+    .nav-links,
+    .nav-profile {
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+    }
+
+    a {
+        font-size: 12px;
+    }
+
+    #view {
+        margin: 8px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    p {
+        font-size: 14px;
+    }
+
+    button,
+    .mission-action {
+        max-width: none;
+        width: 100%;
+    }
+
+    .mission-header {
+        display: grid;
+        grid-template-columns: minmax(66px, max-content) minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .mission-header>h2 {
+        font-size: 13px;
+        min-width: 0;
+    }
+
+    .mission-header>a {
+        min-width: 66px;
+        max-width: none;
+        padding: 8px 10px;
+    }
+
+    .mission-header>.mission-tag {
+        grid-column: 1 / -1;
+        margin-left: 0;
+        padding-left: 0;
+        font-size: 12px;
+    }
+
+    .mission-info {
+        padding: 14px;
+    }
+
+    .mission-test-info {
         flex-direction: column;
-        padding: 20px 16px;
     }
 
-    .profile-summary {
-        align-items: flex-start;
-        text-align: left;
-    }
-
-    .profile-card-row,
-    .profile-stat-grid,
-    .profile-link-options,
-    .profile-card dl,
-    .profile-form {
+    .mission-facts dl,
+    .mission-iteration-card dl,
+    .mission-test-page dl,
+    .profile-card dl {
         grid-template-columns: 1fr;
+        gap: 4px 0;
     }
 
+    .mission-detail-section,
+    .mission-iteration-card,
+    .mission-review-card,
+    .mission-test-info-card,
+    .mission-test-form-card,
     .profile-card {
-        padding: 20px 16px;
+        padding: 18px 14px;
+    }
+
+    .mission-detail-summary strong {
+        font-size: 2.3rem;
+    }
+
+    .profile-gutter-nav {
+        margin-inline: -2px;
+    }
+
+    .profile-header h1 {
+        font-size: 1.65rem;
+    }
+
+    .profile-summary strong {
+        font-size: 1.35rem;
+    }
+
+    .profile-form-wide {
+        grid-column: auto;
     }
 
     .auth-card {
