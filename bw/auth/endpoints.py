@@ -14,9 +14,10 @@ from bw.auth.decorators import (
     with_token,
 )
 from bw.auth.permissions import Permissions
+from bw.auth.remarks import Remark
 from bw.auth.roles import Roles
 from bw.models.auth import User
-from bw.response import JsonResponse, WebResponse
+from bw.response import ChunkedResponse, JsonResponse, WebResponse
 from bw.state import State
 from bw.web_utils import (
     chunk_text_response,
@@ -197,6 +198,8 @@ def define_auth(api: Blueprint):
 def define_user(api: Blueprint, local: Blueprint):
     local_role_blueprint = Blueprint('local_role', __name__, url_prefix='/role')
     role_blueprint = Blueprint('role', __name__, url_prefix='/role')
+
+    remark_blueprint = Blueprint('remark', __name__, url_prefix='/remark')
 
     @api.get('/')
     @url_endpoint
@@ -608,6 +611,29 @@ def define_user(api: Blueprint, local: Blueprint):
         logger.info(f'Assigning {role_name} to user {user_uuid} (Local)')
         return AuthApi().assign_role(State.state, role_name=role_name, user_uuid=uuid.UUID(hex=user_uuid))
 
+    @remark_blueprint.post('/')
+    @form_endpoint
+    @require_session
+    async def update_remark(
+        session_user: User, profile_name: str, steam_id: str, nickname: str | None, remark: str | None
+    ) -> WebResponse:
+        return AuthApi().update_remark(
+            State.state, session_user, Remark(profile_name=profile_name, nickname=nickname, steam_id=steam_id, remark=remark)
+        )
+
+    @remark_blueprint.get('/')
+    @url_endpoint
+    @require_session
+    async def get_remark(session_user: User) -> JsonResponse:
+        return AuthApi().get_remark(State.state, session_user)
+
+    @remark_blueprint.get('/all')
+    @url_endpoint
+    @require_session
+    async def all_remarks() -> ChunkedResponse:
+        return AuthApi().all_remarks(State.state)
+
+    api.register_blueprint(remark_blueprint)
     api.register_blueprint(role_blueprint)
     local.register_blueprint(local_role_blueprint)
 
@@ -927,8 +953,8 @@ def define_group(api: Blueprint):
     api.register_blueprint(permission_blueprint)
 
 
-def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
-    @root.get('/login')
+def define_html(frontend: Blueprint, parts: Blueprint):
+    @frontend.get('/login')
     @html_endpoint(template_path='auth/login.html', title='Sign in to Bourbon Warfare')
     @with_default_session
     async def login_page(session_token: str, html: str) -> str:
@@ -936,7 +962,7 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
         AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
-    @root.get('/verify')
+    @frontend.get('/verify')
     @html_endpoint(template_path='auth/verify.html', title='Verified your Bourbon Warfare account')
     async def verify_page(html: str) -> str:
         token = request.args.get('token')
@@ -947,7 +973,7 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
             verified = False
         return await render_template_string(html, verified=verified)
 
-    @root.get('/register')
+    @frontend.get('/register')
     @html_endpoint(template_path='auth/create_account.html', title='Register a Bourbon Warfare account')
     @with_default_session
     async def register_page(session_token: str, html: str) -> str:
@@ -955,7 +981,7 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
         AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
 
-    @root.get('/recover')
+    @frontend.get('/recover')
     @html_endpoint(template_path='auth/recover.html', title='Recover your Bourbon Warfare account')
     @with_default_session
     async def recover_page(session_token: str, html: str) -> str:
@@ -1000,3 +1026,11 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
             AuthApi().register_access_code(state=State.state, code=code, code_state=state)
         finally:
             return html  # noqa: B012
+
+    @frontend.get('/remarks')
+    @html_endpoint(template_path='squad.xml', title='Bourbon Warfare Squad XML', return_partial=True, mimetype='text/xml')
+    async def squad_xml(html: str) -> str:
+        response = AuthApi().all_remarks(State.state)
+        remarks = [Remark(**remark) for remark in await response.as_json_list()]
+        final = await render_template_string(html, remarks=remarks)
+        return final

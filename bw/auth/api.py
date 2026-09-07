@@ -8,13 +8,14 @@ from quart import session as user_session
 
 from bw.auth.group import GroupStore
 from bw.auth.permissions import Permissions
+from bw.auth.remarks import Remark, RemarkStore
 from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
 from bw.auth.tasks import TaskSendRecoveryEmail, TaskSendRegistrationEmail
 from bw.auth.types import DiscordSnowflake
 from bw.auth.user import UserStore
 from bw.auth.utils import secure_token_urlsafe
-from bw.converters import ALLOWED_PASSWORD_CHARACTERS
+from bw.converters import ALLOWED_PASSWORD_CHARACTERS, make_json_safe
 from bw.environment import ENVIRONMENT
 from bw.error import (
     AuthError,
@@ -26,10 +27,10 @@ from bw.error import (
     SessionExpired,
 )
 from bw.models.auth import User
-from bw.response import BadRequest, Created, DoesNotExist, Exists, JsonResponse, Ok, WebResponse, WithState
+from bw.response import BadRequest, ChunkedResponse, Created, DoesNotExist, Exists, JsonResponse, Ok, WebResponse, WithState
 from bw.state import State
 from bw.tasks.tasks import TasksStore
-from bw.web_utils import define_api
+from bw.web_utils import chunk_json_response, define_api
 
 logger = logging.getLogger('bw.auth')
 
@@ -1082,3 +1083,19 @@ class AuthApi:
         """
         permission = GroupStore().edit_permission(state, permission_name=permission_name, permissions=permissions)
         return JsonResponse({'name': permission.name})
+
+    @define_api
+    def update_remark(self, state: State, user: User, remark: Remark) -> WebResponse:
+        logger.info(f'Updating user #{user.id} remark')
+        RemarkStore().update_remark(state, user, remark)
+        return Ok()
+
+    @define_api
+    def get_remark(self, state: State, user: User) -> JsonResponse:
+        logger.info(f'Getting user #{user.id} remark')
+        return JsonResponse(RemarkStore().user_remark(state, user))
+
+    @define_api
+    def all_remarks(self, state: State) -> ChunkedResponse:
+        logger.info('Getting all remarks')
+        return chunk_json_response([make_json_safe(remark) for remark in RemarkStore().all_remarks(state)])

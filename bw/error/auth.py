@@ -131,3 +131,13 @@ class BourbonUserAlreadyExists(AuthError):
 
     def __init__(self):
         super().__init__('a user with these credentials already exists')
+
+
+class RemarkDoesNotExist(NotFoundError):
+    def __init__(self):
+        super().__init__('User remark does not exist.')
+
+
+class RemarkOwnedByDifferentUser(ForbiddenError):
+    def __init__(self):
+        super().__init__('Remark is owned by another user')

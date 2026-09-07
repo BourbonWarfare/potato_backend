@@ -70,7 +70,7 @@ def define(app: Quart):
     session_parts_blueprint = Blueprint('session_frontend_parts', __name__, url_prefix='/session')
     session_html_blueprint = Blueprint('session_frontend', __name__, url_prefix='/session')
 
-    define_auth_html(html_blueprint, auth_html_blueprint, auth_parts_blueprint)
+    define_auth_html(auth_html_blueprint, auth_parts_blueprint)
     missions_define_html(missions_html_blueprint, missions_parts_blueprint)
     session_define_html(session_html_blueprint, session_parts_blueprint)
 

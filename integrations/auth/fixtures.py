@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy import insert
 
 from bw.auth.permissions import Permissions
+from bw.auth.remarks import Remark
 from bw.auth.roles import Roles
 from bw.auth.types import DiscordSnowflake
 from bw.models.auth import (
@@ -19,6 +20,7 @@ from bw.models.auth import (
     Session,
     User,
 )
+from bw.models.auth import BotUser, DiscordUser, Group, GroupPermission, Role, Session, User
 
 
 @pytest.fixture(scope='session')
@@ -497,6 +499,9 @@ def oauth_state_4():
 # Database fixtures for OAuth codes (function scope for test isolation)
 @pytest.fixture(scope='function')
 def db_oauth_code_1(state, oauth_code_1, oauth_state_1):
+    """OAuth code in database with valid expiry time"""
+    from bw.models.auth import DiscordOAuthCode
+
     with state.Session.begin() as db_session:
         query = insert(DiscordOAuthCode).values(code=oauth_code_1, state=oauth_state_1).returning(DiscordOAuthCode)
         oauth = db_session.execute(query).first()[0]
@@ -506,6 +511,9 @@ def db_oauth_code_1(state, oauth_code_1, oauth_state_1):
 
 @pytest.fixture(scope='function')
 def db_oauth_code_2(state, oauth_code_2, oauth_state_2):
+    """Second OAuth code in database with valid expiry time"""
+    from bw.models.auth import DiscordOAuthCode
+
     with state.Session.begin() as db_session:
         query = insert(DiscordOAuthCode).values(code=oauth_code_2, state=oauth_state_2).returning(DiscordOAuthCode)
         oauth = db_session.execute(query).first()[0]

@@ -172,10 +172,22 @@ class DiscordOAuthCode(Base):
 
 class BourbonUserCode(Base):
     __tablename__ = 'bourbon_user_codes'
-
     code: Mapped[str] = mapped_column(String(TOKEN_LENGTH), primary_key=True)
     email: Mapped[str] = mapped_column(String(EMAIL_LENGTH))
     expire_time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=False),
         server_default=func.localtimestamp() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length'])),
     )
+
+
+class Remark(Base):
+    __tablename__ = 'remarks'
+
+    profile_name: Mapped[str] = mapped_column(String(), primary_key=True)
+    steam_id: Mapped[str] = mapped_column(String(), primary_key=True)
+
+    user_id: Mapped[int | None] = mapped_column(ForeignKey(User.id, name='linked_user_for_remark'))
+    nickname: Mapped[str | None] = mapped_column(String())
+    remark: Mapped[str | None] = mapped_column(String())
+
+    creation_date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=False), server_default=func.current_timestamp())

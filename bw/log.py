@@ -31,10 +31,14 @@ class SecretSanitizerFormatter(logging.Formatter):
         return sanitize_string_for_secrets(original_message)
 
 
-def log_config() -> dict[str, Any]:
+LOG_FILES = {'server': 'server.log', 'cron': 'cron.log', 'monitor': 'monitor.log'}
+
+
+def log_config(service: str = 'server') -> dict[str, Any]:
     os.makedirs('./logs', exist_ok=True)
-    log_config = {
+    return {
         'version': 1,
+        'disable_existing_loggers': False,
         'formatters': {
             'default': {
                 '()': SecretSanitizerFormatter,
@@ -43,56 +47,33 @@ def log_config() -> dict[str, Any]:
             }
         },
         'handlers': {
-            'wsgi': {
+            'console': {
                 'class': 'logging.StreamHandler',
-                'stream': 'ext://flask.logging.wsgi_errors_stream',
-                'formatter': 'default',
-            },
-            'stdout': {
-                'class': 'logging.StreamHandler',
-                'stream': 'ext://sys.stdout',
+                'stream': ('ext://flask.logging.wsgi_errors_stream' if service == 'server' else 'ext://sys.stdout'),
                 'formatter': 'default',
             },
             'file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'default',
-                'filename': 'logs/server.log',
+                'filename': f'logs/{LOG_FILES[service]}',
                 'backupCount': int(GLOBAL_CONFIGURATION.get('log_backup_count', 3)),
                 'maxBytes': int(GLOBAL_CONFIGURATION.get('single_log_size', 1 * 1024 * 1024)),
-            },
-            'file_cron': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'default',
-                'filename': 'logs/cron.log',
-                'backupCount': int(GLOBAL_CONFIGURATION.get('log_backup_count', 3)),
-                'maxBytes': int(GLOBAL_CONFIGURATION.get('single_log_size', 1 * 1024 * 1024)),
-            },
-            'file_monitor': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'default',
-                'filename': 'logs/monitor.log',
-                'backupCount': int(GLOBAL_CONFIGURATION.get('log_backup_count', 3)),
-                'maxBytes': int(GLOBAL_CONFIGURATION.get('single_log_size', 1 * 1024 * 1024)),
+                'delay': True,
             },
         },
         'root': {
             'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else PRODUCTION_LOG_CONFIG['root'],
-            'handlers': ['wsgi', 'file'],
+            'handlers': ['console', 'file'],
         },
         'loggers': {
-            logger: {
-                'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else level,
-            }
+            logger: {'level': 'DEBUG' if isinstance(ENVIRONMENT, Local) else level}
             for logger, level in PRODUCTION_LOG_CONFIG.items()
+            if logger != 'root'
         },
     }
 
-    log_config['loggers']['bw.cron']['handlers'] = ['stdout', 'file_cron']  # ty:ignore[invalid-assignment]
-    log_config['loggers']['bw.monitor']['handlers'] = ['stdout', 'file_monitor']  # ty:ignore[invalid-assignment]
-    return log_config
 
-
-def setup_config() -> None:
+def setup_config(service: str = 'server') -> None:
     import logging
     import logging.config
 
