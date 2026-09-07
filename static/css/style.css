@@ -614,8 +614,52 @@ button:hover {
 }
 
 .profile-page {
-    width: min(100%, 1120px);
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 22px;
+    width: min(100%, 1180px);
     margin: 0 auto 40px;
+    align-items: start;
+}
+
+.profile-main {
+    min-width: 0;
+}
+
+.profile-gutter-nav {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    background: var(--surface);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.profile-gutter-nav a {
+    padding: 9px 10px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.profile-gutter-nav a:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.profile-gutter-nav .profile-gutter-disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+}
+
+.profile-gutter-nav .profile-gutter-danger {
+    color: var(--error-text);
 }
 
 .profile-header {
@@ -713,9 +757,24 @@ button:hover {
     border-left-width: 6px;
 }
 
+.profile-disabled-card {
+    border-left-color: var(--text-secondary);
+    opacity: 0.8;
+}
+
 .profile-danger-card {
     border-left-color: var(--error);
     background: linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--error) 7%, var(--surface)));
+}
+
+.profile-link-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.profile-link-options button {
+    max-width: none;
 }
 
 .profile-card-heading {
@@ -812,7 +871,8 @@ button:hover {
     align-self: end;
 }
 
-.profile-form button:disabled {
+.profile-form button:disabled,
+.profile-link-options button:disabled {
     cursor: not-allowed;
     opacity: 0.55;
 }
@@ -1171,6 +1231,16 @@ button:hover {
         align-self: stretch;
     }
 
+    .profile-page {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-gutter-nav {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
     .profile-header {
         flex-direction: column;
         padding: 20px 16px;
@@ -1183,6 +1253,7 @@ button:hover {
 
     .profile-card-row,
     .profile-stat-grid,
+    .profile-link-options,
     .profile-card dl,
     .profile-form {
         grid-template-columns: 1fr;

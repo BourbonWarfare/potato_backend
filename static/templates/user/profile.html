@@ -1,132 +1,158 @@
 <div class="profile-page">
-    <header class="profile-header">
-        <div>
-            <p class="profile-kicker">Account settings</p>
-            <h1>Your profile</h1>
-            <p>Manage your Bourbon Warfare identity, credentials, and public remark.</p>
-            <p class="profile-muted-id">{{ profile.uuid }}</p>
-        </div>
-        <div class="profile-summary">
-            {% if profile.bourbon %}
-                <span class="profile-pill">Bourbon account</span>
-                <strong>{{ profile.bourbon.username }}</strong>
-                <span class="profile-status {% if profile.bourbon.verified %}profile-status-ok{% else %}profile-status-warn{% endif %}">
-                    {% if profile.bourbon.verified %}Verified{% else %}Unverified{% endif %}
-                </span>
-            {% else %}
-                <span class="profile-pill">External login</span>
-                <strong>User</strong>
-                <span>No Bourbon credentials linked</span>
-            {% endif %}
-        </div>
-    </header>
+    <aside class="profile-gutter-nav" aria-label="Profile sections">
+        <a href="#profile-overview">Overview</a>
+        {% if profile.bourbon %}
+            <a href="#profile-email">Email</a>
+            <a href="#profile-password">Password</a>
+        {% endif %}
+        <a href="#profile-remark">Remark</a>
+        <a class="profile-gutter-disabled" href="#profile-linked-accounts" aria-disabled="true">Linked accounts</a>
+        <a class="profile-gutter-danger" href="#profile-delete">Delete account</a>
+    </aside>
 
-    <section class="profile-card profile-overview-card">
-        <div class="profile-card-heading">
-            <p class="profile-kicker">Overview</p>
-            <h2>Account information</h2>
-        </div>
-        <div class="profile-stat-grid">
-            <div class="profile-stat">
-                <span>Created</span>
-                <strong>{{ profile.creation_date_display }}</strong>
+    <main class="profile-main">
+        <header class="profile-header">
+            <div>
+                <p class="profile-kicker">Account settings</p>
+                <h1>Your profile</h1>
+                <p>Manage your Bourbon Warfare identity, credentials, and public remark.</p>
+                <p class="profile-muted-id">{{ profile.uuid }}</p>
             </div>
-            <div class="profile-stat">
-                <span>Email</span>
-                <strong>{% if profile.bourbon %}{{ profile.bourbon.email }}{% else %}Not linked{% endif %}</strong>
+            <div class="profile-summary">
+                {% if profile.bourbon %}
+                    <span class="profile-pill">Bourbon account</span>
+                    <strong>{{ profile.bourbon.username }}</strong>
+                    <span class="profile-status {% if profile.bourbon.verified %}profile-status-ok{% else %}profile-status-warn{% endif %}">
+                        {% if profile.bourbon.verified %}Verified{% else %}Unverified{% endif %}
+                    </span>
+                {% else %}
+                    <span class="profile-pill">External login</span>
+                    <strong>User</strong>
+                    <span>No Bourbon credentials linked</span>
+                {% endif %}
             </div>
-            <div class="profile-stat profile-stat-wide">
-                <span>Groups</span>
-                <strong>{% if profile.groups %}{{ profile.groups|join(', ') }}{% else %}No groups{% endif %}</strong>
-            </div>
-        </div>
-    </section>
+        </header>
 
-    {% if profile.bourbon %}
-        <div class="profile-card-row">
-            <section class="profile-card profile-action-card">
+        <section id="profile-overview" class="profile-card profile-overview-card">
+            <div class="profile-card-heading">
+                <p class="profile-kicker">Overview</p>
+                <h2>Account information</h2>
+            </div>
+            <div class="profile-stat-grid">
+                <div class="profile-stat">
+                    <span>Created</span>
+                    <strong>{{ profile.creation_date_display }}</strong>
+                </div>
+                <div class="profile-stat">
+                    <span>Email</span>
+                    <strong>{% if profile.bourbon %}{{ profile.bourbon.email }}{% else %}Not linked{% endif %}</strong>
+                </div>
+                <div class="profile-stat profile-stat-wide">
+                    <span>Groups</span>
+                    <strong>{% if profile.groups %}{{ profile.groups|join(', ') }}{% else %}No groups{% endif %}</strong>
+                </div>
+            </div>
+        </section>
+
+        {% if profile.bourbon %}
+            <div class="profile-card-row">
+                <section id="profile-email" class="profile-card profile-action-card">
+                    <div class="profile-card-heading">
+                        <p class="profile-kicker">Credentials</p>
+                        <h2>Change email</h2>
+                        <p>Update the email attached to your Bourbon login.</p>
+                    </div>
+                    <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/email">
+                        <label>
+                            New email
+                            <input type="email" name="email" value="{{ profile.bourbon.email }}" required />
+                        </label>
+                        <label>
+                            Current password
+                            <input type="password" name="current_password" autocomplete="current-password" required />
+                        </label>
+                        <button type="submit">Update email</button>
+                    </form>
+                </section>
+
+                <section id="profile-password" class="profile-card profile-action-card">
+                    <div class="profile-card-heading">
+                        <p class="profile-kicker">Security</p>
+                        <h2>Change password</h2>
+                        <p>Use your current password to confirm this change.</p>
+                    </div>
+                    <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/password">
+                        <label>
+                            Current password
+                            <input type="password" name="current_password" autocomplete="current-password" required />
+                        </label>
+                        <label>
+                            New password
+                            <input type="password" name="password" autocomplete="new-password" required />
+                        </label>
+                        <button type="submit">Update password</button>
+                    </form>
+                </section>
+            </div>
+        {% else %}
+            <section class="profile-card">
                 <div class="profile-card-heading">
                     <p class="profile-kicker">Credentials</p>
-                    <h2>Change email</h2>
-                    <p>Update the email attached to your Bourbon login.</p>
+                    <h2>Email and password</h2>
                 </div>
-                <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/email">
-                    <label>
-                        New email
-                        <input type="email" name="email" value="{{ profile.bourbon.email }}" required />
-                    </label>
-                    <label>
-                        Current password
-                        <input type="password" name="current_password" autocomplete="current-password" required />
-                    </label>
-                    <button type="submit">Update email</button>
-                </form>
+                <p>This account does not currently have Bourbon email/password credentials linked.</p>
             </section>
+        {% endif %}
 
-            <section class="profile-card profile-action-card">
-                <div class="profile-card-heading">
-                    <p class="profile-kicker">Security</p>
-                    <h2>Change password</h2>
-                    <p>Use your current password to confirm this change.</p>
-                </div>
-                <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/password">
-                    <label>
-                        Current password
-                        <input type="password" name="current_password" autocomplete="current-password" required />
-                    </label>
-                    <label>
-                        New password
-                        <input type="password" name="password" autocomplete="new-password" required />
-                    </label>
-                    <button type="submit">Update password</button>
-                </form>
-            </section>
-        </div>
-    {% else %}
-        <section class="profile-card">
+        <section id="profile-remark" class="profile-card profile-remark-card">
             <div class="profile-card-heading">
-                <p class="profile-kicker">Credentials</p>
-                <h2>Email and password</h2>
+                <p class="profile-kicker">Public identity</p>
+                <h2>Remark</h2>
+                <p>Update the name and remark used by the squad XML/remarks view.</p>
             </div>
-            <p>This account does not currently have Bourbon email/password credentials linked.</p>
+            <form class="profile-form" method="post" action="/api/v1/user/remark/">
+                <label>
+                    Profile name
+                    <input name="profile_name" value="{{ remark.profile_name }}" required />
+                </label>
+                <label>
+                    Steam ID
+                    <input name="steam_id" value="{{ remark.steam_id }}" required />
+                </label>
+                <label>
+                    Nickname
+                    <input name="nickname" value="{{ remark.nickname or '' }}" />
+                </label>
+                <label class="profile-form-wide">
+                    Remark
+                    <textarea name="remark" rows="4">{{ remark.remark or '' }}</textarea>
+                </label>
+                <button type="submit">Update remark</button>
+            </form>
         </section>
-    {% endif %}
 
-    <section class="profile-card profile-remark-card">
-        <div class="profile-card-heading">
-            <p class="profile-kicker">Public identity</p>
-            <h2>Remark</h2>
-            <p>Update the name and remark used by the squad XML/remarks view.</p>
-        </div>
-        <form class="profile-form" method="post" action="/api/v1/user/remark/">
-            <label>
-                Profile name
-                <input name="profile_name" value="{{ remark.profile_name }}" required />
-            </label>
-            <label>
-                Steam ID
-                <input name="steam_id" value="{{ remark.steam_id }}" required />
-            </label>
-            <label>
-                Nickname
-                <input name="nickname" value="{{ remark.nickname or '' }}" />
-            </label>
-            <label class="profile-form-wide">
-                Remark
-                <textarea name="remark" rows="4">{{ remark.remark or '' }}</textarea>
-            </label>
-            <button type="submit">Update remark</button>
-        </form>
-    </section>
+        <section id="profile-linked-accounts" class="profile-card profile-disabled-card">
+            <div class="profile-card-heading">
+                <p class="profile-kicker">Coming later</p>
+                <h2>Linked accounts</h2>
+                <p>Eventually you will be able to connect login methods together, such as Discord and Bourbon credentials.</p>
+            </div>
+            <div class="profile-link-options">
+                <button type="button" disabled>Link Discord account</button>
+                <button type="button" disabled>Link Bourbon account</button>
+                <button type="button" disabled>Link Steam account</button>
+            </div>
+        </section>
 
-    <section class="profile-card profile-danger-card">
-        <div class="profile-card-heading">
-            <p class="profile-kicker">Danger zone</p>
-            <h2>Delete account</h2>
-            <p>Account deletion is planned but not enabled yet.</p>
-        </div>
-        <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/delete">
-            <button type="submit" disabled>Delete account eventually</button>
-        </form>
-    </section>
+        <section id="profile-delete" class="profile-card profile-danger-card">
+            <div class="profile-card-heading">
+                <p class="profile-kicker">Danger zone</p>
+                <h2>Delete account</h2>
+                <p>Account deletion is planned but not enabled yet.</p>
+            </div>
+            <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/delete">
+                <button type="submit" disabled>Delete account eventually</button>
+            </form>
+        </section>
+    </main>
 </div>

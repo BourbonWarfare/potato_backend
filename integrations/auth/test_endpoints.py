@@ -143,9 +143,13 @@ class TestProfileEndpoints:
         assert db_bourbon_user_1.username in html
         assert db_bourbon_user_1.email in html
         assert db_user_1.creation_date.strftime('%Y-%m-%d %H:%M') in html
+        assert 'Profile sections' in html
         assert 'Change email' in html
         assert 'Change password' in html
         assert 'Update remark' in html
+        assert 'Linked accounts' in html
+        assert 'Link Discord account' in html
+        assert 'Link Bourbon account' in html
         assert 'Delete account' in html
 
     @pytest.mark.asyncio
