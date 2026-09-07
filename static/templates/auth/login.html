@@ -31,8 +31,8 @@
                     <span class="checkbox-label">Remember me</span>
                 </label>
                 <!-- HTMX: loads forgot password form into the same card -->
-                <a href="/recover" class="forgot-link" hx-get="/recover" hx-target="#auth-card" hx-swap="outerHTML"
-                    hx-push-url="true" hx-browser-indicator="true">
+                <a href="/auth/recover" class="forgot-link" hx-get="/auth/recover" hx-target="#auth-card"
+                    hx-swap="outerHTML" hx-push-url="true" hx-browser-indicator="true">
                     Forgot password?
                 </a>
             </div>
@@ -53,8 +53,8 @@
         <div class="auth-footer">
             <p>Need an account?
                 <!-- HTMX: loads registration form into the same card -->
-                <a href="/register" hx-get="/register" hx-target="#auth-card" hx-swap="outerHTML" hx-push-url="true"
-                    hx-browser-indicator="true">
+                <a href="/auth/register" hx-get="/auth/register" hx-target="#auth-card" hx-swap="outerHTML"
+                    hx-push-url="true" hx-browser-indicator="true">
                     Create one
                 </a>
             </p>
