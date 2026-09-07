@@ -559,7 +559,8 @@ button:hover {
     flex-direction: column;
     gap: 8px;
     color: var(--text-secondary);
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 .mission-test-form input,
@@ -571,6 +572,18 @@ button:hover {
     border: 1px solid var(--border);
     background: var(--bg);
     color: var(--text-primary);
+}
+
+.mission-test-form select {
+    min-height: 52px;
+    padding: 14px 44px 14px 16px;
+    border: 2px solid color-mix(in srgb, var(--accent) 70%, var(--border));
+    border-radius: 4px;
+    background-color: color-mix(in srgb, var(--accent) 8%, var(--bg));
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .mission-test-form input:focus,
