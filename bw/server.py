@@ -1,13 +1,10 @@
 import asyncio
-import multiprocessing
 import os
 from asyncio.tasks import Task
 
 from quart import Quart
 
 import bw.response  # noqa: F401
-from bw import tasks
-from bw.cron import runner
 from bw.endpoints import define as define_endpoints
 from bw.environment import ENVIRONMENT
 from bw.log import log_config
@@ -24,38 +21,18 @@ state = State()
 define_endpoints(app)
 
 EVENT_QUEUE_TASK: Task | None = None
-CRON_PROCESS: multiprocessing.Process | None = None
-TASK_RUNNER_COUNT = int(os.getenv('TASK_RUNNER_N', '1'))
-TASK_RUNNERS: list[multiprocessing.Process] = []
 
 
 @app.before_serving
 async def run_message_queue():
     global EVENT_QUEUE_TASK
-    global CRON_PROCESS
 
     app.logger.info('starting event queue')
     EVENT_QUEUE_TASK = asyncio.ensure_future(state.queue.process_event_queue())
 
-    app.logger.info('starting cron runner')
-    CRON_PROCESS = multiprocessing.Process(target=runner.spawn, args=(ENVIRONMENT.cron_token(),))
-    CRON_PROCESS.start()
-
-    app.logger.info('starting task processors')
-    for _ in range(TASK_RUNNER_COUNT):
-        TASK_RUNNERS.append(tasks.spawn())
-
 
 @app.after_serving
 async def stop_message_queue():
-    app.logger.info('stopping task processors')
-    for processor in TASK_RUNNERS:
-        processor.kill()
-
-    if CRON_PROCESS:
-        app.logger.info('stopping cron runner')
-        CRON_PROCESS.kill()
-
     if EVENT_QUEUE_TASK:
         app.logger.info('stopping event queue')
         EVENT_QUEUE_TASK.cancel()
