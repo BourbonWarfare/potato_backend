@@ -355,7 +355,7 @@ class TestRequireSession:
         ):
             mock_request.headers = {}
             with pytest.raises(CannotDetermineSession):
-                tester()
+                await tester()
         assert not mock_validator.called
         assert not mock_get_session_user.called
         assert not called

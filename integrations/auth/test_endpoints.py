@@ -73,6 +73,8 @@ from integrations.auth.fixtures import (
     role_assigner,
     role_name_1,
     role_name_2,
+    salt_1,
+    salt_2,
     token_1,
     token_2,
     username_1,

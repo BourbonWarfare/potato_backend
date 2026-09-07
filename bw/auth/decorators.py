@@ -116,23 +116,6 @@ def require_session(
     require_authenticated: bool = True,
     require_user: bool = True,
 ):
-    """
-    ### Require a valid session token
-
-    Ensures the decorated function is called with a valid session token.
-
-    **Raises:**
-    - `CannotDetermineSession`: If the request is malformed such that we can't determine session.
-    - `SessionKnownButInvalid`: If the session is not valid for some reason.
-
-    **Example:**
-    ```python
-    @require_session
-    def my_view(session_user, ...):
-        ...
-    ```
-    """
-
     @contextmanager
     def _session_user() -> Generator[User]:
         try:
@@ -144,23 +127,23 @@ def require_session(
         yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)
 
     def decorator(func):
-        def caller(func, **kwargs):
-            if asyncio.iscoroutinefunction(func):
+        if asyncio.iscoroutinefunction(func):
 
-                async def afnc():
-                    return await func(**kwargs)
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):
+                if require_user:
+                    with _session_user() as session_user:
+                        return await func(*args, session_user=session_user, **kwargs)
+                return await func(*args, **kwargs)
 
-                return afnc()
-            else:
-                return func(**kwargs)
+        else:
 
-        @functools.wraps(func)
-        def wrapper(**kwargs):
-            if require_user:
-                with _session_user() as session_user:
-                    return caller(func, session_user=session_user, **kwargs)
-            else:
-                return caller(func, **kwargs)
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                if require_user:
+                    with _session_user() as session_user:
+                        return func(*args, session_user=session_user, **kwargs)
+                return func(*args, **kwargs)
 
         return wrapper
 
@@ -334,6 +317,7 @@ def verify_csrf_from_form(func: Callable | None = None, /, *, form_id: str = 'cs
 
             try:
                 if not session_token:
+                    logger.error('Cannot extact token from form when required')
                     raise NeedsAuthenticatedSession()
 
                 validate_session(State.state, session_token)
@@ -347,6 +331,7 @@ def verify_csrf_from_form(func: Callable | None = None, /, *, form_id: str = 'cs
             with _session_csrf() as csrf_token:
                 form_token = (await request.form).get(form_id, '')
                 if form_token != csrf_token:
+                    logger.error('Possible CSRF attempt, tokens mismatch')
                     raise CsrfTokenDoesntMatch()
 
             if form_id in kwargs:

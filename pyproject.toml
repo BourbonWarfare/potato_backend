@@ -55,6 +55,9 @@ testpaths = [
     "tests",
     "integrations"
 ]
+filterwarnings = [
+    "error::RuntimeWarning",
+]
 log_level = "DEBUG"
 
 [tool.pytest_env]
