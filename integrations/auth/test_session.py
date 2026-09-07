@@ -8,7 +8,6 @@ from sqlalchemy import select
 from bw.auth.session import SessionStore
 from bw.error import NoAccessCodeFound, SessionExpired
 from bw.models.auth import BourbonUserCode, DiscordOAuthCode, Session
-from bw.models.auth import DiscordOAuthCode, Session
 from integrations.auth.fixtures import (
     db_bourbon_code_1,
     db_bourbon_code_2,

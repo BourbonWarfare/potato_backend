@@ -20,7 +20,6 @@ from bw.models.auth import (
     Session,
     User,
 )
-from bw.models.auth import BotUser, DiscordUser, Group, GroupPermission, Role, Session, User
 
 
 @pytest.fixture(scope='session')
@@ -500,7 +499,6 @@ def oauth_state_4():
 @pytest.fixture(scope='function')
 def db_oauth_code_1(state, oauth_code_1, oauth_state_1):
     """OAuth code in database with valid expiry time"""
-    from bw.models.auth import DiscordOAuthCode
 
     with state.Session.begin() as db_session:
         query = insert(DiscordOAuthCode).values(code=oauth_code_1, state=oauth_state_1).returning(DiscordOAuthCode)
@@ -512,7 +510,6 @@ def db_oauth_code_1(state, oauth_code_1, oauth_state_1):
 @pytest.fixture(scope='function')
 def db_oauth_code_2(state, oauth_code_2, oauth_state_2):
     """Second OAuth code in database with valid expiry time"""
-    from bw.models.auth import DiscordOAuthCode
 
     with state.Session.begin() as db_session:
         query = insert(DiscordOAuthCode).values(code=oauth_code_2, state=oauth_state_2).returning(DiscordOAuthCode)
@@ -524,7 +521,6 @@ def db_oauth_code_2(state, oauth_code_2, oauth_state_2):
 @pytest.fixture(scope='function')
 def db_oauth_code_expired(state, oauth_code_3, oauth_state_3, expire_invalid):
     """OAuth code in database with expired time"""
-    from bw.models.auth import DiscordOAuthCode
 
     with state.Session.begin() as db_session:
         query = (

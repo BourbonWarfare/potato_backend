@@ -19,8 +19,6 @@ from bw.error import (
     RoleCreationFailed,
 )
 from bw.models.auth import BotUser, BourbonUser, DiscordUser, Role, User, UserGroup
-from bw.error import AuthError, DbError, DiscordUserAlreadyExists, NoRoleWithName, NoUserWithGivenCredentials, RoleCreationFailed
-from bw.models.auth import BotUser, DiscordUser, Role, User, UserGroup
 from integrations.auth.fixtures import (
     db_bot_user_1,
     db_bourbon_user_1,
