@@ -1,0 +1,35 @@
+<div class="mission-test-page">
+    <p><a href="/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}">← Back to {{ mission.title }}</a></p>
+
+    <h1>Test {{ mission.title }}</h1>
+    <h2>Iteration #{{ iteration.iteration }}</h2>
+
+    <section>
+        <h3>Iteration information</h3>
+        <dl>
+            <dt>Filename</dt><dd>{{ iteration.filename }}</dd>
+            <dt>Players</dt><dd>{{ iteration.min_player_count }}–{{ iteration.max_player_count }} (desired {{ iteration.desired_player_count }})</dd>
+            <dt>Safe start</dt><dd>{{ iteration.safe_start_length }} minutes</dd>
+            <dt>Mission length</dt><dd>{{ iteration.mission_length }} minutes</dd>
+            <dt>BWMF</dt><dd>{{ iteration.bwmf_version }}</dd>
+        </dl>
+    </section>
+
+    <section>
+        <h3>Review form</h3>
+        <p><i>Mission-specific test forms will be injected here later. This generic form is a temporary stub.</i></p>
+        <form method="post" action="/api/v1/html/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">
+            <label for="status">Result</label>
+            <select id="status" name="status">
+                {% for status in statuses %}
+                    <option value="{{ status }}">{{ status }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="8" placeholder="Testing notes"></textarea>
+
+            <button type="submit">Submit review</button>
+        </form>
+    </section>
+</div>

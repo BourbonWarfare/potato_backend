@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from quart import Blueprint, render_template_string, request
+from quart import Blueprint, redirect, render_template_string, request
 
 from bw.auth.decorators import require_group_permission, require_session
 from bw.auth.permissions import Permissions
@@ -15,7 +15,7 @@ from bw.models.auth import User
 from bw.response import JsonResponse, NotFound, WebResponse
 from bw.server_ops.arma.server import SERVER_MAP
 from bw.state import State
-from bw.web_utils import html_endpoint, json_endpoint, load_template_from_disk, url_endpoint
+from bw.web_utils import form_endpoint, html_endpoint, json_endpoint, load_template_from_disk, url_endpoint
 
 logger = logging.getLogger('bw.missions')
 
@@ -167,6 +167,43 @@ def define(api: Blueprint):
         """
         return await MissionsApi().get_mission_information(State.state, mission_uuid)
 
+    @api.post('/iteration/<uuid:iteration_uuid>/test')
+    @json_endpoint
+    @require_session
+    @require_group_permission(Permissions.can_test_mission)
+    async def test_iteration(
+        iteration_uuid: UUID,
+        session_user: User,
+        status: str,
+        notes: dict[str, str] | None = None,
+    ) -> JsonResponse:
+        return await TestApi().review_mission(
+            State.state,
+            tester=session_user,
+            iteration_uuid=iteration_uuid,
+            status=TestStatus(status),
+            notes=notes or {},
+        )
+
+    @api.post('/reviews/<uuid:review_uuid>/cosign')
+    @url_endpoint
+    @require_session
+    @require_group_permission(Permissions.can_test_mission)
+    async def cosign_review(review_uuid: UUID, session_user: User) -> WebResponse:
+        return await TestApi().cosign_result(State.state, tester=session_user, result_uuid=review_uuid)
+
+    @api.get('/iteration/<uuid:iteration_uuid>/reviews')
+    @url_endpoint
+    @require_session
+    async def get_iteration_reviews(iteration_uuid: UUID, session_user: User) -> JsonResponse:
+        return await TestApi().reviews(State.state, iteration_uuid=iteration_uuid, viewer=session_user)
+
+
+def _signoff_counts(reviews: list[dict[str, Any]]) -> tuple[int, int]:
+    passes = sum((1 + review['cosigns']) for review in reviews if TestStatus(review['status']) == TestStatus.PASSED)
+    fails = sum((1 + review['cosigns']) for review in reviews if TestStatus(review['status']) == TestStatus.FAILED)
+    return passes, fails
+
 
 def define_html(frontend: Blueprint, parts: Blueprint):
     @frontend.get('/')
@@ -174,6 +211,75 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     async def homepage(html: str) -> str:
         mission_count = MissionsApi().mission_count(State.state)
         return await render_template_string(html, mission_count=mission_count)
+
+    @frontend.get('/<uuid:mission_uuid>')
+    @html_endpoint(template_path='missions/mission.html', title='BW Mission')
+    @require_session
+    async def mission_page(html: str, mission_uuid: UUID, session_user: User) -> str:
+        mission = await MissionsApi().get_mission_information(State.state, mission_uuid)
+        iteration_template = await load_template_from_disk(template_path='missions/iteration_card.template.html')
+        iteration_cards = []
+        iterations = sorted(
+            MissionsApi().iterations_for_mission(State.state, mission_uuid),
+            key=lambda iteration: iteration.iteration,
+            reverse=True,
+        )
+        for iteration in iterations:
+            reviews: list[dict[str, Any]] = (await TestApi().reviews(State.state, iteration.uuid, viewer=session_user))['reviews']
+            passes, fails = _signoff_counts(reviews)
+            iteration_cards.append(
+                await render_template_string(
+                    iteration_template,
+                    mission=mission,
+                    iteration=iteration,
+                    reviews=reviews,
+                    passed_signoffs=passes,
+                    failed_signoffs=fails,
+                    needed_signoffs=mission['mission_type']['signoffs_required'],
+                )
+            )
+
+        return await render_template_string(html, mission=mission, iterations=iteration_cards)
+
+    @frontend.get('/<uuid:mission_uuid>/iterations/<uuid:iteration_uuid>/test')
+    @html_endpoint(template_path='missions/test_iteration.html', title='Test Mission')
+    @require_session
+    async def test_iteration_page(html: str, mission_uuid: UUID, iteration_uuid: UUID, session_user: User) -> str:
+        iteration = await MissionsApi().get_iteration_information(State.state, iteration_uuid)
+        return await render_template_string(
+            html,
+            mission=iteration['mission'],
+            iteration=iteration,
+            statuses=[status.value for status in TestStatus],
+        )
+
+    @parts.post('/<uuid:mission_uuid>/iterations/<uuid:iteration_uuid>/test')
+    @form_endpoint
+    @require_session
+    @require_group_permission(Permissions.can_test_mission)
+    async def submit_iteration_test(
+        mission_uuid: UUID,
+        iteration_uuid: UUID,
+        session_user: User,
+        status: str,
+        notes: str = '',
+    ) -> WebResponse:
+        await TestApi().review_mission(
+            State.state,
+            tester=session_user,
+            iteration_uuid=iteration_uuid,
+            status=TestStatus(status),
+            notes={'notes': notes} if notes else {},
+        )
+        return redirect(f'/missions/{mission_uuid}#iteration-{iteration_uuid}')
+
+    @parts.post('/reviews/<uuid:review_uuid>/cosign')
+    @url_endpoint
+    @require_session
+    @require_group_permission(Permissions.can_test_mission)
+    async def submit_cosign(review_uuid: UUID, session_user: User) -> WebResponse:
+        await TestApi().cosign_result(State.state, tester=session_user, result_uuid=review_uuid)
+        return redirect(request.args.get('next', '/missions'))
 
     @parts.get('/list')
     @html_endpoint(template_path='missions/mission_card.bundle.html')
@@ -200,8 +306,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
                 reviews: list[dict[str, Any]] = (await TestApi().reviews(State.state, latest_iteration.uuid, viewer=None))[
                     'reviews'
                 ]
-                passes = sum([(1 + review['cosigns']) for review in reviews if TestStatus(review['status']) == TestStatus.PASSED])
-                fails = sum([(1 + review['cosigns']) for review in reviews if TestStatus(review['status']) == TestStatus.FAILED])
+                passes, fails = _signoff_counts(reviews)
             else:
                 passes = 0
                 fails = 0

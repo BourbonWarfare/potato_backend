@@ -1,0 +1,42 @@
+<div class="mission-detail">
+    <p><a href="/missions">← All missions</a></p>
+
+    <header>
+        <h1>{{ mission.title }}</h1>
+        <p><b>[{{ mission.mission_type.name }}]</b> on <i>{{ mission.map }}</i></p>
+        <p>Made by <i>{{ mission.author_name }}</i> for <i>{{ mission.server }}</i></p>
+    </header>
+
+    <section>
+        <h2>Mission information</h2>
+        <dl>
+            <dt>UUID</dt><dd>{{ mission.uuid }}</dd>
+            <dt>Created</dt><dd>{{ mission.creation_date }}</dd>
+            <dt>Author UUID</dt><dd>{{ mission.author_uuid }}</dd>
+            <dt>Signoffs required</dt><dd>{{ mission.mission_type.signoffs_required }}</dd>
+            <dt>Type tag</dt><dd>{{ mission.mission_type.tag }}</dd>
+        </dl>
+
+        <h3>Special flags</h3>
+        {% if mission.special_flags %}
+            <ul>
+            {% for name, value in mission.special_flags.items() %}
+                <li><b>{{ name }}:</b> {{ value }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No special flags supplied.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Iterations</h2>
+        {% if iterations %}
+            {% for iteration in iterations %}
+                {{ iteration|safe }}
+            {% endfor %}
+        {% else %}
+            <p>No uploaded iterations yet.</p>
+        {% endif %}
+    </section>
+</div>
