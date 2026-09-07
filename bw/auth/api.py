@@ -1,5 +1,4 @@
 import logging
-import secrets
 import uuid
 
 import aiohttp
@@ -26,7 +25,7 @@ from bw.error import (
     ReauthNeededError,
     SessionExpired,
 )
-from bw.models.auth import User
+from bw.models.auth import TOKEN_LENGTH, User
 from bw.response import BadRequest, ChunkedResponse, Created, DoesNotExist, Exists, JsonResponse, Ok, WebResponse, WithState
 from bw.state import State
 from bw.tasks.tasks import TasksStore
@@ -86,7 +85,7 @@ class AuthApi:
         if ENVIRONMENT.verify_immediately():
             return Created()
 
-        recovery_token: str = secrets.token_urlsafe()
+        recovery_token: str = secure_token_urlsafe(TOKEN_LENGTH)
         SessionStore().register_bourbon_recovery_code(state, recovery_code=recovery_token, email=email)
         TasksStore().enqueue_task(state, TaskSendRecoveryEmail(email, recovery_token))
         return Created()
@@ -154,7 +153,7 @@ class AuthApi:
             UserStore().verify_bourbon_user_from_email(state, email)
             return Created()
 
-        authorization_token: str = secrets.token_urlsafe()
+        authorization_token: str = secure_token_urlsafe(TOKEN_LENGTH)
         SessionStore().register_bourbon_code(state, access_code=authorization_token, email=email)
         TasksStore().enqueue_task(state, TaskSendRegistrationEmail(email, authorization_token))
         return Created()
