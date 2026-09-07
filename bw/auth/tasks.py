@@ -16,7 +16,7 @@ class TaskSendRegistrationEmail(Kind):
         with open('static/templates/auth/email/verification.template.html') as html_file:
             email_template = Template(html_file.read())
 
-        verify_url = urllib.parse.urljoin(ENVIRONMENT.server_url(), '/verify')
+        verify_url = urllib.parse.urljoin(ENVIRONMENT.server_url(), '/auth/verify')
 
         params: resend.Emails.SendParams = {
             'from': 'Bourbon Warfare Staff <noreply@staff.bourbonwarfare.com>',
@@ -37,7 +37,7 @@ class TaskSendRecoveryEmail(Kind):
         with open('static/templates/auth/email/recover.template.html') as html_file:
             email_template = Template(html_file.read())
 
-        recover_url = urllib.parse.urljoin(ENVIRONMENT.server_url(), '/recover')
+        recover_url = urllib.parse.urljoin(ENVIRONMENT.server_url(), '/auth/recover')
 
         params: resend.Emails.SendParams = {
             'from': 'Bourbon Warfare Staff <noreply@staff.bourbonwarfare.com>',
