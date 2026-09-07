@@ -128,6 +128,10 @@ class JsonResponse(WebResponse):
             raise KeyError(item)
         return self.contained_json.get(item)
 
+    def __setitem__(self, item: str, value: Any):
+        self.contained_json[item] = make_json_safe({'value': value})['value']
+        self.set_data(json.dumps(self.contained_json))
+
 
 class HtmlResponse(WebResponse):
     def content_type(self) -> str:
