@@ -407,12 +407,12 @@ def endpoint_user_verify_resend_url(endpoint_api_v1_url):
 
 @pytest.fixture(scope='function')
 def frontend_recover_url():
-    return '/recover'
+    return '/auth/recover'
 
 
 @pytest.fixture(scope='function')
 def frontend_verify_url():
-    return '/verify'
+    return '/auth/verify'
 
 
 @pytest.fixture(scope='function')
@@ -589,6 +589,8 @@ def make_mock_discord_response():
 @pytest.fixture
 def email_1():
     return 'abc@example.com'
+
+
 # ---------------------------------------------------------------------------
 # Remark fixtures
 # ---------------------------------------------------------------------------
@@ -597,6 +599,8 @@ def email_1():
 @pytest.fixture
 def email_2():
     return 'def@example.com'
+
+
 @pytest.fixture(scope='session')
 def steam_id_1() -> str:
     return '76561197960287930'
@@ -605,6 +609,8 @@ def steam_id_1() -> str:
 @pytest.fixture
 def username_1():
     return 'tcvm'
+
+
 @pytest.fixture(scope='session')
 def steam_id_2() -> str:
     return '76561197960287931'
@@ -613,6 +619,8 @@ def steam_id_2() -> str:
 @pytest.fixture
 def username_2():
     return 'lambda'
+
+
 @pytest.fixture(scope='session')
 def profile_name_1() -> str:
     return 'CoolGamer99'
@@ -621,6 +629,8 @@ def profile_name_1() -> str:
 @pytest.fixture
 def password_1():
     return 'hunter2'
+
+
 @pytest.fixture(scope='session')
 def profile_name_2() -> str:
     return 'Speedrunner42'
@@ -629,6 +639,8 @@ def profile_name_2() -> str:
 @pytest.fixture
 def password_2():
     return '12345'
+
+
 @pytest.fixture(scope='session')
 def nickname_1() -> str:
     return 'The Sniper'
@@ -637,6 +649,8 @@ def nickname_1() -> str:
 @pytest.fixture
 def salt_1():
     return secrets.token_bytes(SALT_LENGTH)
+
+
 @pytest.fixture(scope='session')
 def nickname_2() -> str:
     return 'Speedy'
@@ -645,6 +659,8 @@ def nickname_2() -> str:
 @pytest.fixture
 def salt_2():
     return secrets.token_bytes(SALT_LENGTH)
+
+
 @pytest.fixture(scope='session')
 def remark_text_1() -> str:
     return 'Great teammate, always covers objectives.'
@@ -658,6 +674,8 @@ def db_bourbon_code_1(state, oauth_code_1, email_1, expire_valid):
         db_session.flush()
         db_session.expunge(bourbon_code)
     yield bourbon_code
+
+
 @pytest.fixture(scope='session')
 def remark_text_2() -> str:
     return 'Tends to rush ahead of the squad.'
@@ -671,6 +689,8 @@ def db_bourbon_code_2(state, oauth_code_2, email_2, expire_valid):
         db_session.flush()
         db_session.expunge(bourbon_code)
     yield bourbon_code
+
+
 @pytest.fixture(scope='session')
 def remark_1(profile_name_1, nickname_1, steam_id_1, remark_text_1) -> Remark:
     return Remark(profile_name=profile_name_1, nickname=nickname_1, steam_id=steam_id_1, remark=remark_text_1)
@@ -707,6 +727,8 @@ def db_bourbon_code_expired(state, oauth_code_1, email_1, expire_invalid):
         db_session.flush()
         db_session.expunge(bourbon_code)
     yield bourbon_code
+
+
 @pytest.fixture(scope='function')
 def db_unclaimed_remark_1(state, profile_name_1, steam_id_1):
     """An "unclaimed" remark (no associated user) matching remark_1's profile_name/steam_id.
