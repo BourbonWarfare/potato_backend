@@ -39,7 +39,6 @@ class ProcessStore:
         update_state: bool = True,
     ) -> Generator[ProcessStateManager]:
         try:
-            print('try')
             with state.Session.begin() as session:
                 session.add(process)
                 yield ProcessStateManager(process)
@@ -48,9 +47,7 @@ class ProcessStore:
                     process.state_updated = datetime.datetime.now(tz=TIMEZONE)
                 session.flush()
                 session.expunge(process)
-            print('succ')
         except:
-            print('error')
             with state.Session.begin() as session:
                 session.add(process)
                 if update_state:

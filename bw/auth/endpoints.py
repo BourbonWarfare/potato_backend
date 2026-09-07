@@ -229,12 +229,47 @@ def define_user(api: Blueprint, local: Blueprint):
         """
         return AuthApi().user_info(state=State.state, user=session_user)
 
-    @api.get('/recover')
+    @api.post('/recover')
     @verify_csrf_from_form
     @form_endpoint
     @require_session(require_user=False, require_authenticated=False)
-    async def recover(session_user: User, email: str) -> WebResponse:
-        pass
+    async def recover(csrf_token: str, email: str) -> WebResponse:
+        response = AuthApi().send_recovery_email(State.state, email)
+        if response.status_code >= 400:
+            return response
+
+        html = await load_template_from_disk(template_path='auth/recover_sent.html')
+        return chunk_text_response(
+            html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        )
+
+    @api.post('/recover/reset')
+    @verify_csrf_from_form
+    @form_endpoint
+    @require_session(require_user=False, require_authenticated=False)
+    async def recover_reset(csrf_token: str, token: str, password: str) -> WebResponse:
+        response = AuthApi().recover_bourbon_account(State.state, token, password)
+        if response.status_code >= 400:
+            return response
+
+        html = await load_template_from_disk(template_path='auth/recover_success.html')
+        return chunk_text_response(
+            html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        )
+
+    @api.post('/verify/resend')
+    @verify_csrf_from_form
+    @form_endpoint
+    @require_session(require_user=False, require_authenticated=False)
+    async def resend_verification(csrf_token: str, email: str) -> WebResponse:
+        response = AuthApi().resend_verification_email(State.state, email)
+        if response.status_code >= 400:
+            return response
+
+        html = await load_template_from_disk(template_path='auth/verification_resent.html')
+        return chunk_text_response(
+            html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        )
 
     @api.post('/register')
     @verify_csrf_from_form
@@ -246,7 +281,7 @@ def define_user(api: Blueprint, local: Blueprint):
             return response
 
         html = await load_template_from_disk(template_path='auth/registration_success.html')
-        final_html = await render_template_string(html, username=username, email=email)
+        final_html = await render_template_string(html, username=username, email=email, csrf_token=csrf_token)
         return chunk_text_response(
             final_html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
         )
@@ -906,7 +941,8 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
     async def verify_page(html: str) -> str:
         token = request.args.get('token')
         if token:
-            verified = AuthApi().verify_email(State.state, token)
+            response = AuthApi().verify_email(State.state, token)
+            verified = response.status_code == 200
         else:
             verified = False
         return await render_template_string(html, verified=verified)
@@ -925,6 +961,10 @@ def define_html(root: Blueprint, frontend: Blueprint, parts: Blueprint):
     async def recover_page(session_token: str, html: str) -> str:
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
         AuthApi().store_session_cookie(session_token)
+        token = request.args.get('token')
+        if token:
+            html = await load_template_from_disk(template_path='auth/reset_password.html')
+            return await render_template_string(html, csrf_token=csrf_token, token=token)
         return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/login/discord')

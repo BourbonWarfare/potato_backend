@@ -42,8 +42,8 @@ class TaskSendRecoveryEmail(Kind):
         params: resend.Emails.SendParams = {
             'from': 'Bourbon Warfare Staff <noreply@staff.bourbonwarfare.com>',
             'to': [to_send],
-            'subject': 'Recovery your Bourbon Warfare account.',
-            'html': email_template.substitute(recover_url=recover_url, token=recovery_code),
+            'subject': 'Recover your Bourbon Warfare account',
+            'html': email_template.substitute(recover_url=recover_url, verify_token=recovery_code),
         }
 
         resend.Emails.send(params)

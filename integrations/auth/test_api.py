@@ -11,6 +11,7 @@ from quart import Quart
 
 from bw.auth.api import AuthApi
 from bw.auth.group import GroupStore
+from bw.auth.tasks import TaskSendRecoveryEmail, TaskSendRegistrationEmail
 from bw.auth.user import UserStore
 from bw.error import (
     CannotDetermineSession,
@@ -18,11 +19,13 @@ from bw.error import (
     GroupAssignmentFailed,
     GroupCreationFailed,
     GroupPermissionCreationFailed,
+    NoTasksAvailable,
     NoUserWithGivenCredentials,
     RoleCreationFailed,
     SessionExpired,
 )
 from bw.models.auth import BourbonUser
+from bw.tasks.tasks import TasksStore
 from integrations.auth.fixtures import (
     db_bot_user_1,
     db_bourbon_code_1,
@@ -55,6 +58,7 @@ from integrations.auth.fixtures import (
     oauth_code_1,
     oauth_state_1,
     password_1,
+    password_2,
     permission_1,
     permission_2,
     permission_3,
@@ -330,6 +334,95 @@ class TestAuthApiEmailVerification:
     def test__verify_email__invalid_token_returns_forbidden(self, state):
         response = AuthApi().verify_email(state, 'invalid_authorization_token')
         assert response.status_code == 403
+
+    def test__resend_verification_email__unverified_user_enqueues_email(
+        self, mocker, state, db_unverified_bourbon_user, email_2, token_1
+    ):
+        """Test that resending verification for an unverified user queues a verification task."""
+        # Not yet reviewed
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=False)
+        mocker.patch('secrets.token_urlsafe', return_value=token_1)
+
+        response = AuthApi().resend_verification_email(state, email_2)
+        task = TasksStore().pop_task_to_process(state)
+
+        assert response.status_code == 201
+        assert isinstance(task, TaskSendRegistrationEmail)
+        assert task.arguments == {'to_send': email_2, 'authorization_token': token_1}
+
+    def test__resend_verification_email__verified_user_does_not_enqueue_email(self, mocker, state, db_bourbon_user_1, email_1):
+        """Test that resending verification for a verified user does not queue a task."""
+        # Not yet reviewed
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=False)
+
+        response = AuthApi().resend_verification_email(state, email_1)
+
+        assert response.status_code == 201
+        with pytest.raises(NoTasksAvailable):
+            TasksStore().pop_task_to_process(state)
+
+    def test__resend_verification_email__missing_user_does_not_leak_existence(self, mocker, state, email_1):
+        """Test that resending verification for a missing user returns the generic success response."""
+        # Not yet reviewed
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=False)
+
+        response = AuthApi().resend_verification_email(state, email_1)
+
+        assert response.status_code == 201
+        with pytest.raises(NoTasksAvailable):
+            TasksStore().pop_task_to_process(state)
+
+
+class TestAuthApiRecovery:
+    def test__send_recovery_email__existing_user_enqueues_email(self, mocker, state, db_bourbon_user_1, email_1, token_1):
+        """Test that requesting recovery for an existing user queues a recovery task."""
+        # Not yet reviewed
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=False)
+        mocker.patch('secrets.token_urlsafe', return_value=token_1)
+
+        response = AuthApi().send_recovery_email(state, email_1)
+        task = TasksStore().pop_task_to_process(state)
+
+        assert response.status_code == 201
+        assert isinstance(task, TaskSendRecoveryEmail)
+        assert task.arguments == {'to_send': email_1, 'recovery_code': token_1}
+
+    def test__send_recovery_email__missing_user_does_not_leak_existence(self, mocker, state, email_1):
+        """Test that requesting recovery for a missing user returns the generic success response."""
+        # Not yet reviewed
+        mocker.patch('bw.auth.api.ENVIRONMENT.verify_immediately', return_value=False)
+
+        response = AuthApi().send_recovery_email(state, email_1)
+
+        assert response.status_code == 201
+        with pytest.raises(NoTasksAvailable):
+            TasksStore().pop_task_to_process(state)
+
+    def test__recover_bourbon_account__valid_token_updates_password(
+        self, state, db_user_1, db_bourbon_user_1, db_session_1, db_bourbon_code_1, password_1, password_2
+    ):
+        """Test that a valid recovery token changes the account password and expires sessions."""
+        # Not yet reviewed
+        response = AuthApi().recover_bourbon_account(state, db_bourbon_code_1.code, password_2)
+        bourbon_user = UserStore().bourbon_user_from_user(state, db_user_1)
+
+        assert response.status_code == 200
+        bourbon_user.verify_password(password_2)
+        assert not AuthApi().is_session_active(state, db_session_1.token)
+
+    def test__recover_bourbon_account__invalid_token_returns_forbidden(self, state, password_2):
+        """Test that an invalid recovery token returns forbidden."""
+        # Not yet reviewed
+        response = AuthApi().recover_bourbon_account(state, 'invalid_authorization_token', password_2)
+
+        assert response.status_code == 403
+
+    def test__recover_bourbon_account__invalid_password_returns_bad_request(self, state, db_bourbon_code_1):
+        """Test that recovery rejects invalid password characters."""
+        # Not yet reviewed
+        response = AuthApi().recover_bourbon_account(state, db_bourbon_code_1.code, 'password😀')
+
+        assert response.status_code == 400
 
 
 class TestAuthApiOAuthCode:

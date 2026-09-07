@@ -15,6 +15,7 @@ from bw.error import (
     DiscordUserAlreadyExists,
     NoRoleWithName,
     NoUserWithGivenCredentials,
+    PasswordDoesNotMatch,
     RoleCreationFailed,
 )
 from bw.models.auth import BotUser, BourbonUser, DiscordUser, Role, User, UserGroup
@@ -29,6 +30,7 @@ from integrations.auth.fixtures import (
     db_permission_2,
     db_role_1,
     db_role_2,
+    db_unverified_bourbon_user,
     db_user_1,
     db_user_2,
     discord_id_1,
@@ -232,6 +234,33 @@ class TestUserStoreBourbonUser:
 
         bourbon_user = UserStore().bourbon_user_from_user(state, db_user_1)
         assert bourbon_user.verified is True
+
+    def test__set_bourbon_user_password_from_email__updates_password(
+        self, state, db_user_1, email_1, db_bourbon_user_1, password_1, password_2
+    ):
+        """Test that password recovery changes the password for a Bourbon user."""
+        # Not yet reviewed
+        bourbon_user = UserStore().set_bourbon_user_password_from_email(state, email_1, password_2)
+
+        bourbon_user.verify_password(password_2)
+        with pytest.raises(PasswordDoesNotMatch):
+            bourbon_user.verify_password(password_1)
+
+    def test__set_bourbon_user_password_from_email__marks_user_verified(
+        self, state, db_user_2, email_2, db_unverified_bourbon_user, password_2
+    ):
+        """Test that password recovery verifies the Bourbon user."""
+        # Not yet reviewed
+        UserStore().set_bourbon_user_password_from_email(state, email_2, password_2)
+
+        bourbon_user = UserStore().bourbon_user_from_user(state, db_user_2)
+        assert bourbon_user.verified is True
+
+    def test__set_bourbon_user_password_from_email__raises_for_missing_email(self, state, email_1, password_1):
+        """Test that setting a password for an unknown email raises."""
+        # Not yet reviewed
+        with pytest.raises(NoUserWithGivenCredentials):
+            UserStore().set_bourbon_user_password_from_email(state, email_1, password_1)
 
     def test__delete_bourbon_user__by_bourbon_user(self, state, db_user_1, email_1, db_bourbon_user_1):
         UserStore().delete_bourbon_user(state, db_bourbon_user_1)

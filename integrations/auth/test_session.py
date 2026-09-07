@@ -332,3 +332,50 @@ class TestBourbonCode:
         result = SessionStore().verify_bourbon_code(state, access_code=db_bourbon_code_expired.code)
 
         assert result is None
+
+
+class TestBourbonRecoveryCode:
+    def test__register_bourbon_recovery_code__code_created(self, session, state, token_1, email_1):
+        """Test that registering a recovery code stores an email code."""
+        # Not yet reviewed
+        SessionStore().register_bourbon_recovery_code(state, recovery_code=token_1, email=email_1)
+
+        with state.Session.begin() as db_session:
+            query = select(BourbonUserCode).where(BourbonUserCode.code == token_1)
+            record = db_session.execute(query).scalar_one_or_none()
+
+            assert record is not None
+            assert record.code == token_1
+            assert record.email == email_1
+
+    def test__verify_bourbon_recovery_code__email_returned_when_valid(self, session, state, db_bourbon_code_1):
+        """Test that a valid recovery code returns the associated email."""
+        # Not yet reviewed
+        result_email = SessionStore().verify_bourbon_recovery_code(state, recovery_code=db_bourbon_code_1.code)
+
+        assert result_email == db_bourbon_code_1.email
+
+    def test__verify_bourbon_recovery_code__record_deleted_when_verified(self, session, state, db_bourbon_code_1):
+        """Test that a valid recovery code is deleted after verification."""
+        # Not yet reviewed
+        SessionStore().verify_bourbon_recovery_code(state, recovery_code=db_bourbon_code_1.code)
+
+        with state.Session.begin() as db_session:
+            query = select(BourbonUserCode).where(BourbonUserCode.code == db_bourbon_code_1.code)
+            record = db_session.execute(query).scalar_one_or_none()
+
+            assert record is None
+
+    def test__verify_bourbon_recovery_code__none_returned_when_invalid_access_code(self, session, state, db_bourbon_code_1):
+        """Test that an invalid recovery code returns None."""
+        # Not yet reviewed
+        result = SessionStore().verify_bourbon_recovery_code(state, recovery_code='invalid_code_xyz')
+
+        assert result is None
+
+    def test__verify_bourbon_recovery_code__none_returned_when_expired(self, session, state, db_bourbon_code_expired):
+        """Test that an expired recovery code returns None."""
+        # Not yet reviewed
+        result = SessionStore().verify_bourbon_recovery_code(state, recovery_code=db_bourbon_code_expired.code)
+
+        assert result is None

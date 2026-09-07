@@ -1,6 +1,4 @@
 import logging
-import os
-import subprocess as sp
 from collections.abc import Sequence
 
 import psutil
@@ -8,6 +6,7 @@ import psutil
 from bw.error import NoProcessWithNameAndNamespace
 from bw.models.process import Process
 from bw.server_ops.arma.server import Server
+from bw.server_ops.process.launcher import launch_process
 from bw.server_ops.process.process import ProcessStore
 from bw.server_ops.process.state import State as ProcessState
 from bw.server_ops.process.status import Arma3HeadlessClientStatus, Arma3ServerStatus
@@ -173,22 +172,12 @@ class Arma3Api:
         """
 
         def start(processes: Sequence[Process]) -> Arma3ServerStatus:
-            process_kwargs = {}
-            if os.name == 'nt':
-                flags = sp.DETACHED_PROCESS | sp.CREATE_NEW_PROCESS_GROUP | sp.CREATE_NO_WINDOW | sp.CREATE_BREAKAWAY_FROM_JOB
-                process_kwargs.update(
-                    {'stdin': sp.DEVNULL, 'stdout': sp.DEVNULL, 'stderr': sp.DEVNULL, 'creationflags': flags, 'close_fds': True}
-                )
-            else:
-                process_kwargs.update({'start_new_session': True})
-            logger.debug(f'Process starting with process_kwargs={process_kwargs}')
-
-            all_processes: list[psutil.Popen] = []
+            all_processes: list[psutil.Process] = []
             try:
                 logger.info('Starting server')
                 with ProcessStore().manage_process(state, processes[0]) as process_manager:
                     process_manager.update_state(ProcessState.STARTING)
-                    subprocess = psutil.Popen(server.server_launch_options(), **process_kwargs)
+                    subprocess = launch_process(server.server_launch_options())
                     processes[0].pid = subprocess.pid
                     process_manager.update_status(subprocess.status())
                     all_processes.append(subprocess)
@@ -204,7 +193,7 @@ class Arma3Api:
                     logger.info(f'Starting headless client {idx + 1}/{server.headless_client_count()}')
                     with ProcessStore().manage_process(state, process) as process_manager:
                         process_manager.update_state(ProcessState.STARTING)
-                        subprocess = psutil.Popen(server.headless_launch_options(), **process_kwargs)
+                        subprocess = launch_process(server.headless_launch_options())
 
                         process.pid = subprocess.pid
                         process_manager.update_status(subprocess.status())

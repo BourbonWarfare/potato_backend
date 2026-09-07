@@ -11,7 +11,7 @@ ALLOWED_PASSWORD_CHARACTERS = set(string.ascii_letters + string.digits + '!@#$%^
 SECRET_REGEX_MATCH = re.compile('((?:password|token|secret)[\'"\\s :,]*)([a-zA-Z0-9!@#$%^&*-._~]+)')
 
 
-def make_json_safe(json: Any):
+def make_json_safe(json: Any) -> dict[str, Any]:
     from bw.web_event.base import BaseEvent
 
     if json is None:
@@ -38,7 +38,7 @@ def make_json_safe(json: Any):
     return json_safe
 
 
-def file_sha2(file_path: Path, *, buffer_size=2**20) -> str:
+def file_sha2(file_path: Path) -> str:
     with open(file_path, 'rb') as f:
         return hashlib.file_digest(f, 'sha256').hexdigest()
 

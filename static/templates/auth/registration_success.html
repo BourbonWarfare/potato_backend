@@ -8,5 +8,11 @@
             Hi <b>{{ username }}</b>, an email has been sent to <b>{{ email }}</b> which will allow you to verify your
             account.
         </p>
+        <form method="POST" hx-post="/api/v1/user/verify/resend" hx-target="#auth-card" hx-trigger="submit"
+            class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <input type="hidden" name="email" value="{{ email }}" />
+            <button type="submit" class="btn-primary">Resend verification email</button>
+        </form>
     </div>
 </div>

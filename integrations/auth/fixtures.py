@@ -389,6 +389,31 @@ def endpoint_user_url(endpoint_api_v1_url):
 
 
 @pytest.fixture(scope='function')
+def endpoint_user_recover_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/user/recover'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_recover_reset_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/user/recover/reset'
+
+
+@pytest.fixture(scope='function')
+def endpoint_user_verify_resend_url(endpoint_api_v1_url):
+    return f'{endpoint_api_v1_url}/user/verify/resend'
+
+
+@pytest.fixture(scope='function')
+def frontend_recover_url():
+    return '/recover'
+
+
+@pytest.fixture(scope='function')
+def frontend_verify_url():
+    return '/verify'
+
+
+@pytest.fixture(scope='function')
 def endpoint_user_role_create_url(endpoint_api_v1_url):
     return f'{endpoint_api_v1_url}/user/role/create'
 
