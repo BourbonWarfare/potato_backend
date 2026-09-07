@@ -1,0 +1,100 @@
+<div class="profile-page">
+    <header class="profile-header">
+        <div>
+            <p class="profile-kicker">Account</p>
+            <h1>Your profile</h1>
+            <p class="profile-muted-id">{{ profile.uuid }}</p>
+        </div>
+        <div class="profile-summary">
+            {% if profile.bourbon %}
+                <span class="profile-pill">Bourbon</span>
+                <strong>{{ profile.bourbon.username }}</strong>
+                <span>{% if profile.bourbon.verified %}Verified{% else %}Unverified{% endif %}</span>
+            {% else %}
+                <span class="profile-pill">External login</span>
+                <strong>User</strong>
+                <span>No Bourbon credentials linked</span>
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="profile-card">
+        <h2>Account information</h2>
+        <dl>
+            <dt>Created</dt><dd>{{ profile.creation_date }}</dd>
+            <dt>Groups</dt><dd>{% if profile.groups %}{{ profile.groups|join(', ') }}{% else %}No groups{% endif %}</dd>
+            {% if profile.bourbon %}
+                <dt>Email</dt><dd>{{ profile.bourbon.email }}</dd>
+            {% endif %}
+        </dl>
+    </section>
+
+    {% if profile.bourbon %}
+        <section class="profile-card">
+            <h2>Change email</h2>
+            <form class="profile-form" method="post" action="/api/v1/user/email">
+                <label>
+                    New email
+                    <input type="email" name="email" value="{{ profile.bourbon.email }}" required />
+                </label>
+                <label>
+                    Current password
+                    <input type="password" name="current_password" autocomplete="current-password" required />
+                </label>
+                <button type="submit">Update email</button>
+            </form>
+        </section>
+
+        <section class="profile-card">
+            <h2>Change password</h2>
+            <form class="profile-form" method="post" action="/api/v1/user/password">
+                <label>
+                    Current password
+                    <input type="password" name="current_password" autocomplete="current-password" required />
+                </label>
+                <label>
+                    New password
+                    <input type="password" name="password" autocomplete="new-password" required />
+                </label>
+                <button type="submit">Update password</button>
+            </form>
+        </section>
+    {% else %}
+        <section class="profile-card">
+            <h2>Email and password</h2>
+            <p>This account does not currently have Bourbon email/password credentials linked.</p>
+        </section>
+    {% endif %}
+
+    <section class="profile-card">
+        <h2>Remark</h2>
+        <p>Update the name and remark used by the squad XML/remarks view.</p>
+        <form class="profile-form" method="post" action="/api/v1/user/remark/">
+            <label>
+                Profile name
+                <input name="profile_name" value="{{ remark.profile_name }}" required />
+            </label>
+            <label>
+                Steam ID
+                <input name="steam_id" value="{{ remark.steam_id }}" required />
+            </label>
+            <label>
+                Nickname
+                <input name="nickname" value="{{ remark.nickname or '' }}" />
+            </label>
+            <label class="profile-form-wide">
+                Remark
+                <textarea name="remark" rows="4">{{ remark.remark or '' }}</textarea>
+            </label>
+            <button type="submit">Update remark</button>
+        </form>
+    </section>
+
+    <section class="profile-card profile-danger-card">
+        <h2>Delete account</h2>
+        <p>Account deletion is planned but not enabled yet.</p>
+        <form class="profile-form" method="post" action="/api/v1/user/delete">
+            <button type="submit" disabled>Delete account eventually</button>
+        </form>
+    </section>
+</div>

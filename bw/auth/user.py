@@ -873,6 +873,34 @@ class UserStore:
             query = update(BourbonUser).where(BourbonUser.email == email).values(verified=True)
             session.execute(query)
 
+    def update_bourbon_user_email(self, state: State, user: User, email: str) -> BourbonUser:
+        with state.Session.begin() as session:
+            query = update(BourbonUser).where(BourbonUser.user_id == user.id).values(email=email).returning(BourbonUser)
+            try:
+                bourbon_user = session.scalars(query).one_or_none()
+                if bourbon_user is None:
+                    raise NoUserWithGivenCredentials(user.id)
+            except IntegrityError:
+                raise BourbonUserAlreadyExists()
+            session.expunge(bourbon_user)
+        return bourbon_user
+
+    def set_bourbon_user_password(self, state: State, user: User, plaintext_password: str) -> BourbonUser:
+        salt = secrets.token_bytes(SALT_LENGTH)
+        hashed_password = BourbonUser.hashed_password(plaintext_password, salt)
+        with state.Session.begin() as session:
+            query = (
+                update(BourbonUser)
+                .where(BourbonUser.user_id == user.id)
+                .values(password_hashed=hashed_password, salt=salt, verified=True)
+                .returning(BourbonUser)
+            )
+            bourbon_user = session.scalars(query).one_or_none()
+            if bourbon_user is None:
+                raise NoUserWithGivenCredentials(user.id)
+            session.expunge(bourbon_user)
+        return bourbon_user
+
     def set_bourbon_user_password_from_email(self, state: State, email: str, plaintext_password: str) -> BourbonUser:
         """
         ### Set Bourbon user password by email
