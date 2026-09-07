@@ -230,10 +230,10 @@ def define_user(api: Blueprint, local: Blueprint):
         return AuthApi().user_info(state=State.state, user=session_user)
 
     @api.post('/recover')
-    @verify_csrf_from_form
     @form_endpoint
+    @verify_csrf_from_form
     @require_session(require_user=False, require_authenticated=False)
-    async def recover(csrf_token: str, email: str) -> WebResponse:
+    async def recover(email: str) -> WebResponse:
         response = AuthApi().send_recovery_email(State.state, email)
         if response.status_code >= 400:
             return response
@@ -244,10 +244,10 @@ def define_user(api: Blueprint, local: Blueprint):
         )
 
     @api.post('/recover/reset')
-    @verify_csrf_from_form
     @form_endpoint
+    @verify_csrf_from_form
     @require_session(require_user=False, require_authenticated=False)
-    async def recover_reset(csrf_token: str, token: str, password: str) -> WebResponse:
+    async def recover_reset(token: str, password: str) -> WebResponse:
         response = AuthApi().recover_bourbon_account(State.state, token, password)
         if response.status_code >= 400:
             return response
@@ -258,10 +258,10 @@ def define_user(api: Blueprint, local: Blueprint):
         )
 
     @api.post('/verify/resend')
-    @verify_csrf_from_form
     @form_endpoint
+    @verify_csrf_from_form
     @require_session(require_user=False, require_authenticated=False)
-    async def resend_verification(csrf_token: str, email: str) -> WebResponse:
+    async def resend_verification(email: str) -> WebResponse:
         response = AuthApi().resend_verification_email(State.state, email)
         if response.status_code >= 400:
             return response

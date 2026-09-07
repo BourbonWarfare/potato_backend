@@ -75,6 +75,8 @@ from integrations.auth.fixtures import (
     role_name_2,
     token_1,
     token_2,
+    username_1,
+    username_2,
 )
 from integrations.fixtures import test_app
 
