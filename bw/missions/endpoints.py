@@ -273,13 +273,18 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         session_user: User,
         status: str,
         notes: str = '',
+        **section_values: str,
     ) -> WebResponse:
+        review_notes = {key: value for key, value in section_values.items() if value}
+        if notes:
+            review_notes['notes'] = notes
+
         await TestApi().review_mission(
             State.state,
             tester=session_user,
             iteration_uuid=iteration_uuid,
             status=TestStatus(status),
-            notes={'notes': notes} if notes else {},
+            notes=review_notes,
         )
         return redirect(f'/missions/{mission_uuid}#iteration-{iteration_uuid}')
 

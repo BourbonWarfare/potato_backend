@@ -541,6 +541,7 @@ button:hover {
     display: flex;
     flex-direction: column;
     gap: 18px;
+    margin-bottom: 32px;
 }
 
 .mission-test-form-intro p {
@@ -586,6 +587,17 @@ button:hover {
 
 .mission-form-wide {
     width: 100%;
+}
+
+.mission-test-result-card {
+    display: grid;
+    grid-template-columns: 1fr minmax(220px, 320px);
+    gap: 18px;
+    align-items: end;
+}
+
+.mission-submit-action {
+    align-self: flex-end;
 }
 
 .auth-card {
@@ -932,6 +944,14 @@ button:hover {
 
     .mission-test-form-card {
         padding: 20px 16px;
+    }
+
+    .mission-test-result-card {
+        grid-template-columns: 1fr;
+    }
+
+    .mission-submit-action {
+        align-self: stretch;
     }
 
     .auth-card {

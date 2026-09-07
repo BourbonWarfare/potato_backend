@@ -84,8 +84,12 @@ class TestMissionFrontendEndpoints:
         html = await response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert 'Review form' in html
-        assert 'temporary stub' in html
+        assert 'Overall result' in html
+        assert 'Briefing and slotting' in html
+        assert 'Loadouts and assets' in html
+        assert 'Gameplay flow' in html
+        assert 'Technical checks' in html
+        assert 'Other considerations' in html
         assert f'/api/v1/html/missions/{db_mission_1.uuid}/iterations/{db_iteration_1.uuid}/test' in html
         assert 'Passed' in html
         assert 'Failed' in html
