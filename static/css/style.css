@@ -560,7 +560,7 @@ button:hover {
     gap: 8px;
     color: var(--text-secondary);
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .mission-test-form input,
@@ -575,15 +575,15 @@ button:hover {
 }
 
 .mission-test-form select {
-    min-height: 52px;
-    padding: 14px 44px 14px 16px;
-    border: 2px solid color-mix(in srgb, var(--accent) 70%, var(--border));
+    min-height: 48px;
+    padding: 12px 40px 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+    border-left: 3px solid var(--accent);
     border-radius: 4px;
-    background-color: color-mix(in srgb, var(--accent) 8%, var(--bg));
+    background-color: color-mix(in srgb, var(--accent) 4%, var(--bg));
     color: var(--text-primary);
-    font-size: 1.05rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .mission-test-form input:focus,
