@@ -35,8 +35,9 @@ logger = logging.getLogger('bw.auth')
 
 
 class AuthApi:
-    def store_session_cookie(self, session: str):
+    def store_session_cookie(self, session: str, *, permanent: bool = False):
         user_session['session'] = session
+        user_session.permanent = permanent
 
     def get_session_cookie(self) -> str:
         if not has_request_context():

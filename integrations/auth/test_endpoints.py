@@ -90,6 +90,38 @@ def csrf_token_from_html(html: str) -> str:
     return match.group(1)
 
 
+class TestLoginBourbonEndpoints:
+    @pytest.mark.asyncio
+    async def test__login_bourbon__stores_session_cookie_without_remember(
+        self, test_app, db_bourbon_user_1, username_1, password_1
+    ):
+        page = await test_app.get('/auth/login')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1},
+        )
+        cookies = response.headers.getlist('Set-Cookie')
+
+        assert response.status_code == 200
+        assert any(cookie.startswith('session=') for cookie in cookies)
+
+    @pytest.mark.asyncio
+    async def test__login_bourbon__remember_controls_cookie_permanence(self, test_app, db_bourbon_user_1, username_1, password_1):
+        page = await test_app.get('/auth/login')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1, 'remember': 'on'},
+        )
+        cookies = response.headers.getlist('Set-Cookie')
+
+        assert response.status_code == 200
+        assert any(cookie.startswith('session=') and 'Expires=' in cookie for cookie in cookies)
+
+
 class TestLoginBotEndpoints:
     @pytest.mark.asyncio
     async def test__login_bot__session_created_with_bot(self, state, test_app, endpoint_login_bot_url, db_bot_user_1):
