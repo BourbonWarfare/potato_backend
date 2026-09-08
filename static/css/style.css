@@ -537,6 +537,15 @@ button:hover {
     border-color: var(--accent-hover);
 }
 
+.mission-action-disabled,
+.mission-action-disabled:hover {
+    cursor: not-allowed;
+    opacity: 0.58;
+    background: var(--border);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
 .mission-test-form {
     display: flex;
     flex-direction: column;
