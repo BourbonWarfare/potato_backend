@@ -77,7 +77,7 @@ def setup_config(service: str = 'server') -> None:
     import logging
     import logging.config
 
-    logging.config.dictConfig(log_config())
+    logging.config.dictConfig(log_config(service))
 
     logger = logging.getLogger('bw.cron')
     logger.propagate = False
