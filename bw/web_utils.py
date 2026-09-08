@@ -317,6 +317,13 @@ def html_endpoint(
         template_path = Path(template_path)
 
     def decorator(func: Callable[..., Awaitable[str | WebResponse]]):
+        signature = inspect.signature(func)
+        logged_in_parameter = signature.parameters.get('logged_in')
+        inject_logged_in = logged_in_parameter is not None and logged_in_parameter.kind in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        )
+
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             if mimetype == 'text/xml':
@@ -324,6 +331,17 @@ def html_endpoint(
             else:
                 html = await load_template_from_disk(template_path=template_path)
             kwargs['html'] = html
+
+            try:
+                session_token = AuthApi().get_session_cookie()
+                validate_session(State.state, session_token)
+                is_logged_in = True
+            except (CannotDetermineSession, SessionExpired, NeedsAuthenticatedSession):
+                is_logged_in = False
+
+            if inject_logged_in:
+                kwargs['logged_in'] = is_logged_in
+
             try:
                 inner_html = await func(*args, **kwargs)
             except BwServerError as e:
@@ -345,13 +363,6 @@ def html_endpoint(
                     return chunk_text_response(inner_html, mimetype=mimetype)
                 else:
                     return inner_html
-
-            try:
-                session_token = AuthApi().get_session_cookie()
-                validate_session(State.state, session_token)
-                is_logged_in = True
-            except (CannotDetermineSession, SessionExpired, NeedsAuthenticatedSession):
-                is_logged_in = False
 
             partial_page = await load_template_from_disk(template_path='page.html')
             full_page = await render_template_string(

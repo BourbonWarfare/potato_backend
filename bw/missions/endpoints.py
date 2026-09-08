@@ -298,7 +298,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
 
     @parts.get('/list')
     @html_endpoint(template_path='missions/mission_card.bundle.html')
-    async def list(html: str) -> str | WebResponse:
+    async def list(html: str, logged_in: bool) -> str | WebResponse:
         current_page = int(request.args.get('page', '1'))
         current_page = max(1, current_page)
         items_per_page = int(request.args.get('count_per_page', '10'))
@@ -328,6 +328,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
             mission_cards.append(
                 await render_template_string(
                     card_template,
+                    logged_in=logged_in,
                     mission_type=mission.mission_type.name,
                     mission_name=mission.title,
                     mission_author=mission.author_name,

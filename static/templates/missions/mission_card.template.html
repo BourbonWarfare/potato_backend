@@ -1,6 +1,9 @@
-<a class="mission-card" href="/missions/{{ mission_uuid }}" hx-get="/missions/{{ mission_uuid }}" hx-target="#view" hx-push-url="true">
+<a class="mission-card" href="/missions/{{ mission_uuid }}" hx-get="/missions/{{ mission_uuid }}" hx-target="#view"
+    hx-push-url="true">
     <div class="mission-header">
+        {% if logged_in %}
         <span class="mission-card-view">View</span>
+        {% endif %}
         <h2 title="{{ mission_name }}">{{ mission_name }}</h2>
         <div class="mission-tag">
             <b>[{{ mission_type }}]</b>

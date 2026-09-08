@@ -383,6 +383,19 @@ async def test__html_endpoint__renders_error_template_on_bw_server_error(mocker,
     mock_render_template.assert_called_once()
 
 
+@pytest.mark.asyncio
+async def test__html_endpoint__injects_logged_in_when_endpoint_accepts_it(mocker):
+    mocker.patch('bw.web_utils.load_template_from_disk', return_value='<html></html>')
+
+    @html_endpoint(template_path='dashboard.html', return_partial=True)
+    async def endpoint(html: str, logged_in: bool):
+        return str(logged_in)
+
+    result = b''.join(await consume_generator(await endpoint())).decode()
+
+    assert result == 'False'
+
+
 # ==============================================================================
 # UNIT UNDER TEST: sse_endpoint
 # ==============================================================================
