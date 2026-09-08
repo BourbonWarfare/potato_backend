@@ -7,31 +7,26 @@
     <title>{{ title }}</title>
 
     <link rel="stylesheet" href="/static/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6"
-        integrity="sha384-6lyVbhrs13b9z7mLOpt/N6R76rtkEBWgCjAXRs/DSWyi2AMnQSs10ijWk+PI8n7W"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6/dist/ext/hx-browser-indicator.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6/dist/ext/hx-preload.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 
-<body hx-ext="preload, browser-indicator">
+<body>
     <!-- The top bar for the website -->
     <header>
-        <nav class="navbar" hx-target:inherited="#view" hx-push-url:inherited="true" hx-preload:inherited="mouseenter"
-            hx-browser-indicator:inherited="true">
+        <nav class="navbar">
             <ul class="nav-links">
-                <li><a href="/" hx-get="/">Home</a></li>
-                <li><a href="/missions" hx-get="/missions">Missions</a></li>
+                <li><a href="/" hx-get="/" hx-target="#view" hx-push-url="true">Home</a></li>
+                <li><a href="/missions" hx-get="/missions" hx-target="#view" hx-push-url="true">Missions</a></li>
             </ul>
             <div class="nav-profile">
                 {% if logged_in %}
-                <a href="/user/profile" hx-get="/user/profile">Profile</a>
+                <a href="/user/profile" hx-get="/user/profile" hx-target="#view" hx-push-url="true">Profile</a>
                 <form class="nav-logout-form" method="post" action="/api/v1/auth/logout" hx-post="/api/v1/auth/logout">
                     <button class="nav-logout-button" type="submit">Logout</button>
                 </form>
                 {% else %}
-                <a href="/auth/register" hx-get="/auth/register">Register</a>
-                <a href="/auth/login" hx-get="/auth/login">Login</a>
+                <a href="/auth/register" hx-get="/auth/register" hx-target="#view" hx-push-url="true">Register</a>
+                <a href="/auth/login" hx-get="/auth/login" hx-target="#view" hx-push-url="true">Login</a>
                 {% endif %}
             </div>
         </nav>
