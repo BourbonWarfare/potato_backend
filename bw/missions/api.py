@@ -112,8 +112,12 @@ class MissionsApi:
             stored_pbo_path = Path(stored_pbo_path)
 
         logger.info(f'uploading mission: {stored_pbo_path} to database')
-        if stored_pbo_path.stat().st_size >= (5 * 1024 * 1024):
-            raise MissionTooLarge(stored_pbo_path.stat().st_size, 5 * 1024 * 1024)
+        try:
+            mission_size = stored_pbo_path.stat().st_size
+        except FileNotFoundError:
+            mission_size = 0
+        if mission_size >= (5 * 1024 * 1024):
+            raise MissionTooLarge(mission_size, 5 * 1024 * 1024)
 
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
         try:
