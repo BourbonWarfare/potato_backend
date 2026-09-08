@@ -8,25 +8,26 @@
 
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0/dist/ext/hx-preload.js"></script>
 </head>
 
-<body>
+<body hx-ext="preload">
     <!-- The top bar for the website -->
     <header>
         <nav class="navbar">
             <ul class="nav-links">
-                <li><a href="/" hx-get="/" hx-target="#view" hx-push-url="true">Home</a></li>
-                <li><a href="/missions" hx-get="/missions" hx-target="#view" hx-push-url="true">Missions</a></li>
+                <li><a href="/" hx-get="/" hx-target="#view" hx-push-url="true" hx-preload="mouseenter">Home</a></li>
+                <li><a href="/missions" hx-get="/missions" hx-target="#view" hx-push-url="true" hx-preload="mouseenter">Missions</a></li>
             </ul>
             <div class="nav-profile">
                 {% if logged_in %}
-                <a href="/user/profile" hx-get="/user/profile" hx-target="#view" hx-push-url="true">Profile</a>
+                <a href="/user/profile" hx-get="/user/profile" hx-target="#view" hx-push-url="true" hx-preload="mouseenter">Profile</a>
                 <form class="nav-logout-form" method="post" action="/api/v1/auth/logout" hx-post="/api/v1/auth/logout">
                     <button class="nav-logout-button" type="submit">Logout</button>
                 </form>
                 {% else %}
-                <a href="/auth/register" hx-get="/auth/register" hx-target="#view" hx-push-url="true">Register</a>
-                <a href="/auth/login" hx-get="/auth/login" hx-target="#view" hx-push-url="true">Login</a>
+                <a href="/auth/register" hx-get="/auth/register" hx-target="#view" hx-push-url="true" hx-preload="mouseenter">Register</a>
+                <a href="/auth/login" hx-get="/auth/login" hx-target="#view" hx-push-url="true" hx-preload="mouseenter">Login</a>
                 {% endif %}
             </div>
         </nav>
