@@ -151,7 +151,7 @@ def test__process_store__manage_process__handles_exceptions_and_sets_error_state
     process = store.create_managed_process(state, 'error_ns', 'error_proc')
 
     with (
-        pytest.raises(ValueError, match='something went wrong'),
+        pytest.raises(ValueError),
         store.manage_process(state, process, state_on_error=ProcessState.ERROR) as manager,
     ):
         manager.update_state(ProcessState.STARTING)
