@@ -31,7 +31,7 @@ class SecretSanitizerFormatter(logging.Formatter):
         return sanitize_string_for_secrets(original_message)
 
 
-LOG_FILES = {'server': 'server.log', 'cron': 'cron.log', 'monitor': 'monitor.log'}
+LOG_FILES = {'server': 'server.log', 'cron': 'cron.log', 'monitor': 'monitor.log', 'tasks': 'tasks.log'}
 
 
 def log_config(service: str = 'server') -> dict[str, Any]:

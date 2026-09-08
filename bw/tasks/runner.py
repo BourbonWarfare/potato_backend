@@ -1,9 +1,12 @@
+import logging
 import time
 
 from bw.error import NoTasksAvailable
 from bw.models.tasks import TaskState
 from bw.state import State
 from bw.tasks.tasks import TasksStore
+
+logger = logging.getLogger('bw.tasks')
 
 
 class Runner:
@@ -56,8 +59,10 @@ class Runner:
         try:
             result = task()
         except Exception as err:  # noqa: BLE001
+            logger.error(f'Failed to process task {task.__class__.__name__}: {err}')
             TasksStore().fail_task(State.state, task, err)
         else:
+            logger.info(f'Finished task {task.__class__.__name__}')
             TasksStore().finish_task(State.state, task, result)
         return True
 
@@ -82,6 +87,7 @@ class Runner:
         ```
         """
         for task in TasksStore().get_stale_tasks(State.state):
+            logger.warning(f'Reaping {task.__class__.__name__}({task.uuid})')
             TasksStore().fail_task(State.state, task, 'task has become stale', task_state=TaskState.STALE)
 
     def run(self):
