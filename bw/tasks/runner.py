@@ -1,6 +1,7 @@
 import logging
 import time
 
+from bw.auth.tasks import *
 from bw.error import NoTasksAvailable
 from bw.models.tasks import TaskState
 from bw.state import State
