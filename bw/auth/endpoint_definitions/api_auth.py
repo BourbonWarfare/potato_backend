@@ -129,8 +129,7 @@ def define_auth(api: Blueprint):
             return WebResponse(status=401, response='Password does not match login')
 
         session_token = response.state['session_token']
-        if remember == 'on':
-            AuthApi().store_session_cookie(session_token)
+        AuthApi().store_session_cookie(session_token, permanent=remember == 'on')
 
         return response
 

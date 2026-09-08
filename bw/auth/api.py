@@ -35,8 +35,9 @@ logger = logging.getLogger('bw.auth')
 
 
 class AuthApi:
-    def store_session_cookie(self, session: str):
+    def store_session_cookie(self, session: str, *, permanent: bool = False):
         user_session['session'] = session
+        user_session.permanent = permanent
 
     def get_session_cookie(self) -> str:
         if not has_request_context():
@@ -741,6 +742,42 @@ class AuthApi:
         """
         group = GroupStore().get_group(state=state, group_name=group_name)
         GroupStore().remove_user_from_group(state=state, user=user, group=group)
+        return Ok()
+
+    @define_api
+    def profile_info(self, state: State, user: User) -> JsonResponse:
+        profile = {
+            'uuid': str(user.uuid),
+            'creation_date': user.creation_date.isoformat(),
+            'groups': [group.name for group in GroupStore().get_user_groups(state, user)],
+            'bourbon': None,
+        }
+        try:
+            bourbon_user = UserStore().bourbon_user_from_user(state, user)
+        except NoUserWithGivenCredentials:
+            pass
+        else:
+            profile['bourbon'] = {
+                'username': bourbon_user.username,
+                'email': bourbon_user.email,
+                'verified': bourbon_user.verified,
+            }
+        return JsonResponse(profile)
+
+    @define_api
+    def update_bourbon_email(self, state: State, user: User, current_password: str, email: str) -> WebResponse:
+        bourbon_user = UserStore().bourbon_user_from_user(state, user)
+        bourbon_user.verify_password(current_password)
+        UserStore().update_bourbon_user_email(state, user, email)
+        return Ok()
+
+    @define_api
+    def update_bourbon_password(self, state: State, user: User, current_password: str, password: str) -> WebResponse:
+        if not ALLOWED_PASSWORD_CHARACTERS.issuperset(password):
+            return BadRequest('invalid characters in password')
+        bourbon_user = UserStore().bourbon_user_from_user(state, user)
+        bourbon_user.verify_password(current_password)
+        UserStore().set_bourbon_user_password(state, user, password)
         return Ok()
 
     @define_api

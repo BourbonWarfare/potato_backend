@@ -1,7 +1,7 @@
 import aiofiles
 from quart import Blueprint, Quart
 
-from bw.auth.endpoints import define_auth, define_group, define_user
+from bw.auth.endpoints import define_auth, define_group, define_profile_html, define_user
 from bw.auth.endpoints import define_html as define_auth_html
 from bw.environment import ENVIRONMENT
 from bw.missions.endpoints import define as missions_define
@@ -69,13 +69,16 @@ def define(app: Quart):
 
     session_parts_blueprint = Blueprint('session_frontend_parts', __name__, url_prefix='/session')
     session_html_blueprint = Blueprint('session_frontend', __name__, url_prefix='/session')
+    user_html_blueprint = Blueprint('user_frontend', __name__, url_prefix='/user')
 
     define_auth_html(auth_html_blueprint, auth_parts_blueprint)
+    define_profile_html(user_html_blueprint)
     missions_define_html(missions_html_blueprint, missions_parts_blueprint)
     session_define_html(session_html_blueprint, session_parts_blueprint)
 
     html_blueprint.register_blueprint(auth_html_blueprint)
     html_blueprint.register_blueprint(missions_html_blueprint)
+    html_blueprint.register_blueprint(user_html_blueprint)
 
     html_parts_blueprint.register_blueprint(auth_parts_blueprint)
     html_parts_blueprint.register_blueprint(missions_parts_blueprint)

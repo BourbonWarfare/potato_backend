@@ -6,6 +6,7 @@ import unittest.mock
 
 import pytest
 
+from bw.auth.api import AuthApi
 from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
@@ -89,6 +90,38 @@ def csrf_token_from_html(html: str) -> str:
     return match.group(1)
 
 
+class TestLoginBourbonEndpoints:
+    @pytest.mark.asyncio
+    async def test__login_bourbon__stores_session_cookie_without_remember(
+        self, test_app, db_bourbon_user_1, username_1, password_1
+    ):
+        page = await test_app.get('/auth/login')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1},
+        )
+        cookies = response.headers.getlist('Set-Cookie')
+
+        assert response.status_code == 200
+        assert any(cookie.startswith('session=') for cookie in cookies)
+
+    @pytest.mark.asyncio
+    async def test__login_bourbon__remember_controls_cookie_permanence(self, test_app, db_bourbon_user_1, username_1, password_1):
+        page = await test_app.get('/auth/login')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1, 'remember': 'on'},
+        )
+        cookies = response.headers.getlist('Set-Cookie')
+
+        assert response.status_code == 200
+        assert any(cookie.startswith('session=') and 'Expires=' in cookie for cookie in cookies)
+
+
 class TestLoginBotEndpoints:
     @pytest.mark.asyncio
     async def test__login_bot__session_created_with_bot(self, state, test_app, endpoint_login_bot_url, db_bot_user_1):
@@ -129,6 +162,75 @@ class TestUserEndpoints:
     async def test__user__expired_session_no_data(self, state, test_app, endpoint_user_url, db_expired_session_1):
         response = await test_app.get(endpoint_user_url, headers={'Authorization': f'Bearer {db_expired_session_1.token}'})
         assert response.status_code == 401
+
+
+class TestProfileEndpoints:
+    @pytest.mark.asyncio
+    async def test__profile_page__renders_account_forms(self, test_app, token_1, db_session_1, db_user_1, db_bourbon_user_1):
+        response = await test_app.get('/user/profile', headers={'Authorization': f'Bearer {token_1}'})
+        html = await response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert 'Your profile' in html
+        assert db_bourbon_user_1.username in html
+        assert db_bourbon_user_1.email in html
+        assert db_user_1.creation_date.strftime('%Y-%m-%d %H:%M') in html
+        assert 'Profile sections' in html
+        assert 'Change email' in html
+        assert 'Change password' in html
+        assert 'Update remark' in html
+        assert 'Linked accounts' in html
+        assert 'Link Discord account' in html
+        assert 'Link Bourbon account' in html
+        assert 'Delete account' in html
+
+    @pytest.mark.asyncio
+    async def test__profile_update_email__changes_bourbon_email(
+        self, state, test_app, token_1, db_session_1, db_user_1, db_bourbon_user_1, password_1
+    ):
+        response = await test_app.post(
+            '/api/v1/user/email',
+            headers={'Authorization': f'Bearer {token_1}'},
+            form={'current_password': password_1, 'email': 'new-email@example.com'},
+        )
+
+        assert response.status_code == 200
+        bourbon_user = UserStore().bourbon_user_from_user(state, db_user_1)
+        assert bourbon_user.email == 'new-email@example.com'
+
+    @pytest.mark.asyncio
+    async def test__profile_update_password__changes_bourbon_password(
+        self, state, test_app, token_1, db_session_1, db_user_1, db_bourbon_user_1, password_1
+    ):
+        response = await test_app.post(
+            '/api/v1/user/password',
+            headers={'Authorization': f'Bearer {token_1}'},
+            form={'current_password': password_1, 'password': 'newPassword123'},
+        )
+
+        assert response.status_code == 200
+        bourbon_user = UserStore().bourbon_user_from_user(state, db_user_1)
+        bourbon_user.verify_password('newPassword123')
+
+    @pytest.mark.asyncio
+    async def test__profile_update_remark__stores_remark(self, state, test_app, token_1, db_session_1, db_user_1):
+        response = await test_app.post(
+            '/api/v1/user/remark/',
+            headers={'Authorization': f'Bearer {token_1}'},
+            form={
+                'profile_name': 'CoolGamer99',
+                'steam_id': '76561197960287930',
+                'nickname': 'The Sniper',
+                'remark': 'Great teammate.',
+            },
+        )
+
+        assert response.status_code == 200
+        remark = AuthApi().get_remark(state, db_user_1)
+        assert remark['profile_name'] == 'CoolGamer99'
+        assert remark['steam_id'] == '76561197960287930'
+        assert remark['nickname'] == 'The Sniper'
+        assert remark['remark'] == 'Great teammate.'
 
 
 class TestRecoveryEndpoints:

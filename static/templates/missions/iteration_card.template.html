@@ -2,7 +2,7 @@
     <header>
         <h3>Iteration #{{ iteration.iteration }}</h3>
         <p class="mission-signoff-line"><b>{{ passed_signoffs }}</b> passed, <b>{{ failed_signoffs }}</b> failed; {{ needed_signoffs }} required</p>
-        <a class="mission-action" href="/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">Test this iteration</a>
+        <span class="mission-action mission-action-disabled" aria-disabled="true">Testing temporarily disabled</span>
     </header>
 
     <dl>

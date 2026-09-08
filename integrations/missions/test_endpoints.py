@@ -71,7 +71,8 @@ class TestMissionFrontendEndpoints:
         assert 'Reviews' in html
         assert str(db_test_result_1.uuid) in html
         assert 'Cosign this review' in html
-        assert f'/missions/{db_mission_1.uuid}/iterations/{db_iteration_1.uuid}/test' in html
+        assert 'Testing temporarily disabled' in html
+        assert f'/missions/{db_mission_1.uuid}/iterations/{db_iteration_1.uuid}/test' not in html
 
     @pytest.mark.asyncio
     async def test__test_iteration_page__renders_stub_review_form(

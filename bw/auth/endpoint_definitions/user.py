@@ -3,6 +3,7 @@
 import logging
 import secrets
 import uuid
+from datetime import datetime
 
 from quart import Blueprint, render_template_string, request
 
@@ -16,8 +17,9 @@ from bw.auth.decorators import (
     with_token,
 )
 from bw.auth.permissions import Permissions
-from bw.auth.remarks import Remark
+from bw.auth.remarks import Remark, RemarkStore
 from bw.auth.roles import Roles
+from bw.error import RemarkDoesNotExist
 from bw.models.auth import User
 from bw.response import ChunkedResponse, JsonResponse, WebResponse
 from bw.state import State
@@ -70,6 +72,25 @@ def define_user(api: Blueprint, local: Blueprint):
         ```
         """
         return AuthApi().user_info(state=State.state, user=session_user)
+
+    @api.post('/email')
+    @form_endpoint
+    @require_session
+    async def update_email(session_user: User, current_password: str, email: str) -> WebResponse:
+        return AuthApi().update_bourbon_email(State.state, session_user, current_password, email)
+
+    @api.post('/password')
+    @form_endpoint
+    @require_session
+    async def update_password(session_user: User, current_password: str, password: str) -> WebResponse:
+        return AuthApi().update_bourbon_password(State.state, session_user, current_password, password)
+
+    @api.post('/delete')
+    @form_endpoint
+    @require_session
+    async def delete_account(session_user: User) -> WebResponse:
+        # Placeholder endpoint so the profile view can expose the future account-deletion affordance.
+        return WebResponse(501, response='Account deletion is not implemented yet')
 
     @api.post('/recover')
     @form_endpoint
@@ -475,3 +496,23 @@ def define_user(api: Blueprint, local: Blueprint):
     api.register_blueprint(remark_blueprint)
     api.register_blueprint(role_blueprint)
     local.register_blueprint(local_role_blueprint)
+
+
+def _format_display_datetime(value: str | datetime) -> str:
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M')
+    return datetime.fromisoformat(value).strftime('%Y-%m-%d %H:%M')
+
+
+def define_profile_html(frontend: Blueprint):
+    @frontend.get('/profile')
+    @html_endpoint(template_path='user/profile.html', title='Your Bourbon Warfare profile')
+    @require_session
+    async def profile_page(html: str, session_user: User) -> str:
+        profile = AuthApi().profile_info(State.state, session_user)
+        profile['creation_date_display'] = _format_display_datetime(profile['creation_date'])
+        try:
+            remark = RemarkStore().user_remark(State.state, session_user)
+        except RemarkDoesNotExist:
+            remark = Remark(profile_name='', nickname='', steam_id='', remark='')
+        return await render_template_string(html, profile=profile, remark=remark)
