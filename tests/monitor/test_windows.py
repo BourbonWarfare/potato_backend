@@ -1,5 +1,6 @@
 import pytest
-import win32evtlog
+
+win32evtlog = pytest.importorskip('win32evtlog', reason='Windows event log APIs are only available on Windows')
 
 from bw.error.monitor import (
     RemoteConnectionEventInvalidField,
