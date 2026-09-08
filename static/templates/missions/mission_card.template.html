@@ -1,4 +1,5 @@
-<a class="mission-card" href="/missions/{{ mission_uuid }}">
+<a class="mission-card" {% if logged_in %}href="/missions/{{ mission_uuid }}" hx-get="/missions/{{ mission_uuid }}"
+    hx-target="#view" hx-push-url="true" {% endif %}>
     <div class="mission-header">
         {% if logged_in %}
         <span class="mission-card-view">View</span>
