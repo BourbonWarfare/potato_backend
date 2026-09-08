@@ -5,7 +5,7 @@ from bw.tasks.runner import Runner
 
 def main():
     setup_config('tasks')
-    State()
+    State(load_arma=False)
     Runner().run()
 
 

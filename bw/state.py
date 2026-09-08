@@ -47,7 +47,7 @@ class State:
         logger.info(f'Loading servers from {ENVIRONMENT.server_config_directory()}')
         load_server_config_directory(ENVIRONMENT.server_config_directory())
 
-    def __init__(self):
+    def __init__(self, *, load_arma: bool = True):
         State.broker = Broker()
         State.queue = Queue(State.broker, GLOBAL_CONFIGURATION.get('queue_delay', 5))
         State.cache = Cache()
@@ -59,7 +59,8 @@ class State:
             self.default_database = GLOBAL_CONFIGURATION['db_name']
             self.register_database(self.default_database, echo=False)
 
-        self._load_arma_configs()
+        if load_arma:
+            self._load_arma_configs()
         State.broker.subscribe_all(self.cache.event)
 
     def register_database(self, database_name: str, echo=False):
