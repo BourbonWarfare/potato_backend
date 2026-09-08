@@ -18,6 +18,8 @@ from bw.auth.decorators import (
 from bw.auth.permissions import Permissions
 from bw.auth.remarks import Remark
 from bw.auth.roles import Roles
+from bw.auth.utils import session_token_from_bearer
+from bw.error import CannotDetermineSession
 from bw.models.auth import User
 from bw.response import ChunkedResponse, JsonResponse, WebResponse
 from bw.state import State
@@ -131,6 +133,16 @@ def define_auth(api: Blueprint):
         session_token = response.state['session_token']
         AuthApi().store_session_cookie(session_token, permanent=remember == 'on')
 
+        return response
+
+    @api.post('/logout')
+    @url_endpoint
+    async def logout() -> WebResponse:
+        try:
+            session_token = AuthApi().get_session_cookie()
+        except CannotDetermineSession:
+            session_token = session_token_from_bearer(request.headers)
+        response = AuthApi().logout(State.state, session_token=session_token)
         return response
 
     @api.post('/login/bot')

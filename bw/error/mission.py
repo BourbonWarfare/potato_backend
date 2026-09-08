@@ -124,6 +124,18 @@ class MissionDoesNotHaveMetadata(UploadError):
         )
 
 
+class MissionDoesNotHaveFile(UploadError):
+    def __init__(self, file: str = ''):
+        super().__init__('mission does not have a required file' + (f' (missing {file})' if file else ''))
+
+
+class MissionTooLarge(UploadError):
+    def __init__(self, size_on_disk: int, maximum_size: int):
+        super().__init__(
+            f'mission is too large ({size_on_disk / 1024 / 1024:.2f}MB / {maximum_size / 1024 / 1024:.2f} MB (Maximum))'
+        )
+
+
 class MissionIsNotBinarized(UploadError):
     def __init__(self):
         super().__init__('mission needs to be binarized to upload')

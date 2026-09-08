@@ -15,6 +15,7 @@ from bw.error import (
     MissionDoesNotHaveMetadata,
     MissionHasNoMap,
     MissionIsNotBinarized,
+    MissionTooLarge,
     NoResultFound,
 )
 from bw.missions.missions import MissionStore, MissionTypeStore
@@ -111,6 +112,9 @@ class MissionsApi:
             stored_pbo_path = Path(stored_pbo_path)
 
         logger.info(f'uploading mission: {stored_pbo_path} to database')
+        if stored_pbo_path.stat().st_size >= (5 * 1024 * 1024):
+            raise MissionTooLarge(stored_pbo_path.stat().st_size, 5 * 1024 * 1024)
+
         logger.debug(f'changelog:\n\t{"\n\t".join([f"{k}: {v}" for k, v in changelog.items()])}')
         try:
             mission = await MissionLoader().load_pbo_from_directory(stored_pbo_path)

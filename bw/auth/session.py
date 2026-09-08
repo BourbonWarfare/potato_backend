@@ -12,6 +12,11 @@ logger = logging.getLogger('bw.auth')
 
 
 class SessionStore:
+    def expire_session_token(self, state: State, session_token: str):
+        with state.Session.begin() as session:
+            query = delete(Session).where(Session.token == session_token)
+            session.execute(query)
+
     def expire_session_from_user(self, state: State, user: User):
         """
         ### Expire session for a user

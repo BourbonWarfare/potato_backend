@@ -77,13 +77,19 @@ def define_user(api: Blueprint, local: Blueprint):
     @form_endpoint
     @require_session
     async def update_email(session_user: User, current_password: str, email: str) -> WebResponse:
-        return AuthApi().update_bourbon_email(State.state, session_user, current_password, email)
+        response = AuthApi().update_bourbon_email(State.state, session_user, current_password, email)
+        if response.status_code >= 400:
+            return response
+        return chunk_text_response('<p>Email updated.</p>', mimetype='text/html')
 
     @api.post('/password')
     @form_endpoint
     @require_session
     async def update_password(session_user: User, current_password: str, password: str) -> WebResponse:
-        return AuthApi().update_bourbon_password(State.state, session_user, current_password, password)
+        response = AuthApi().update_bourbon_password(State.state, session_user, current_password, password)
+        if response.status_code >= 400:
+            return response
+        return chunk_text_response('<p>Password updated.</p>', mimetype='text/html')
 
     @api.post('/delete')
     @form_endpoint
@@ -477,9 +483,12 @@ def define_user(api: Blueprint, local: Blueprint):
     async def update_remark(
         session_user: User, profile_name: str, steam_id: str, nickname: str | None, remark: str | None
     ) -> WebResponse:
-        return AuthApi().update_remark(
+        response = AuthApi().update_remark(
             State.state, session_user, Remark(profile_name=profile_name, nickname=nickname, steam_id=steam_id, remark=remark)
         )
+        if response.status_code >= 400:
+            return response
+        return chunk_text_response('<p>Remark updated.</p>', mimetype='text/html')
 
     @remark_blueprint.get('/')
     @url_endpoint

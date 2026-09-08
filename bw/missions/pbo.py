@@ -7,7 +7,7 @@ from typing import Any
 
 import aiofiles
 
-from bw.error import MissionDoesNotHaveMetadata
+from bw.error import MissionDoesNotHaveFile, MissionDoesNotHaveMetadata
 from bw.subprocess.hemtt import hemtt
 
 
@@ -112,6 +112,11 @@ class MissionLoader:
         mission_path = temp_path / mission_name
         await hemtt.utils.pbo.unpack.acall(str(temp_path / pbo_name), str(mission_path))
         await hemtt.utils.config.derapify.acall(str(mission_path / 'mission.sqm'), format='json')
+
+        if not (mission_path / 'description.ext').exists():
+            raise MissionDoesNotHaveFile('description.ext')
+        if not (mission_path / 'mission.sqm').exists():
+            raise MissionDoesNotHaveFile('mission.sqm')
 
         bwmf_version = '2016/01/19'
         async with aiofiles.open(mission_path / 'description.ext') as file:

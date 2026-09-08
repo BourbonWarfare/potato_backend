@@ -47,6 +47,9 @@ class AuthApi:
             raise CannotDetermineSession()
         return user_session['session']
 
+    def clear_session_cookie(self):
+        user_session.clear()
+
     @define_api
     def set_csrf_token(self, state: State, session_token: str) -> WebResponse:
         csrf_token = secure_token_urlsafe()
@@ -769,6 +772,12 @@ class AuthApi:
         bourbon_user = UserStore().bourbon_user_from_user(state, user)
         bourbon_user.verify_password(current_password)
         UserStore().update_bourbon_user_email(state, user, email)
+        return Ok()
+
+    @define_api
+    def logout(self, state: State, session_token: str) -> WebResponse:
+        SessionStore().expire_session_token(state, session_token)
+        self.clear_session_cookie()
         return Ok()
 
     @define_api
