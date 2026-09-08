@@ -1,0 +1,174 @@
+<div class="mission-test-page">
+    <p><a href="/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}">← Back to {{ mission.title }}</a></p>
+
+    <section class="mission-test-hero">
+        <div>
+            <p class="mission-kicker">Testing iteration</p>
+            <h1>{{ mission.title }}</h1>
+            <p class="mission-muted-id">{{ iteration.uuid }}</p>
+        </div>
+        <div class="mission-detail-summary">
+            <span class="mission-pill">Iteration #{{ iteration.iteration }}</span>
+            <strong>{{ iteration.desired_player_count }}</strong>
+            <span>desired players</span>
+        </div>
+    </section>
+
+    <section class="mission-test-info-card">
+        <h2>Iteration information</h2>
+        <dl>
+            <dt>Filename</dt><dd>{{ iteration.filename }}</dd>
+            <dt>Uploaded</dt><dd>{{ iteration.upload_date_display }}</dd>
+            <dt>Players</dt><dd>{{ iteration.min_player_count }}–{{ iteration.max_player_count }} (desired {{ iteration.desired_player_count }})</dd>
+            <dt>Safe start</dt><dd>{{ iteration.safe_start_length }} minutes</dd>
+            <dt>Mission length</dt><dd>{{ iteration.mission_length }} minutes</dd>
+            <dt>BWMF</dt><dd>{{ iteration.bwmf_version }}</dd>
+        </dl>
+    </section>
+
+    <form class="mission-test-form" method="post" action="/api/v1/html/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">
+        <section class="mission-test-form-card mission-test-result-card">
+            <div class="mission-test-form-intro">
+                <h2>Overall result</h2>
+                <p><i>Generated reports resolve this from section pass/fail values. For now, pick the submitted review result.</i></p>
+            </div>
+            <label>
+                Result
+                <select name="status">
+                    {% for status in statuses %}
+                        <option value="{{ status }}">{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </section>
+
+        <section class="mission-test-form-card">
+            <div class="mission-test-form-intro">
+                <h2>Briefing and slotting</h2>
+                <p>Matches the report's mission summary, player-count, and briefing checklist areas.</p>
+            </div>
+            <div class="mission-form-grid">
+                <label>
+                    Briefing clarity
+                    <select name="briefing_clarity">
+                        <option value="clear">Clear</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="needs_work">Needs work</option>
+                    </select>
+                </label>
+                <label>
+                    Slotting / ORBAT
+                    <select name="slotting_orbat">
+                        <option value="valid">Valid</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </label>
+            </div>
+            <label class="mission-form-wide">
+                Briefing notes
+                <textarea name="briefing_notes" rows="4" placeholder="Dummy field for pasted briefing / slotting findings"></textarea>
+            </label>
+        </section>
+
+        <section class="mission-test-form-card">
+            <div class="mission-test-form-intro">
+                <h2>Loadouts and assets</h2>
+                <p>Covers custom player loadouts, vehicle loadouts, armor testing output, and asset availability.</p>
+            </div>
+            <div class="mission-form-grid">
+                <label>
+                    Player loadouts
+                    <select name="player_loadouts">
+                        <option value="valid">Valid</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </label>
+                <label>
+                    Vehicle loadouts / armor
+                    <select name="vehicle_loadouts_armor">
+                        <option value="valid">Valid</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </label>
+            </div>
+            <label class="mission-form-wide">
+                Loadout / asset notes
+                <textarea name="loadout_asset_notes" rows="4" placeholder="Dummy field for pasted loadout or armor findings"></textarea>
+            </label>
+        </section>
+
+        <section class="mission-test-form-card">
+            <div class="mission-test-form-intro">
+                <h2>Gameplay flow</h2>
+                <p>Captures objectives, triggers, win/loss endings, safe start, timing, and balance notes.</p>
+            </div>
+            <div class="mission-form-grid">
+                <label>
+                    Objectives and endings
+                    <select name="objectives_endings">
+                        <option value="valid">Valid</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </label>
+                <label>
+                    Timing and balance
+                    <select name="timing_balance">
+                        <option value="looks_good">Looks good</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="needs_work">Needs work</option>
+                    </select>
+                </label>
+            </div>
+            <label class="mission-form-wide">
+                Gameplay notes
+                <textarea name="gameplay_notes" rows="4" placeholder="Dummy field for pasted gameplay-flow findings"></textarea>
+            </label>
+        </section>
+
+        <section class="mission-test-form-card">
+            <div class="mission-test-form-intro">
+                <h2>Technical checks</h2>
+                <p>Maps to custom scripting, modules, Zeus/admin support, performance, errors, and JIP concerns.</p>
+            </div>
+            <div class="mission-form-grid">
+                <label>
+                    Scripts / triggers
+                    <select name="scripts_triggers">
+                        <option value="valid">Valid</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </label>
+                <label>
+                    Performance / errors
+                    <select name="performance_errors">
+                        <option value="valid">Valid</option>
+                        <option value="minor_issues">Minor issues</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </label>
+            </div>
+            <label class="mission-form-wide">
+                Technical notes
+                <textarea name="technical_notes" rows="4" placeholder="Dummy field for pasted technical findings"></textarea>
+            </label>
+        </section>
+
+        <section class="mission-test-form-card">
+            <div class="mission-test-form-intro">
+                <h2>Other considerations</h2>
+                <p>The SQF report has an explicit other-considerations section and appends armor output here when needed.</p>
+            </div>
+            <label class="mission-form-wide">
+                General feedback from mission tester
+                <textarea name="notes" rows="7" placeholder="General testing feedback"></textarea>
+            </label>
+        </section>
+
+        <button class="mission-action mission-submit-action" type="submit">Submit review</button>
+    </form>
+</div>

@@ -1,0 +1,51 @@
+<article class="mission-iteration-card" id="iteration-{{ iteration.uuid }}">
+    <header>
+        <h3>Iteration #{{ iteration.iteration }}</h3>
+        <p class="mission-signoff-line"><b>{{ passed_signoffs }}</b> passed, <b>{{ failed_signoffs }}</b> failed; {{ needed_signoffs }} required</p>
+        <a class="mission-action" href="/missions/{{ mission.uuid }}/iterations/{{ iteration.uuid }}/test">Test this iteration</a>
+    </header>
+
+    <dl>
+        <dt>UUID</dt><dd class="mission-muted-id">{{ iteration.uuid }}</dd>
+        <dt>Filename</dt><dd>{{ iteration.filename }}</dd>
+        <dt>Uploaded</dt><dd>{{ iteration.upload_date_display }}</dd>
+        <dt>BWMF</dt><dd>{{ iteration.bwmf_version }}</dd>
+        <dt>Players</dt><dd>{{ iteration.min_player_count }}–{{ iteration.max_player_count }} (desired {{ iteration.desired_player_count }})</dd>
+        <dt>Safe start</dt><dd>{{ iteration.safe_start_length }} minutes</dd>
+        <dt>Mission length</dt><dd>{{ iteration.mission_length }} minutes</dd>
+    </dl>
+
+    <h4>Changelog</h4>
+    <pre>{{ iteration.changelog }}</pre>
+
+    <h4>Reviews</h4>
+    {% if reviews %}
+        {% for review in reviews %}
+            <div class="mission-review-card mission-review-card-{{ review.status|lower }}">
+                <p><b>{{ review.status }}</b> on {{ review.date_tested }}</p>
+                <p>{{ review.cosigns }} cosign{% if review.cosigns != 1 %}s{% endif %}</p>
+                {% if review.notes %}
+                    <ul>
+                    {% for topic, note in review.notes.items() %}
+                        <li><b>{{ topic }}:</b> {{ note }}</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No notes supplied.</p>
+                {% endif %}
+
+                {% if review.is_viewer_reviewer %}
+                    <p><i>You reviewed this iteration.</i></p>
+                {% elif review.is_viewer_cosigner %}
+                    <p><i>You cosigned this review.</i></p>
+                {% else %}
+                    <form method="post" action="/api/v1/html/missions/reviews/{{ review.uuid }}/cosign?next=/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}">
+                        <button class="mission-action" type="submit">Cosign this review</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No reviews yet.</p>
+    {% endif %}
+</article>
