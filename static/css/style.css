@@ -57,7 +57,33 @@ header {
 }
 
 .nav-profile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
     margin-left: auto;
+}
+
+.nav-logout-form {
+    margin: 0;
+}
+
+.nav-logout-button {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nav-logout-button:hover {
+    background: transparent;
+    color: var(--accent);
 }
 
 a {
@@ -297,7 +323,15 @@ button:hover {
     margin-bottom: 16px;
     width: min(100%, 1180px);
     max-width: 1180px;
+    color: var(--text-primary);
+    letter-spacing: normal;
+    text-transform: none;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.mission-card:hover {
+    color: var(--text-primary);
+    transform: translateY(-1px);
 }
 
 .mission-header {
@@ -320,7 +354,7 @@ button:hover {
     text-transform: none;
 }
 
-.mission-header>a {
+.mission-card-view {
     min-width: 100px;
     max-width: 160px;
     width: inherit;
@@ -330,16 +364,11 @@ button:hover {
     padding: 8px;
     border: 4px var(--surface) double;
     text-shadow: 2px 2px 2px var(--surface);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.mission-header>a:hover {
-    background: var(--accent-hover);
-}
-
-.mission-header>a.disabled {
-    pointer-events: none;
-    cursor: default;
-    color: var(--text-secondary);
+.mission-card:hover .mission-card-view {
     background: var(--accent-hover);
 }
 
@@ -880,6 +909,12 @@ button:hover {
     align-self: end;
 }
 
+.profile-form-status {
+    align-self: center;
+    color: var(--accent);
+    font-weight: 600;
+}
+
 .profile-form button:disabled,
 .profile-link-options button:disabled {
     cursor: not-allowed;
@@ -1303,6 +1338,11 @@ button:hover {
         width: 100%;
     }
 
+    .nav-logout-button {
+        width: auto;
+        font-size: 12px;
+    }
+
     .mission-header {
         display: grid;
         grid-template-columns: minmax(66px, max-content) minmax(0, 1fr);
@@ -1314,7 +1354,7 @@ button:hover {
         min-width: 0;
     }
 
-    .mission-header>a {
+    .mission-card-view {
         min-width: 66px;
         max-width: none;
         padding: 8px 10px;

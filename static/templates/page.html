@@ -26,6 +26,9 @@
             <div class="nav-profile">
                 {% if logged_in %}
                 <a href="/user/profile" hx-get="/user/profile">Profile</a>
+                <form class="nav-logout-form" method="post" action="/api/v1/auth/logout" hx-post="/api/v1/auth/logout">
+                    <button class="nav-logout-button" type="submit">Logout</button>
+                </form>
                 {% else %}
                 <a href="/auth/register" hx-get="/auth/register">Register</a>
                 <a href="/auth/login" hx-get="/auth/login">Login</a>

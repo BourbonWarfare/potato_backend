@@ -143,7 +143,9 @@ def define_auth(api: Blueprint):
         except CannotDetermineSession:
             session_token = session_token_from_bearer(request.headers)
         response = AuthApi().logout(State.state, session_token=session_token)
-        return response
+        if response.status_code >= 400:
+            return response
+        return WebResponse(status=302, headers={'Location': '/auth/login', 'HX-Redirect': '/auth/login'})
 
     @api.post('/login/bot')
     @json_endpoint

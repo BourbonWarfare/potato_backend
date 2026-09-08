@@ -122,6 +122,21 @@ class TestLoginBourbonEndpoints:
         assert any(cookie.startswith('session=') and 'Expires=' in cookie for cookie in cookies)
 
 
+class TestLogoutEndpoints:
+    @pytest.mark.asyncio
+    async def test__logout__expires_session(self, state, test_app, token_1, db_session_1):
+        response = await test_app.post('/api/v1/auth/logout', headers={'Authorization': f'Bearer {token_1}'})
+
+        assert response.status_code == 302
+        assert not SessionStore().is_session_active(state, token_1)
+
+    @pytest.mark.asyncio
+    async def test__logout__requires_session(self, test_app):
+        response = await test_app.post('/api/v1/auth/logout')
+
+        assert response.status_code == 401
+
+
 class TestLoginBotEndpoints:
     @pytest.mark.asyncio
     async def test__login_bot__session_created_with_bot(self, state, test_app, endpoint_login_bot_url, db_bot_user_1):

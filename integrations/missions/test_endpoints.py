@@ -43,6 +43,16 @@ def db_mission_test_group(state, db_user_2):
 
 class TestMissionFrontendEndpoints:
     @pytest.mark.asyncio
+    async def test__mission_list__renders_clickable_cards(self, test_app, db_mission_1, db_iteration_1):
+        response = await test_app.get('/api/v1/html/missions/list')
+        html = await response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert response.content_type.startswith('text/html')
+        assert html
+        assert f'href="/missions/{db_mission_1.uuid}"' in html
+
+    @pytest.mark.asyncio
     async def test__mission_page__renders_api_and_iteration_review_information(
         self,
         test_app,

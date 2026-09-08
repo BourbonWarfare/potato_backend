@@ -1,6 +1,6 @@
-<div class="mission-card">
+<a class="mission-card" href="/missions/{{ mission_uuid }}" hx-get="/missions/{{ mission_uuid }}" hx-target="#view" hx-push-url="true">
     <div class="mission-header">
-        <a href="/missions/{{ mission_uuid }}">View</a>
+        <span class="mission-card-view">View</span>
         <h2 title="{{ mission_name }}">{{ mission_name }}</h2>
         <div class="mission-tag">
             <b>[{{ mission_type }}]</b>
@@ -15,4 +15,4 @@
         <p>Map: <i>{{ mission_map }}</i></p>
         <p>Made by <i>{{ mission_author }}</i></p>
     </div>
-</div>
+</a>

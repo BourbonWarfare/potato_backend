@@ -62,7 +62,7 @@
                         <h2>Change email</h2>
                         <p>Update the email attached to your Bourbon login.</p>
                     </div>
-                    <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/email">
+                    <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/email" hx-post="/api/v1/user/email" hx-target="#profile-email-status" hx-swap="innerHTML">
                         <label>
                             New email
                             <input type="email" name="email" value="{{ profile.bourbon.email }}" required />
@@ -72,6 +72,7 @@
                             <input type="password" name="current_password" autocomplete="current-password" required />
                         </label>
                         <button type="submit">Update email</button>
+                        <div id="profile-email-status" class="profile-form-status" aria-live="polite"></div>
                     </form>
                 </section>
 
@@ -81,7 +82,7 @@
                         <h2>Change password</h2>
                         <p>Use your current password to confirm this change.</p>
                     </div>
-                    <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/password">
+                    <form class="profile-form profile-form-stacked" method="post" action="/api/v1/user/password" hx-post="/api/v1/user/password" hx-target="#profile-password-status" hx-swap="innerHTML">
                         <label>
                             Current password
                             <input type="password" name="current_password" autocomplete="current-password" required />
@@ -91,6 +92,7 @@
                             <input type="password" name="password" autocomplete="new-password" required />
                         </label>
                         <button type="submit">Update password</button>
+                        <div id="profile-password-status" class="profile-form-status" aria-live="polite"></div>
                     </form>
                 </section>
             </div>
@@ -110,7 +112,7 @@
                 <h2>Remark</h2>
                 <p>Update the name and remark used by the squad XML/remarks view.</p>
             </div>
-            <form class="profile-form" method="post" action="/api/v1/user/remark/">
+            <form class="profile-form" method="post" action="/api/v1/user/remark/" hx-post="/api/v1/user/remark/" hx-target="#profile-remark-status" hx-swap="innerHTML">
                 <label>
                     Profile name
                     <input name="profile_name" value="{{ remark.profile_name }}" required />
@@ -128,6 +130,7 @@
                     <textarea name="remark" rows="4">{{ remark.remark or '' }}</textarea>
                 </label>
                 <button type="submit">Update remark</button>
+                <div id="profile-remark-status" class="profile-form-status" aria-live="polite"></div>
             </form>
         </section>
 
