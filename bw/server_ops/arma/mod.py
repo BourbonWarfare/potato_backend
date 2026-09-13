@@ -327,18 +327,19 @@ async def load_mod_configs(mods_file: Path, *, ignore_already_defined_mods=False
         except ValueError as e:
             raise ModInvalidKind(mod_name, kind_str, list(Kind)) from e
 
-        if kind == Kind.SERVER_MOD:
-            directory = Path(defaults['server_mod_directory'])
-            if 'server_mod_directory' in mod_data:
-                if not isinstance(mod_data['server_mod_directory'], str):
-                    raise ModFieldInvalid(mod_name, 'server_mod_directory', 'must be a string')
-                directory = Path(mod_data['server_mod_directory'])
-        else:
-            directory = Path(defaults['mod_directory'])
-            if 'mod_directory' in mod_data:
-                if not isinstance(mod_data['mod_directory'], str):
-                    raise ModFieldInvalid(mod_name, 'mod_directory', 'must be a string')
-                directory = Path(mod_data['mod_directory'])
+        match kind:
+            case Kind.SERVER_MOD:
+                directory = Path(defaults['server_mod_directory'])
+                if 'server_mod_directory' in mod_data:
+                    if not isinstance(mod_data['server_mod_directory'], str):
+                        raise ModFieldInvalid(mod_name, 'server_mod_directory', 'must be a string')
+                    directory = Path(mod_data['server_mod_directory'])
+            case Kind.MOD | Kind.CLIENT_MOD:
+                directory = Path(defaults['mod_directory'])
+                if 'mod_directory' in mod_data:
+                    if not isinstance(mod_data['mod_directory'], str):
+                        raise ModFieldInvalid(mod_name, 'mod_directory', 'must be a string')
+                    directory = Path(mod_data['mod_directory'])
 
         mod = Mod(
             filename=mod_data['filename'],
@@ -459,12 +460,13 @@ def save_mod_configs(config_path: Path):
             mod_config['manual_install'] = True
 
         # Add custom directory overrides if different from defaults
-        if mod.kind == Kind.MOD:
-            if str(mod.directory) != default_mod_dir:
-                mod_config['mod_directory'] = str(mod.directory)
-        elif mod.kind == Kind.SERVER_MOD:  # noqa: SIM102
-            if str(mod.directory) != default_server_mod_dir:
-                mod_config['server_mod_directory'] = str(mod.directory)
+        match mod.kind:
+            case Kind.MOD | Kind.CLIENT_MOD:
+                if str(mod.directory) != default_mod_dir:
+                    mod_config['mod_directory'] = str(mod.directory)
+            case Kind.SERVER_MOD:
+                if str(mod.directory) != default_server_mod_dir:
+                    mod_config['server_mod_directory'] = str(mod.directory)
 
         config['mod'][mod_key] = mod_config
 
@@ -601,8 +603,9 @@ def load_modlists(config_path: Path):
 
 
 class Kind(StrEnum):
-    MOD = 'mod'
-    SERVER_MOD = 'server_mod'
+    MOD = 'mod'                 # Normal mod loaded everywhere
+    SERVER_MOD = 'server_mod'   # Mod loaded only on the server
+    CLIENT_MOD = 'client_mod'   # Mod only needed on client (optional or just not required on headless)
 
 
 @dataclass
