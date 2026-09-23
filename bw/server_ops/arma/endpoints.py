@@ -1,7 +1,8 @@
+import html
 import logging
 import urllib.parse
 
-from quart import Blueprint
+from quart import Blueprint, render_template_string, request
 
 from bw.auth.decorators import require_session, require_user_role
 from bw.auth.roles import Roles
@@ -12,12 +13,65 @@ from bw.server_ops.arma.api import ArmaApi
 from bw.server_ops.arma.mod import MODS, Mod
 from bw.server_ops.arma.types import WorkshopId
 from bw.state import State
-from bw.web_utils import json_endpoint, url_endpoint
+from bw.web_utils import chunk_text_response, html_endpoint, json_endpoint, url_endpoint
 
 logger = logging.getLogger('bw.server_ops.arma')
 
 
+def _client_prefers_html() -> bool:
+    accepts_header = request.headers.get('Accepts', '')
+    if 'text/html' in accepts_header:
+        return True
+    best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+    return best == 'text/html'
+
+
+def _requested_event_tags() -> list[str]:
+    tags = request.args.getlist('tag')
+    tags.extend(request.args.get('tags', '').split(','))
+    return [tag.strip() for tag in tags if tag.strip()]
+
+
+def _tag_query(tags: list[str]) -> str:
+    return urllib.parse.quote(','.join(tags), safe=',')
+
+
+def _events_html(payload: dict) -> str:
+    event_items = ''.join(
+        '<li>'
+        f'<time datetime="{html.escape(event["creation_date"])}">{html.escape(event["creation_date"])}</time> '
+        f'<strong>{html.escape(event["tag"])}</strong>: '
+        f'<span>{html.escape(event["message"])}</span>'
+        '</li>'
+        for event in payload['events']
+    )
+    return (
+        '<section class="arma-events">'
+        '<h2>Arma Events</h2>'
+        f'<ol>{event_items}</ol>'
+        f'<p>Page {payload["page"]} of {payload["total_pages"]}</p>'
+        '</section>'
+    )
+
+
 def define_arma(api: Blueprint):
+    @api.post('events')
+    @json_endpoint
+    async def create_event(tag: str, message: str) -> WebResponse:
+        logger.info(f'Recording Arma event tagged {tag}')
+        return ArmaApi().create_event(State.state, tag=tag, message=message)
+
+    @api.get('events')
+    @url_endpoint
+    async def get_events() -> WebResponse:
+        page = request.args.get('page', default=1, type=int)
+        page_size = request.args.get('page_size', default=50, type=int)
+        tags = _requested_event_tags()
+        response = ArmaApi().get_events(State.state, page=page, page_size=page_size, tags=tags)
+        if _client_prefers_html():
+            return chunk_text_response(_events_html(response.contained_json), mimetype='text/html')
+        return response
+
     @api.get('servers')
     @url_endpoint
     async def get_all_servers() -> JsonResponse:
@@ -869,3 +923,34 @@ def define_arma(api: Blueprint):
         logger.info(f'User {session_user.id} is looking at {len(mods)} mods to see if they are out of date')
         arma_mods: list[Mod] = [MODS[mod_name] for mod_name in mods if mod_name in MODS]
         return await ArmaApi().get_out_of_date_workshop_mods(State.state, arma_mods)
+
+
+def define_arma_html(frontend: Blueprint, parts: Blueprint):
+    @frontend.get('/arma/events')
+    @html_endpoint(template_path='server_ops/arma/events.html', title='Arma Events')
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def events_page(html: str, session_user: User) -> str:
+        return await render_template_string(html)
+
+    @parts.get('/arma/events/list')
+    @html_endpoint(template_path='server_ops/arma/event_list.template.html', return_partial=True)
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def events_list(html: str, session_user: User) -> str:
+        page = request.args.get('page', default=1, type=int)
+        page_size = request.args.get('page_size', default=50, type=int)
+        tags = _requested_event_tags()
+        payload = ArmaApi().get_events(State.state, page=page, page_size=page_size, tags=tags).contained_json
+        return await render_template_string(
+            html,
+            events=payload['events'],
+            page=payload['page'],
+            page_size=payload['page_size'],
+            total=payload['total'],
+            total_pages=payload['total_pages'],
+            tags=payload['tags'],
+            tag_query=_tag_query(payload['tags']),
+            has_previous=payload['page'] > 1,
+            has_next=payload['page'] < payload['total_pages'],
+        )

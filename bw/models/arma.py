@@ -1,11 +1,31 @@
-from typing import Self
+import datetime
+from typing import Any, Self
 
-from sqlalchemy import BigInteger, String
+from sqlalchemy import BigInteger, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.models import Base
 from bw.models.types import HtmlSafeString
 from bw.server_ops.arma.mod import SteamWorkshopDetails, WorkshopId
+
+
+class ArmaEvent(Base):
+    __tablename__ = 'arma_events'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    creation_date: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=False), nullable=False, server_default=func.current_timestamp(), index=True
+    )
+    tag: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    message: Mapped[str] = mapped_column(Text(), nullable=False)
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            'id': self.id,
+            'creation_date': self.creation_date.isoformat(),
+            'tag': self.tag,
+            'message': self.message,
+        }
 
 
 class Mod(Base):

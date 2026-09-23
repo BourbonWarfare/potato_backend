@@ -9,6 +9,7 @@ from bw.missions.endpoints import define_html as missions_define_html
 from bw.realtime.endpoints import define as realtime_define
 from bw.response import Ok, WebResponse
 from bw.server_ops.endpoints import define as server_ops_define
+from bw.server_ops.endpoints import define_html as server_ops_define_html
 from bw.session.endpoints import define as sessions_define
 from bw.session.endpoints import define_html as session_define_html
 from bw.web_utils import chunk_file_response, html_endpoint, url_endpoint
@@ -70,18 +71,23 @@ def define(app: Quart):
     session_parts_blueprint = Blueprint('session_frontend_parts', __name__, url_prefix='/session')
     session_html_blueprint = Blueprint('session_frontend', __name__, url_prefix='/session')
     user_html_blueprint = Blueprint('user_frontend', __name__, url_prefix='/user')
+    server_ops_parts_blueprint = Blueprint('server_ops_frontend_parts', __name__, url_prefix='/server_ops')
+    server_ops_html_blueprint = Blueprint('server_ops_frontend', __name__, url_prefix='/server_ops')
 
     define_auth_html(auth_html_blueprint, auth_parts_blueprint)
     define_profile_html(user_html_blueprint)
     missions_define_html(missions_html_blueprint, missions_parts_blueprint)
     session_define_html(session_html_blueprint, session_parts_blueprint)
+    server_ops_define_html(server_ops_html_blueprint, server_ops_parts_blueprint)
 
     html_blueprint.register_blueprint(auth_html_blueprint)
     html_blueprint.register_blueprint(missions_html_blueprint)
     html_blueprint.register_blueprint(user_html_blueprint)
+    html_blueprint.register_blueprint(server_ops_html_blueprint)
 
     html_parts_blueprint.register_blueprint(auth_parts_blueprint)
     html_parts_blueprint.register_blueprint(missions_parts_blueprint)
+    html_parts_blueprint.register_blueprint(server_ops_parts_blueprint)
 
     auth_blueprint = Blueprint('auth', __name__, url_prefix='/auth')
     user_blueprint = Blueprint('user', __name__, url_prefix='/user')
