@@ -35,6 +35,29 @@ class Role(Base):
     def into_roles(self) -> Roles:
         return Roles.from_csv(self.grants)
 
+    def has_grant(self, grant: str) -> bool:
+        return self.into_roles().has(grant)
+
+    @property
+    def can_create_role(self) -> bool:
+        return self.has_grant('can_create_role')
+
+    @property
+    def can_create_group(self) -> bool:
+        return self.has_grant('can_create_group')
+
+    @property
+    def can_manage_server(self) -> bool:
+        return self.has_grant('can_manage_server')
+
+    @property
+    def can_publish_realtime_events(self) -> bool:
+        return self.has_grant('can_publish_realtime_events')
+
+    @property
+    def can_manage_session(self) -> bool:
+        return self.has_grant('can_manage_session')
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -134,6 +157,17 @@ class GroupPermission(Base):
 
     def into_permissions(self) -> Permissions:
         return Permissions.from_csv(self.grants)
+
+    def has_grant(self, grant: str) -> bool:
+        return self.into_permissions().has(grant)
+
+    @property
+    def can_upload_mission(self) -> bool:
+        return self.has_grant('can_upload_mission')
+
+    @property
+    def can_test_mission(self) -> bool:
+        return self.has_grant('can_test_mission')
 
 
 class Group(Base):

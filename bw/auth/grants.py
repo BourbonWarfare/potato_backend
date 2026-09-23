@@ -6,7 +6,23 @@ from dataclasses import dataclass, field
 
 def normalize_grant(grant: str) -> str:
     """Normalize role/permission grant names for case-insensitive comparisons."""
-    return grant.strip().casefold()
+    return str(grant).strip().casefold()
+
+
+class Grant:
+    """Descriptor that returns a grant name on the class and membership on instances."""
+
+    def __init__(self, name: str | None = None):
+        self.name = name
+
+    def __set_name__(self, owner, name: str):
+        if self.name is None:
+            self.name = name
+
+    def __get__(self, instance: GrantSet | None, owner=None) -> str | bool:
+        if instance is None:
+            return self.name or ''
+        return instance.has(self.name or '')
 
 
 @dataclass(slots=True)
