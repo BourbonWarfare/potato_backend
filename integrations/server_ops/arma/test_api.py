@@ -5,7 +5,15 @@ from pathlib import Path
 
 import pytest
 
-from bw.error import ModAlreadyDefined, ModInvalidKind, ModMissingField, ModNotDefined, ServerConfigNotFound
+from bw.error import (
+    ArmaServerUnresponsive,
+    ModAlreadyDefined,
+    ModInvalidKind,
+    ModMissingField,
+    ModNotDefined,
+    ServerConfigNotFound,
+    SubprocessFailed,
+)
 from bw.server_ops.arma.api import ArmaApi
 from bw.server_ops.arma.mod import MODLISTS, MODS, Kind, Mod, Modlist, WorkshopId
 from integrations.server_ops.arma.fixtures import (
@@ -425,3 +433,255 @@ def test__get_all_servers__returns_empty_when_no_servers(mocker, state, session)
 
     assert response.status_code == 200
     assert response.contained_json['servers'] == []
+
+
+# Additional server operation coverage
+
+
+def test__get_server_from_string__returns_configured_server(mocker, server_name_1, mock_server_1):
+    """Test that get_server_from_string returns the configured server object."""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: mock_server_1})
+
+    server = ArmaApi().get_server_from_string(server_name_1)
+
+    assert server is mock_server_1
+
+
+def test__get_server_from_string__raises_when_server_missing(mocker, server_name_2):
+    """Test that get_server_from_string raises when the server is not configured."""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {})
+
+    with pytest.raises(ServerConfigNotFound):
+        ArmaApi().get_server_from_string(server_name_2)
+
+
+def test__reload_server_configs__loads_configs_and_publishes_event(mocker, tmp_path):
+    """Test that reload_server_configs reloads from disk and publishes an event."""
+    # Not yet reviewed
+    load_server_config_directory = mocker.patch('bw.server_ops.arma.api.load_server_config_directory')
+    publish = mocker.patch('bw.server_ops.arma.api.State.broker.publish')
+
+    response = ArmaApi().reload_server_configs(tmp_path)
+
+    assert response.status_code == 200
+    load_server_config_directory.assert_called_once_with(tmp_path)
+    publish.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test__server_ping__returns_ping_value(mocker):
+    """Test that server_ping returns the subprocess ping value."""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.a3sb.ping.acall', return_value=(12.5, ''))
+
+    response = await ArmaApi().server_ping('localhost', 2303)
+
+    assert response.status_code == 200
+    assert await response.get_data(as_text=True) == '12.5'
+
+
+@pytest.mark.asyncio
+async def test__server_ping__returns_error_when_server_unresponsive(mocker):
+    """Test that server_ping maps unresponsive server errors through the API wrapper."""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.a3sb.ping.acall', side_effect=ArmaServerUnresponsive())
+
+    response = await ArmaApi().server_ping('localhost', 2303)
+
+    assert response.status_code == 504
+
+
+@pytest.mark.asyncio
+async def test__server_steam_status__returns_success_payload(mocker):
+    """Test that server_steam_status returns server status fields when the query succeeds."""
+    # Not yet reviewed
+    query = {
+        'name': 'server',
+        'game': 'mission',
+        'keywords': {'server_state': 'PLAYING'},
+        'map': 'Altis',
+        'players': 12,
+        'max_players': 64,
+    }
+    mocker.patch('bw.server_ops.arma.api.a3sb.info.acall', return_value=(__import__('json').dumps(query), ''))
+
+    response = await ArmaApi().server_steam_status('localhost', 2303)
+
+    assert response.status_code == 200
+    assert response.contained_json['result'] == 'success'
+    assert response.contained_json['name'] == 'server'
+    assert response.contained_json['mission'] == 'mission'
+    assert response.contained_json['state'] == 'PLAYING'
+    assert response.contained_json['map'] == 'Altis'
+    assert response.contained_json['players'] == 12
+    assert response.contained_json['max_players'] == 64
+
+
+@pytest.mark.asyncio
+async def test__server_steam_status__returns_failure_payload_on_subprocess_failure(mocker):
+    """Test that server_steam_status returns a failure payload when the subprocess fails."""
+    # Not yet reviewed
+    mocker.patch(
+        'bw.server_ops.arma.api.a3sb.info.acall',
+        side_effect=SubprocessFailed('a3sb', 'failed', 'stdout', 'stderr'),
+    )
+
+    response = await ArmaApi().server_steam_status('localhost', 2303)
+
+    assert response.status_code == 200
+    assert response.contained_json == {'result': 'failure', 'reason': 'failed'}
+
+
+@pytest.mark.asyncio
+async def test__server_steam_status__returns_unresponsive_payload(mocker):
+    """Test that server_steam_status returns an unresponsive payload when the server does not answer."""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.a3sb.info.acall', side_effect=ArmaServerUnresponsive())
+
+    response = await ArmaApi().server_steam_status('localhost', 2303)
+
+    assert response.status_code == 200
+    assert response.contained_json['result'] == 'unresponsive'
+
+
+@pytest.mark.asyncio
+async def test__start_server__reloads_config_and_delegates_to_process_api(mocker, state, server_name_1, mock_server_1):
+    """Test that start_server reloads config and delegates to Arma3Api."""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: mock_server_1})
+    start_server = mocker.patch('bw.server_ops.arma.api.Arma3Api.start_server', return_value={'running': True})
+
+    response = await ArmaApi().start_server(state, server_name_1)
+
+    assert response.contained_json == {'running': True}
+    mock_server_1.reload_config.assert_called_once_with()
+    start_server.assert_called_once_with(state, mock_server_1)
+
+
+@pytest.mark.asyncio
+async def test__stop_server__delegates_to_process_api(mocker, state, server_name_1, mock_server_1):
+    """Test that stop_server delegates to Arma3Api."""
+    # Not yet reviewed
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: mock_server_1})
+    stop_server = mocker.patch('bw.server_ops.arma.api.Arma3Api.stop_server', return_value={'running': False})
+
+    response = await ArmaApi().stop_server(state, server_name_1)
+
+    assert response.contained_json == {'running': False}
+    stop_server.assert_called_once_with(state, mock_server_1)
+
+
+def test__flush_mods_to_disk__saves_mod_config(mocker, tmp_path):
+    """Test that flush_mods_to_disk delegates to save_mod_configs."""
+    # Not yet reviewed
+    save_mod_configs = mocker.patch('bw.server_ops.arma.api.save_mod_configs')
+
+    response = ArmaApi().flush_mods_to_disk(tmp_path)
+
+    assert response.status_code == 200
+    save_mod_configs.assert_called_once_with(tmp_path)
+
+
+def test__flush_modlists_to_disk__saves_modlist_config(mocker, tmp_path):
+    """Test that flush_modlists_to_disk delegates to save_modlists."""
+    # Not yet reviewed
+    save_modlists = mocker.patch('bw.server_ops.arma.mod.save_modlists')
+
+    response = ArmaApi().flush_modlists_to_disk(tmp_path)
+
+    assert response.status_code == 200
+    save_modlists.assert_called_once_with(tmp_path)
+
+
+def test__deploy_mods__creates_links_and_publishes_event(mocker, tmp_path, server_name_1):
+    """Test that deploy_mods creates mod links and publishes a deployment event."""
+    # Not yet reviewed
+    mod_install_path = tmp_path / 'server_mods'
+    mod_source = tmp_path / 'mods' / '@example'
+    mod_source.mkdir(parents=True)
+    mod = Mod(directory=tmp_path / 'mods', name='Example', filename='example', manual_install=True)
+    modlist = Modlist('main', mods=[mod])
+    server = mocker.Mock()
+    server.mod_install_path.return_value = mod_install_path
+    server.modlist.return_value = modlist
+    server.server_name.return_value = server_name_1
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: server})
+    symlink = mocker.patch('bw.server_ops.arma.api.os.symlink')
+    publish = mocker.patch('bw.server_ops.arma.api.State.broker.publish')
+
+    response = ArmaApi().deploy_mods(server_name_1)
+
+    assert response.status_code == 200
+    assert mod_install_path.exists()
+    symlink.assert_called_once_with(mod_source, mod_install_path / '@example', target_is_directory=True)
+    publish.assert_called_once()
+    assert publish.call_args.args[0].server == server_name_1
+    assert publish.call_args.args[0].mods == ['Example']
+
+
+def test__deploy_mods__continues_when_symlink_fails(mocker, tmp_path, server_name_1):
+    """Test that deploy_mods continues when creating a symlink fails."""
+    # Not yet reviewed
+    mod = Mod(directory=tmp_path / 'mods', name='Example', filename='example', manual_install=True)
+    modlist = Modlist('main', mods=[mod])
+    server = mocker.Mock()
+    server.mod_install_path.return_value = tmp_path / 'server_mods'
+    server.modlist.return_value = modlist
+    server.server_name.return_value = server_name_1
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: server})
+    mocker.patch('bw.server_ops.arma.api.os.symlink', side_effect=OSError('no link'))
+
+    response = ArmaApi().deploy_mods(server_name_1)
+
+    assert response.status_code == 200
+
+
+def test__deploy_keys__copies_keys_and_publishes_event(mocker, tmp_path, server_name_1):
+    """Test that deploy_keys copies bikeys and publishes a deployment event."""
+    # Not yet reviewed
+    mod = Mod(directory=tmp_path / 'mods', name='Example', filename='example', manual_install=True)
+    key_source_path = mod.download_path() / 'keys'
+    key_source_path.mkdir(parents=True)
+    key_source = key_source_path / 'example.bikey'
+    key_source.write_text('key-data')
+    key_install_path = tmp_path / 'server_keys'
+    modlist = Modlist('main', mods=[mod])
+    server = mocker.Mock()
+    server.key_install_path.return_value = key_install_path
+    server.modlist.return_value = modlist
+    server.server_name.return_value = server_name_1
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: server})
+    publish = mocker.patch('bw.server_ops.arma.api.State.broker.publish')
+
+    response = ArmaApi().deploy_keys(server_name_1)
+
+    assert response.status_code == 200
+    assert (key_install_path / 'example.bikey').read_text() == 'key-data'
+    publish.assert_called_once()
+    assert publish.call_args.args[0].server == server_name_1
+
+
+def test__deploy_keys__skips_existing_identical_key(mocker, tmp_path, server_name_1):
+    """Test that deploy_keys skips an existing key with identical contents."""
+    # Not yet reviewed
+    mod = Mod(directory=tmp_path / 'mods', name='Example', filename='example', manual_install=True)
+    key_source_path = mod.download_path() / 'keys'
+    key_source_path.mkdir(parents=True)
+    (key_source_path / 'example.bikey').write_text('key-data')
+    key_install_path = tmp_path / 'server_keys'
+    key_install_path.mkdir()
+    (key_install_path / 'example.bikey').write_text('key-data')
+    modlist = Modlist('main', mods=[mod])
+    server = mocker.Mock()
+    server.key_install_path.return_value = key_install_path
+    server.modlist.return_value = modlist
+    server.server_name.return_value = server_name_1
+    mocker.patch('bw.server_ops.arma.api.SERVER_MAP', {server_name_1: server})
+    copy = mocker.patch('bw.server_ops.arma.api.shutil.copy')
+
+    response = ArmaApi().deploy_keys(server_name_1)
+
+    assert response.status_code == 200
+    copy.assert_not_called()

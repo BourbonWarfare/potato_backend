@@ -384,16 +384,18 @@ async def test__html_endpoint__renders_error_template_on_bw_server_error(mocker,
 
 
 @pytest.mark.asyncio
-async def test__html_endpoint__injects_logged_in_when_endpoint_accepts_it(mocker):
+async def test__html_endpoint__passes_logged_in_when_endpoint_accepts_it(mocker):
     mocker.patch('bw.web_utils.load_template_from_disk', return_value='<html></html>')
+    endpoint_spy = mocker.Mock()
 
     @html_endpoint(template_path='dashboard.html', return_partial=True)
     async def endpoint(html: str, logged_in: bool):
-        return str(logged_in)
+        endpoint_spy(logged_in)
+        return ''
 
-    result = b''.join(await consume_generator(await endpoint())).decode()
+    await consume_generator(await endpoint())
 
-    assert result == 'False'
+    endpoint_spy.assert_called_once_with(False)
 
 
 # ==============================================================================

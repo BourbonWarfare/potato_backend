@@ -1,5 +1,7 @@
 # ruff: noqa: F811, F401
 
+from unittest.mock import AsyncMock
+
 import pytest
 
 from bw.auth.user import UserStore
@@ -688,3 +690,229 @@ async def test__get_all_servers__returns_empty_list(mocker, state, test_app, end
     assert response.status_code == 200
     data = await response.get_json()
     assert data['servers'] == []
+
+
+# Additional protected server operation endpoint coverage
+
+
+@pytest.fixture(scope='session')
+def endpoint_start_server_url(endpoint_arma_base_url, server_name_1):
+    return f'{endpoint_arma_base_url}/{server_name_1}/start'
+
+
+@pytest.fixture(scope='session')
+def endpoint_stop_server_url(endpoint_arma_base_url, server_name_1):
+    return f'{endpoint_arma_base_url}/{server_name_1}/stop'
+
+
+@pytest.fixture(scope='session')
+def endpoint_restart_server_url(endpoint_arma_base_url, server_name_1):
+    return f'{endpoint_arma_base_url}/{server_name_1}/restart'
+
+
+@pytest.fixture(scope='session')
+def endpoint_update_server_url(endpoint_arma_base_url, server_name_1):
+    return f'{endpoint_arma_base_url}/{server_name_1}/update'
+
+
+@pytest.fixture(scope='session')
+def endpoint_update_server_mods_url(endpoint_arma_base_url, server_name_1):
+    return f'{endpoint_arma_base_url}/{server_name_1}/update_mods'
+
+
+@pytest.fixture(scope='session')
+def endpoint_healthcheck_server_url(endpoint_arma_base_url, server_name_1):
+    return f'{endpoint_arma_base_url}/{server_name_1}/healthcheck'
+
+
+@pytest.fixture(scope='session')
+def endpoint_status_server_url(endpoint_arma_base_url, server_name_1):
+    return f'{endpoint_arma_base_url}/{server_name_1}/status'
+
+
+@pytest.fixture(scope='session')
+def endpoint_update_specific_mod_url(endpoint_arma_base_url, mock_workshop_id_1):
+    return f'{endpoint_arma_base_url}/mod/{mock_workshop_id_1}/update'
+
+
+@pytest.fixture(scope='session')
+def auth_header_1(token_1):
+    return {'Authorization': f'Bearer {token_1}'}
+
+
+@pytest.mark.asyncio
+async def test__start_server__starts_server_successfully(
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_start_server_url, auth_header_1
+):
+    """Test that POST /<server>/start starts a server for server managers."""
+    # Not yet reviewed
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    start_server = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.start_server', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.post(endpoint_start_server_url, headers=auth_header_1)
+
+    assert response.status_code == 200
+    start_server.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test__start_server__requires_authentication(test_app, endpoint_start_server_url):
+    """Test that POST /<server>/start requires authentication."""
+    # Not yet reviewed
+    response = await test_app.post(endpoint_start_server_url)
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test__start_server__requires_permission(test_app, db_session_1, endpoint_start_server_url, auth_header_1):
+    """Test that POST /<server>/start requires server manager permission."""
+    # Not yet reviewed
+    response = await test_app.post(endpoint_start_server_url, headers=auth_header_1)
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test__stop_server__stops_server_successfully(
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_stop_server_url, auth_header_1
+):
+    """Test that POST /<server>/stop stops a server for server managers."""
+    # Not yet reviewed
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    stop_server = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.stop_server', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.post(endpoint_stop_server_url, headers=auth_header_1)
+
+    assert response.status_code == 200
+    stop_server.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test__restart_server__restarts_server_successfully(
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_restart_server_url, auth_header_1
+):
+    """Test that POST /<server>/restart restarts a server for server managers."""
+    # Not yet reviewed
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    restart_server = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.restart_server', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.post(endpoint_restart_server_url, headers=auth_header_1)
+
+    assert response.status_code == 200
+    restart_server.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test__update_server__updates_server_successfully(
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_update_server_url, auth_header_1
+):
+    """Test that POST /<server>/update updates a server for server managers."""
+    # Not yet reviewed
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    update_server = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.update_server', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.post(endpoint_update_server_url, headers=auth_header_1)
+
+    assert response.status_code == 200
+    update_server.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test__update_server_mods__updates_mods_successfully(
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_update_server_mods_url, auth_header_1
+):
+    """Test that POST /<server>/update_mods updates server mods for server managers."""
+    # Not yet reviewed
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    update_server_mods = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.update_server_mods', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.post(endpoint_update_server_mods_url, headers=auth_header_1)
+
+    assert response.status_code == 200
+    update_server_mods.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test__healthcheck_server__checks_health_successfully(
+    mocker, test_app, endpoint_healthcheck_server_url, server_name_1, mock_server_1
+):
+    """Test that GET /<server>/healthcheck checks the configured server health."""
+    # Not yet reviewed
+    mock_server_1.server_port.return_value = 2302
+    mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_server_from_string', return_value=mock_server_1)
+    server_ping = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.server_ping', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.get(endpoint_healthcheck_server_url)
+
+    assert response.status_code == 200
+    server_ping.assert_called_once_with('localhost', 2303)
+
+
+@pytest.mark.asyncio
+async def test__server_status__checks_status_successfully(mocker, test_app, endpoint_status_server_url, mock_server_1):
+    """Test that GET /<server>/status checks the configured server status."""
+    # Not yet reviewed
+    mock_server_1.server_port.return_value = 2302
+    mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_server_from_string', return_value=mock_server_1)
+    server_steam_status = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.server_steam_status', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.get(endpoint_status_server_url)
+
+    assert response.status_code == 200
+    server_steam_status.assert_called_once_with('localhost', 2303)
+
+
+@pytest.mark.asyncio
+async def test__update_specific_mod__returns_404_for_unknown_workshop_id(
+    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_update_specific_mod_url, auth_header_1
+):
+    """Test that POST /mod/<workshop_id>/update returns not found for unknown mods."""
+    # Not yet reviewed
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    mocker.patch('bw.server_ops.arma.endpoints.MODS', {})
+
+    response = await test_app.post(endpoint_update_specific_mod_url, headers=auth_header_1)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test__update_specific_mod__updates_matching_mod(
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_update_specific_mod_url,
+    auth_header_1,
+    mock_mod_1,
+):
+    """Test that POST /mod/<workshop_id>/update updates the matching mod."""
+    # Not yet reviewed
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    mocker.patch('bw.server_ops.arma.endpoints.MODS', {mock_mod_1.name: mock_mod_1})
+    update_mods = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.update_mods', new_callable=AsyncMock, return_value=WebResponse(200)
+    )
+
+    response = await test_app.post(endpoint_update_specific_mod_url, headers=auth_header_1)
+
+    assert response.status_code == 200
+    update_mods.assert_called_once()
+    assert update_mods.call_args.args[1] == [mock_mod_1]

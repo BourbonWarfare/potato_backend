@@ -121,10 +121,13 @@ class L1Cache:
             entry = self.entry_map[key]
 
             self._remove_entry(entry)
-            assert self.newest_entry is not None
-            entry.prev = self.newest_entry
-            self.newest_entry.next = entry
-            self.newest_entry = entry
+            if self.newest_entry is None:
+                self.oldest_entry = entry
+                self.newest_entry = entry
+            else:
+                entry.prev = self.newest_entry
+                self.newest_entry.next = entry
+                self.newest_entry = entry
 
             return self.memory_cache[key]
         return None
