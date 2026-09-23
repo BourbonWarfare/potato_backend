@@ -64,7 +64,7 @@ class Server:
         return list(self._server.require('headless_launch_options').get())
 
     def mod_launch_options(self) -> list[str]:
-        return [mod.as_launch_parameter() for mod in self.modlist().mods if mod.kind != Kind.SERVER_MOD]
+        return [mod.as_launch_parameter() for mod in self.modlist().mods if mod.kind == Kind.MOD]
 
     def server_mod_launch_options(self) -> list[str]:
         return [mod.as_launch_parameter() for mod in self.modlist().mods if mod.kind == Kind.SERVER_MOD]
