@@ -3,7 +3,6 @@ import functools
 import logging
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
-from types import MemberDescriptorType
 
 from quart import request
 
@@ -208,7 +207,7 @@ def with_default_session(func):
     return wrapper
 
 
-def require_group_permission(*required_permissions: MemberDescriptorType):
+def require_group_permission(*required_permissions: str):
     """
     ### Require group permissions
 
@@ -229,8 +228,8 @@ def require_group_permission(*required_permissions: MemberDescriptorType):
     def _validate_permissions(session_user: User):
         permissions = GroupStore().get_all_permissions_user_has(State.state, session_user)
         for permission in required_permissions:
-            if not permission.__get__(permissions):
-                logger.warning(f'User {session_user.id} does not have required permission: {permission.__name__}')
+            if not permissions.has(permission):
+                logger.warning(f'User {session_user.id} does not have required permission: {permission}')
                 raise NotEnoughPermissions()
         yield
 
@@ -252,7 +251,7 @@ def require_group_permission(*required_permissions: MemberDescriptorType):
     return decorator
 
 
-def require_user_role(*required_roles: MemberDescriptorType):
+def require_user_role(*required_roles: str):
     """
     ### Require group permissions
 
@@ -276,8 +275,8 @@ def require_user_role(*required_roles: MemberDescriptorType):
             logger.warning(f'User {session_user.id} does not have a role assigned')
             raise NotEnoughPermissions()
         for role in required_roles:
-            if not role.__get__(user_role):
-                logger.warning(f'User {session_user.id} does not have required role: {role.__name__}')
+            if not user_role.has(role):
+                logger.warning(f'User {session_user.id} does not have required role: {role}')
                 raise NotEnoughPermissions()
         yield
 

@@ -472,9 +472,8 @@ class AuthApi:
         if user_roles is None:
             return DoesNotExist()
 
-        test_roles = user_roles.as_dict()
-        for role, expecting_role in wanted_roles.as_dict().items():
-            if expecting_role and not test_roles[role]:
+        for role in wanted_roles.as_list():
+            if not user_roles.has(role):
                 return DoesNotExist()
         return Exists()
 
@@ -514,9 +513,8 @@ class AuthApi:
         if user_perms is None:
             return DoesNotExist()
 
-        test_perms = user_perms.as_dict()
-        for perms, expecting_perms in wanted_perms.as_dict().items():
-            if expecting_perms and not test_perms[perms]:
+        for permission in wanted_perms.as_list():
+            if not user_perms.has(permission):
                 return DoesNotExist()
         return Exists()
 

@@ -4,7 +4,7 @@ import uuid
 from uuid import UUID
 
 import argon2
-from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, String, UniqueConstraint, Uuid, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bw.auth.permissions import Permissions
@@ -30,14 +30,10 @@ class Role(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), unique=True)
 
-    can_create_role: Mapped[bool]
-    can_create_group: Mapped[bool]
-    can_manage_server: Mapped[bool]
-    can_publish_realtime_events: Mapped[bool]
-    can_manage_session: Mapped[bool]
+    grants: Mapped[str] = mapped_column(Text(), default='')
 
     def into_roles(self) -> Roles:
-        return Roles.from_keys(**{key: getattr(self, key) for key in Roles.__slots__})
+        return Roles.from_csv(self.grants)
 
 
 class User(Base):
@@ -134,11 +130,10 @@ class GroupPermission(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(HtmlSafeString(NAME_LENGTH), unique=True)
 
-    can_upload_mission: Mapped[bool] = mapped_column(Boolean(False))
-    can_test_mission: Mapped[bool] = mapped_column(Boolean(False))
+    grants: Mapped[str] = mapped_column(Text(), default='')
 
     def into_permissions(self) -> Permissions:
-        return Permissions.from_keys(**{key: getattr(self, key) for key in Permissions.__slots__})
+        return Permissions.from_csv(self.grants)
 
 
 class Group(Base):
