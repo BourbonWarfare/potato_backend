@@ -444,7 +444,7 @@ class TestRequireGroupPermission:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=False)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission])
             tester(mock_session_user)
         assert mock_getter.called
         assert called
@@ -459,7 +459,7 @@ class TestRequireGroupPermission:
             assert arg2 == 'test'
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=False)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission])
             tester(mock_session_user, arg1=42, arg2='test')
 
     def test__require_group_permission__sync__proper_return(self, mock_session_user):
@@ -468,7 +468,7 @@ class TestRequireGroupPermission:
             return 42
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=False)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission])
             assert 42 == tester(mock_session_user)
 
     def test__require_group_permission__sync__fails_on_invalid_perms(self, mock_session_user):
@@ -480,7 +480,7 @@ class TestRequireGroupPermission:
             called = True
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=False, can_upload_mission=False)
+            mock_getter.return_value = Permissions()
             with pytest.raises(NotEnoughPermissions):
                 tester(mock_session_user)
         assert mock_getter.called
@@ -496,14 +496,14 @@ class TestRequireGroupPermission:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=True)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission, Permissions.can_upload_mission])
             tester(mock_session_user)
         assert mock_getter.called
         assert called
 
         called = False
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=False, can_upload_mission=False)
+            mock_getter.return_value = Permissions()
             with pytest.raises(NotEnoughPermissions):
                 tester(mock_session_user)
         assert mock_getter.called
@@ -520,7 +520,7 @@ class TestRequireGroupPermission:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=False)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission])
             await tester(mock_session_user)
         assert mock_getter.called
         assert called
@@ -536,7 +536,7 @@ class TestRequireGroupPermission:
             assert arg2 == 'test'
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=False)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission])
             await tester(mock_session_user, arg1=42, arg2='test')
 
     @pytest.mark.asyncio
@@ -546,7 +546,7 @@ class TestRequireGroupPermission:
             return 42
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=False)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission])
             assert 42 == await tester(mock_session_user)
 
     @pytest.mark.asyncio
@@ -560,7 +560,7 @@ class TestRequireGroupPermission:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=False, can_upload_mission=False)
+            mock_getter.return_value = Permissions()
             with pytest.raises(NotEnoughPermissions):
                 await tester(mock_session_user)
         assert mock_getter.called
@@ -577,14 +577,14 @@ class TestRequireGroupPermission:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=True, can_upload_mission=True)
+            mock_getter.return_value = Permissions([Permissions.can_test_mission, Permissions.can_upload_mission])
             await tester(mock_session_user)
         assert mock_getter.called
         assert called
 
         called = False
         with unittest.mock.patch('bw.auth.decorators.GroupStore.get_all_permissions_user_has') as mock_getter:
-            mock_getter.return_value = Permissions(can_test_mission=False, can_upload_mission=False)
+            mock_getter.return_value = Permissions()
             with pytest.raises(NotEnoughPermissions):
                 await tester(mock_session_user)
         assert mock_getter.called
@@ -602,7 +602,7 @@ class TestRequireUserRole:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_role])
             tester(mock_session_user)
         assert mock_getter.called
         assert called
@@ -617,7 +617,7 @@ class TestRequireUserRole:
             assert arg2 == 'test'
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_role])
             tester(mock_session_user, arg1=42, arg2='test')
 
     def test__require_session__sync__proper_return(self, mock_session_user):
@@ -626,7 +626,7 @@ class TestRequireUserRole:
             return 42
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_role])
             assert 42 == tester(mock_session_user)
 
     def test__require_user_role__sync__no_role_fails(self, mock_session_user):
@@ -654,7 +654,7 @@ class TestRequireUserRole:
             called = True
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=False, can_manage_server=False)
+            mock_getter.return_value = Roles()
             with pytest.raises(NotEnoughPermissions):
                 tester(mock_session_user)
         assert mock_getter.called
@@ -670,14 +670,14 @@ class TestRequireUserRole:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=True, can_create_role=True, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_group, Roles.can_create_role])
             tester(mock_session_user)
         assert mock_getter.called
         assert called
 
         called = False
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=True, can_create_role=False, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_group])
             with pytest.raises(NotEnoughPermissions):
                 tester(mock_session_user)
         assert mock_getter.called
@@ -694,7 +694,7 @@ class TestRequireUserRole:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=True, can_create_role=False, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_group])
             await tester(mock_session_user)
         assert mock_getter.called
         assert called
@@ -710,7 +710,7 @@ class TestRequireUserRole:
             assert arg2 == 'test'
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_role])
             await tester(mock_session_user, arg1=42, arg2='test')
 
     @pytest.mark.asyncio
@@ -720,7 +720,7 @@ class TestRequireUserRole:
             return 42
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_role])
             assert 42 == await tester(mock_session_user)
 
     @pytest.mark.asyncio
@@ -751,7 +751,7 @@ class TestRequireUserRole:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=False, can_manage_server=False)
+            mock_getter.return_value = Roles()
             with pytest.raises(NotEnoughPermissions):
                 await tester(mock_session_user)
         assert mock_getter.called
@@ -768,14 +768,14 @@ class TestRequireUserRole:
             assert session_user == mock_session_user
 
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=True, can_create_role=True, can_manage_server=False)
+            mock_getter.return_value = Roles([Roles.can_create_group, Roles.can_create_role])
             await tester(mock_session_user)
         assert mock_getter.called
         assert called
 
         called = False
         with unittest.mock.patch('bw.auth.decorators.UserStore.get_users_role') as mock_getter:
-            mock_getter.return_value = Roles(can_create_group=False, can_create_role=False, can_manage_server=False)
+            mock_getter.return_value = Roles()
             with pytest.raises(NotEnoughPermissions):
                 await tester(mock_session_user)
         assert mock_getter.called

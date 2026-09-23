@@ -295,8 +295,7 @@ class TestUserStoreRoles:
     def test__create_role__valid(self, state, role_name_1, role_1):
         role = UserStore().create_role(state, role_name_1, role_1)
         assert role.name == role_name_1
-        assert role.can_create_role == role_1.can_create_role
-        assert role.can_create_group == role_1.can_create_group
+        assert role.into_roles().as_list() == role_1.as_list()
 
     def test__create_role__already_exists_raises(self, state, role_name_1, role_1):
         UserStore().create_role(state, role_name_1, role_1)
@@ -305,8 +304,7 @@ class TestUserStoreRoles:
 
     def test__edit_role__valid(self, state, db_role_1, role_2):
         updated_role = UserStore().edit_role(state, db_role_1.name, role_2)
-        assert updated_role.can_create_group == role_2.can_create_group
-        assert updated_role.can_create_role == role_2.can_create_role
+        assert updated_role.into_roles().as_list() == role_2.as_list()
 
     def test__edit_role__nonexistent_raises(self, state, role_1):
         with pytest.raises(NoRoleWithName):
@@ -315,8 +313,7 @@ class TestUserStoreRoles:
     def test__assign_user_role__and_get_users_role(self, state, db_user_1, db_role_1, role_1):
         UserStore().assign_user_role(state, db_user_1, db_role_1.name)
         assigned_role = UserStore().get_users_role(state, db_user_1)
-        assert assigned_role.can_create_role == role_1.can_create_role
-        assert assigned_role.can_create_group == role_1.can_create_group
+        assert assigned_role.as_list() == role_1.as_list()
 
     def test__assign_user_role__nonexistent_role_raises(self, state, db_user_1):
         with pytest.raises(NoRoleWithName):

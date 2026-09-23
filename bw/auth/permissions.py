@@ -1,6 +1,8 @@
-from bw.auth.grants import Grant, GrantSet
+from bw.auth.grants import GrantSet
 
 
 class Permissions(GrantSet):
-    can_upload_mission = Grant()
-    can_test_mission = Grant()
+    namespace = 'group:'
+
+    can_upload_mission = 'group:can_upload_mission'
+    can_test_mission = 'group:can_test_mission'

@@ -35,7 +35,7 @@ def db_mission_session(state, db_user_2, mission_session_token):
 
 @pytest.fixture(scope='function')
 def db_mission_test_group(state, db_user_2):
-    permission = GroupStore().create_permission(state, 'mission testers', Permissions(can_test_mission=True))
+    permission = GroupStore().create_permission(state, 'mission testers', Permissions([Permissions.can_test_mission]))
     group = GroupStore().create_group(state, 'mission testers', permission.name)
     GroupStore().assign_user_to_group(state, db_user_2, group)
     yield group
