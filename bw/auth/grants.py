@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from typing import ClassVar
 
 
 class InvalidGrant(ValueError):
@@ -9,36 +9,53 @@ class InvalidGrant(ValueError):
         super().__init__(f'Grant "{grant}" must be namespaced with "{namespace}"')
 
 
+class UnknownGrant(ValueError):
+    def __init__(self, grant: str):
+        super().__init__(f'Grant "{grant}" is not defined in code')
+
+
 def normalize_grant(grant: str) -> str:
     """Normalize role/permission grant names for case-insensitive comparisons."""
     return str(grant).strip().casefold()
 
 
-@dataclass(slots=True)
 class GrantSet:
-    """Case-insensitive set of string grants.
+    """Case-insensitive set of namespaced string grants.
 
-    Subclasses can set ``namespace`` to enforce role/group grant separation while
-    keeping grants extensible without schema migrations.
+    Subclasses define a namespace, and callers can pass either ``name`` or
+    ``namespace:name``. Roles can additionally define ``allowed_grants`` to make
+    them code-only while group permissions remain appendable/extensible.
     """
 
-    namespace: str = ''
-    grants: set[str] = field(default_factory=set)
+    namespace: ClassVar[str] = ''
+    allowed_grants: ClassVar[set[str] | None] = None
 
     def __init__(self, grants: Iterable[str] | None = None):
         self.grants = {self._validate(grant) for grant in grants or [] if normalize_grant(grant)}
 
     @classmethod
     def _namespace(cls) -> str:
-        return normalize_grant(getattr(cls, 'namespace', ''))
+        return normalize_grant(cls.namespace)
 
     @classmethod
     def _validate(cls, grant: str) -> str:
         normalized = normalize_grant(grant)
         namespace = cls._namespace()
-        if namespace and not normalized.startswith(namespace):
-            raise InvalidGrant(normalized, namespace)
+        if namespace:
+            if ':' not in normalized:
+                normalized = f'{namespace}{normalized}'
+            elif not normalized.startswith(namespace):
+                raise InvalidGrant(normalized, namespace)
+
+        if cls.allowed_grants is not None and normalized not in cls.allowed_grants:
+            raise UnknownGrant(normalized)
         return normalized
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.as_list()!r})'
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, GrantSet) and self.grants == other.grants
 
     def __contains__(self, grant: str) -> bool:
         return self.has(grant)

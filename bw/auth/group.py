@@ -134,6 +134,20 @@ class GroupStore:
             session.expunge(permission)
         return permission
 
+    def append_permission(self, state: State, permission_name: str, permissions: Permissions) -> GroupPermission:
+        with state.Session.begin() as session:
+            query = select(GroupPermission).where(GroupPermission.name == permission_name)
+            try:
+                permission = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoGroupPermissionWithCredentials(permission_name)
+
+            permission.grants = Permissions.from_many(permission.into_permissions(), permissions).as_csv()
+
+            session.flush()
+            session.expunge(permission)
+        return permission
+
     def assign_user_to_group(self, state: State, user: User, group: Group):
         """
         ### Assign a user to a group

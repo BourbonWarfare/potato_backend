@@ -1128,6 +1128,11 @@ class AuthApi:
         return JsonResponse({'name': permission.name})
 
     @define_api
+    def append_permission(self, state: State, permission_name: str, permissions: Permissions) -> JsonResponse:
+        permission = GroupStore().append_permission(state, permission_name=permission_name, permissions=permissions)
+        return JsonResponse({'name': permission.name})
+
+    @define_api
     def update_remark(self, state: State, user: User, remark: Remark) -> WebResponse:
         logger.info(f'Updating user #{user.id} remark')
         RemarkStore().update_remark(state, user, remark)

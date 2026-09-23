@@ -314,6 +314,15 @@ def define_group(api: Blueprint):
         permission = Permissions.from_keys(default_if_key_not_present=False, **kwargs)
         return AuthApi().edit_permission(State.state, permission_name=permission_name, permissions=permission)
 
+    @permission_blueprint.patch('/<string:permission_name>/append')
+    @json_endpoint
+    @require_session
+    @require_user_role(Roles.can_create_group)
+    async def append_permission(session_user: User, permission_name: str, **kwargs) -> JsonResponse:
+        logger.info(f'Appending permission grants to {permission_name}')
+        permission = Permissions.from_keys(**kwargs)
+        return AuthApi().append_permission(State.state, permission_name=permission_name, permissions=permission)
+
     @permission_blueprint.delete('/<string:permission_name>')
     @url_endpoint
     @require_session
