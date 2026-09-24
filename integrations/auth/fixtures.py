@@ -49,17 +49,17 @@ def expire_invalid():
 
 @pytest.fixture(scope='session')
 def permission_1() -> Permissions:
-    return Permissions(can_test_mission=False, can_upload_mission=True)
+    return Permissions([Permissions.can_upload_mission])
 
 
 @pytest.fixture(scope='session')
 def permission_2() -> Permissions:
-    return Permissions(can_test_mission=True, can_upload_mission=False)
+    return Permissions([Permissions.can_test_mission])
 
 
 @pytest.fixture(scope='session')
 def permission_3() -> Permissions:
-    return Permissions(can_test_mission=False, can_upload_mission=False)
+    return Permissions()
 
 
 @pytest.fixture(scope='session')
@@ -79,27 +79,27 @@ def server_manager_name() -> str:
 
 @pytest.fixture(scope='session')
 def role_1() -> Roles:
-    return Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
+    return Roles([Roles.can_create_role])
 
 
 @pytest.fixture(scope='session')
 def role_2() -> Roles:
-    return Roles(can_create_group=True, can_create_role=False, can_manage_server=True, can_publish_realtime_events=True)
+    return Roles([Roles.can_create_group, Roles.can_manage_server, Roles.can_publish_realtime_events])
 
 
 @pytest.fixture(scope='session')
 def role_assigner() -> Roles:
-    return Roles(can_create_group=False, can_create_role=True, can_manage_server=False)
+    return Roles([Roles.can_create_role])
 
 
 @pytest.fixture(scope='session')
 def group_assigner() -> Roles:
-    return Roles(can_create_group=True, can_create_role=False, can_manage_server=True)
+    return Roles([Roles.can_create_group, Roles.can_manage_server])
 
 
 @pytest.fixture(scope='session')
 def server_manager() -> Roles:
-    return Roles(can_create_group=False, can_create_role=False, can_manage_server=True)
+    return Roles([Roles.can_manage_server])
 
 
 @pytest.fixture(scope='session')
@@ -268,7 +268,7 @@ def db_bot_user_1(state, db_user_1, token_1):
 @pytest.fixture(scope='function')
 def db_permission_1(state, permission_1, permission_name_1):
     with state.Session.begin() as session:
-        query = insert(GroupPermission).values(name=permission_name_1, **permission_1.as_dict()).returning(GroupPermission)
+        query = insert(GroupPermission).values(name=permission_name_1, grants=permission_1.as_csv()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
         session.expunge(perm)
     yield perm
@@ -277,7 +277,7 @@ def db_permission_1(state, permission_1, permission_name_1):
 @pytest.fixture(scope='function')
 def db_permission_2(state, permission_2, permission_name_2):
     with state.Session.begin() as session:
-        query = insert(GroupPermission).values(name=permission_name_2, **permission_2.as_dict()).returning(GroupPermission)
+        query = insert(GroupPermission).values(name=permission_name_2, grants=permission_2.as_csv()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
         session.expunge(perm)
     yield perm
@@ -286,7 +286,7 @@ def db_permission_2(state, permission_2, permission_name_2):
 @pytest.fixture(scope='function')
 def db_permission_3(state, permission_3, permission_name_3):
     with state.Session.begin() as session:
-        query = insert(GroupPermission).values(name=permission_name_3, **permission_3.as_dict()).returning(GroupPermission)
+        query = insert(GroupPermission).values(name=permission_name_3, grants=permission_3.as_csv()).returning(GroupPermission)
         perm = session.execute(query).first()[0]
         session.expunge(perm)
     yield perm
@@ -322,7 +322,7 @@ def db_group_3(state, db_permission_3, group_name_3):
 @pytest.fixture(scope='function')
 def db_role_1(state, role_1, role_name_1):
     with state.Session.begin() as session:
-        query = insert(Role).values(name=role_name_1, **role_1.as_dict()).returning(Role)
+        query = insert(Role).values(name=role_name_1, grants=role_1.as_csv()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -331,7 +331,7 @@ def db_role_1(state, role_1, role_name_1):
 @pytest.fixture(scope='function')
 def db_role_2(state, role_2, role_name_2):
     with state.Session.begin() as session:
-        query = insert(Role).values(name=role_name_2, **role_2.as_dict()).returning(Role)
+        query = insert(Role).values(name=role_name_2, grants=role_2.as_csv()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -340,7 +340,7 @@ def db_role_2(state, role_2, role_name_2):
 @pytest.fixture(scope='function')
 def db_role_assigner(state, role_assigner):
     with state.Session.begin() as session:
-        query = insert(Role).values(name='role-assigner', **role_assigner.as_dict()).returning(Role)
+        query = insert(Role).values(name='role-assigner', grants=role_assigner.as_csv()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -349,7 +349,7 @@ def db_role_assigner(state, role_assigner):
 @pytest.fixture(scope='function')
 def db_group_assigner(state, group_assigner):
     with state.Session.begin() as session:
-        query = insert(Role).values(name='group-assigner', **group_assigner.as_dict()).returning(Role)
+        query = insert(Role).values(name='group-assigner', grants=group_assigner.as_csv()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role
@@ -358,7 +358,7 @@ def db_group_assigner(state, group_assigner):
 @pytest.fixture(scope='function')
 def db_server_manager(state, server_manager, server_manager_name):
     with state.Session.begin() as session:
-        query = insert(Role).values(name=server_manager_name, **server_manager.as_dict()).returning(Role)
+        query = insert(Role).values(name=server_manager_name, grants=server_manager.as_csv()).returning(Role)
         role = session.execute(query).first()[0]
         session.expunge(role)
     yield role

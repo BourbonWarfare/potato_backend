@@ -34,7 +34,7 @@ class GroupStore:
         - `GroupPermissionCreationFailed`: If a model constraint is violated during creation.
         """
         with state.Session.begin() as session:
-            query = insert(GroupPermission).values(name=name, **permissions.as_dict()).returning(GroupPermission)
+            query = insert(GroupPermission).values(name=name, grants=permissions.as_csv()).returning(GroupPermission)
             try:
                 group_permission = session.execute(query).one()[0]
             except IntegrityError:
@@ -128,8 +128,21 @@ class GroupStore:
             except NoResultFound:
                 raise NoGroupPermissionWithCredentials(permission_name)
 
-            for grant, allowed in permissions.as_dict().items():
-                setattr(permission, grant, allowed)
+            permission.grants = permissions.as_csv()
+
+            session.flush()
+            session.expunge(permission)
+        return permission
+
+    def append_permission(self, state: State, permission_name: str, permissions: Permissions) -> GroupPermission:
+        with state.Session.begin() as session:
+            query = select(GroupPermission).where(GroupPermission.name == permission_name)
+            try:
+                permission = session.execute(query).one()[0]
+            except NoResultFound:
+                raise NoGroupPermissionWithCredentials(permission_name)
+
+            permission.grants = Permissions.from_many(permission.into_permissions(), permissions).as_csv()
 
             session.flush()
             session.expunge(permission)

@@ -76,6 +76,18 @@ class TestGroupStorePermissions:
         with pytest.raises(NoGroupPermissionWithCredentials):
             GroupStore().edit_permission(state, permission_name_2, permission_2)
 
+    def test__append_permission__adds_new_grants_without_replacing_existing(self, state, db_permission_1):
+        original = db_permission_1.into_permissions()
+        appended = Permissions(['can_publish_mission'])
+
+        new_permission = GroupStore().append_permission(state, db_permission_1.name, appended)
+
+        assert new_permission.into_permissions().as_list() == Permissions.from_many(original, appended).as_list()
+
+    def test__append_permission__cant_append_nonexistant_permission(self, state, permission_2, permission_name_2):
+        with pytest.raises(NoGroupPermissionWithCredentials):
+            GroupStore().append_permission(state, permission_name_2, permission_2)
+
     def test__get_all_permissions_user_has__no_permissions_if_not_in_group(self, state, db_user_1):
         permissions = GroupStore().get_all_permissions_user_has(state, db_user_1)
         assert not any(permissions.as_dict().values())

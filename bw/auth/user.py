@@ -589,7 +589,7 @@ class UserStore:
         ```
         """
         with state.Session.begin() as session:
-            query = insert(Role).values(name=role_name, **roles.as_dict()).returning(Role)
+            query = insert(Role).values(name=role_name, grants=roles.as_csv()).returning(Role)
             try:
                 role = session.execute(query).one()[0]
             except IntegrityError:
@@ -632,8 +632,7 @@ class UserStore:
             except NoResultFound:
                 raise NoRoleWithName(role_name)
 
-            for grant, allowed in new_roles.as_dict().items():
-                setattr(permission, grant, allowed)
+            permission.grants = new_roles.as_csv()
 
             session.flush()
             session.expunge(permission)

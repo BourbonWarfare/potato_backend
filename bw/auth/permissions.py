@@ -1,9 +1,8 @@
-from dataclasses import dataclass
-
-from bw.combined_dataclass import SlotCombiner
+from bw.auth.grants import GrantSet
 
 
-@dataclass(kw_only=True, slots=True)
-class Permissions(SlotCombiner):
-    can_upload_mission: bool = False
-    can_test_mission: bool = False
+class Permissions(GrantSet):
+    namespace = 'group:'
+
+    can_upload_mission = 'group:can_upload_mission'
+    can_test_mission = 'group:can_test_mission'
