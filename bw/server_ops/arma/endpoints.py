@@ -941,7 +941,7 @@ def define_arma_html(frontend: Blueprint, parts: Blueprint):
     )
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def events_page(html: str) -> str:
+    async def events_page(session_user: User, html: str) -> str:
         all_servers = ArmaApi().get_all_servers().contained_json['servers']
         return await render_template_string(html, servers=all_servers)
 
@@ -953,7 +953,7 @@ def define_arma_html(frontend: Blueprint, parts: Blueprint):
     )
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def events_list(html: str) -> str:
+    async def events_list(session_user: User, html: str) -> str:
         page = request.args.get('page', default=1, type=int)
         page_size = request.args.get('page_size', default=50, type=int)
         server = request.args.get('server', default=None, type=str)
