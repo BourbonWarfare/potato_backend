@@ -54,7 +54,7 @@ def can_manage_session_role_name():
 
 @pytest.fixture(scope='session')
 def can_manage_session_role():
-    return Roles(can_manage_session=True)
+    return Roles([Roles.can_manage_session])
 
 
 @pytest.fixture(scope='session')
