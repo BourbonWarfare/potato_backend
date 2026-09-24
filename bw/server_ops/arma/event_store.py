@@ -9,9 +9,9 @@ from bw.state import State
 
 
 class ArmaEventStore:
-    def create_event(self, state: State, tag: str, message: str) -> ArmaEvent:
+    def create_event(self, state: State, tag: str, message: str, server: str) -> ArmaEvent:
         with state.Session.begin() as session:
-            event = ArmaEvent(tag=tag, message=message)
+            event = ArmaEvent(tag=tag, message=message, server=server)
             session.add(event)
             session.flush()
             session.refresh(event)
@@ -19,7 +19,7 @@ class ArmaEventStore:
         return event
 
     def get_events_paginated(
-        self, state: State, page: int = 1, page_size: int = 50, tags: list[str] | None = None
+        self, state: State, page: int = 1, page_size: int = 50, tags: list[str] | None = None, server: str | None = None
     ) -> dict[str, Any]:
         page = max(1, page)
         page_size = max(1, min(page_size, 500))
@@ -31,6 +31,9 @@ class ArmaEventStore:
             if tags:
                 count_query = count_query.where(ArmaEvent.tag.in_(tags))
                 events_query = events_query.where(ArmaEvent.tag.in_(tags))
+
+            if server:
+                events_query = events_query.where(ArmaEvent.server == server)
 
             total = session.scalar(count_query) or 0
             events = (

@@ -13,15 +13,17 @@ class ArmaEvent(Base):
     __tablename__ = 'arma_events'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    server: Mapped[str] = mapped_column(String(length=128), index=True)
     creation_date: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=False), nullable=False, server_default=func.current_timestamp(), index=True
+        DateTime(timezone=False), server_default=func.current_timestamp(), index=True
     )
-    tag: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
-    message: Mapped[str] = mapped_column(Text(), nullable=False)
+    tag: Mapped[str] = mapped_column(String(128), index=True)
+    message: Mapped[str] = mapped_column(Text())
 
     def to_json(self) -> dict[str, Any]:
         return {
             'id': self.id,
+            'server': self.server,
             'creation_date': self.creation_date.isoformat(),
             'tag': self.tag,
             'message': self.message,

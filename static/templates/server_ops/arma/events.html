@@ -1,15 +1,32 @@
 <div class="section-header arma-events-header">
     <h1>Arma Events</h1>
-    <i>Script errors and server messages</i>
+    <i>Events that the Arma server has published for viewing out of Arma</i>
 </div>
 
 <section class="container-card arma-events-card">
     <div class="card-content arma-events-content">
-        <form id="arma-events-filter" class="arma-events-filter" hx-get="/api/v1/html/server_ops/arma/events/list" hx-target="#arma-events-results" hx-trigger="submit, change from:#arma-events-page-size" hx-swap="innerHTML">
+        <form id="arma-events-filter" class="arma-events-filter" hx-get="/api/v1/html/server_ops/arma/events/list"
+            hx-target="#arma-events-results" hx-trigger="submit, change from:#arma-events-page-size"
+            hx-swap="innerHTML">
             <input type="hidden" name="page" value="1" />
             <label>
                 Tags
-                <input type="text" name="tags" placeholder="script_error, server_message" />
+                <input type="text" name="tags" placeholder="script-error, admin-message" />
+            </label>
+            <label>
+                Server
+                {% if servers %}
+                <input id="server" name="server" list="server-options" autocomplete="off" value="{{ servers[0] }}" />
+                <datalist id="server-options">
+                    {% for server in servers %}
+                    <option value="{{ server }}"></option>
+                    {% endfor %}
+                </datalist>
+                {% else %}
+                <input id="server" name="server" disabled placeholder="No servers available"
+                    aria-describedby="server-empty-hint" />
+                <small id="server-empty-hint">No servers are registered.</small>
+                {% endif %}
             </label>
             <label>
                 Page size
@@ -23,6 +40,17 @@
             <button type="submit">Filter</button>
         </form>
 
-        <div id="arma-events-results" class="arma-events-results" hx-get="/api/v1/html/server_ops/arma/events/list" hx-trigger="load" hx-swap="innerHTML"></div>
+        <div id="arma-events-results" class="arma-events-results" hx-get="/api/v1/html/server_ops/arma/events/list"
+            hx-trigger="load" hx-swap="innerHTML"></div>
     </div>
 </section>
+
+<script>
+    function highlightNew() {
+        document.querySelectorAll("pre code:not([data-highlighted])")
+            .forEach(el => hljs.highlightElement(el));
+    }
+
+    highlightNew();
+    document.addEventListener("htmx:after:swap", () => highlightNew());
+</script>

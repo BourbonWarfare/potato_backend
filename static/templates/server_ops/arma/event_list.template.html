@@ -15,9 +15,9 @@
     <tbody>
         {% for event in events %}
         <tr>
-            <td><time datetime="{{ event.creation_date }}">{{ event.creation_date }}</time></td>
+            <td><time datetime="{{ event.creation_date }}">{{ event.creation_date_human }}</time></td>
             <td><span class="arma-event-tag">{{ event.tag }}</span></td>
-            <td class="arma-event-message">{{ event.message }}</td>
+            <td class="arma-event-message">{{ event.formatted_message|safe }}</td>
         </tr>
         {% endfor %}
     </tbody>

@@ -1,3 +1,4 @@
+import datetime
 import html
 import logging
 import urllib.parse
@@ -9,9 +10,11 @@ from bw.auth.roles import Roles
 from bw.environment import ENVIRONMENT
 from bw.models.auth import User
 from bw.response import ChunkedResponse, JsonResponse, NotFound, WebResponse
+from bw.server_ops.arma import utils
 from bw.server_ops.arma.api import ArmaApi
 from bw.server_ops.arma.mod import MODS, Mod
 from bw.server_ops.arma.types import WorkshopId
+from bw.settings import TIMEZONE
 from bw.state import State
 from bw.web_utils import chunk_text_response, html_endpoint, json_endpoint, url_endpoint
 
@@ -927,24 +930,47 @@ def define_arma(api: Blueprint):
 
 def define_arma_html(frontend: Blueprint, parts: Blueprint):
     @frontend.get('/arma/events')
-    @html_endpoint(template_path='server_ops/arma/events.html', title='Arma Events')
-    @require_session
-    @require_user_role(Roles.can_manage_server)
-    async def events_page(html: str, session_user: User) -> str:
-        return await render_template_string(html)
+    @html_endpoint(
+        template_path='server_ops/arma/events.html',
+        title='Arma Events',
+        injected_headers=[
+            '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">',
+            '<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>',
+            '<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sqf.min.js"></script>',
+        ],
+    )
+    # @require_session
+    # @require_user_role(Roles.can_manage_server)
+    async def events_page(html: str) -> str:
+        all_servers = ArmaApi().get_all_servers().contained_json['servers']
+        return await render_template_string(html, servers=all_servers)
 
     @parts.get('/arma/events/list')
-    @html_endpoint(template_path='server_ops/arma/event_list.template.html', return_partial=True)
-    @require_session
-    @require_user_role(Roles.can_manage_server)
-    async def events_list(html: str, session_user: User) -> str:
+    @html_endpoint(
+        template_path='server_ops/arma/event_list.template.html',
+        return_partial=True,
+        injected_response_headers={'HX-Trigger': 'highlight'},
+    )
+    # @require_session
+    # @require_user_role(Roles.can_manage_server)
+    async def events_list(html: str) -> str:
         page = request.args.get('page', default=1, type=int)
         page_size = request.args.get('page_size', default=50, type=int)
+        server = request.args.get('server', default=None, type=str)
         tags = _requested_event_tags()
-        payload = ArmaApi().get_events(State.state, page=page, page_size=page_size, tags=tags).contained_json
+        payload = ArmaApi().get_events(State.state, page=page, page_size=page_size, tags=tags, server=server).contained_json
         return await render_template_string(
             html,
-            events=payload['events'],
+            events=[
+                {
+                    **event,
+                    'creation_date_human': datetime.datetime.fromisoformat(event['creation_date'])
+                    .replace(tzinfo=TIMEZONE)
+                    .strftime('%Y, %B %d - %H:%M:%S'),
+                    'formatted_message': await utils.format_arma_event(event['tag'], event['message']),
+                }
+                for event in payload['events']
+            ],
             page=payload['page'],
             page_size=payload['page_size'],
             total=payload['total'],

@@ -141,7 +141,7 @@ a:hover {
     width: 100%;
 }
 
-.card-content form {
+.card-content :where(form) {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1417,6 +1417,7 @@ button:hover {
         border-radius: 0;
     }
 }
+
 .arma-events-header {
     width: min(100%, 1180px);
 }
@@ -1433,32 +1434,43 @@ button:hover {
 
 .arma-events-filter {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) 160px auto;
+    grid-template-columns: minmax(220px, 2fr) minmax(200px, 1.5fr) 140px auto;
     gap: 16px;
     align-items: end;
     width: 100%;
     margin-bottom: 24px;
 }
 
-.arma-events-filter label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.arma-events-filter label,
+.arma-events-filter .field {
+    position: relative;
+}
+
+.arma-events-filter small {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: nowrap;
 }
 
 .arma-events-filter input,
 .arma-events-filter select {
+    height: 48px;
+    padding: 0 16px;
+    width: 100%;
     background-color: var(--bg);
     color: var(--text-primary);
     border: 1px solid var(--border);
-    padding: 12px 16px;
+    font: inherit;
     font-size: 1rem;
-    width: 100%;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
 }
 
 .arma-events-filter input:focus,
@@ -1467,8 +1479,7 @@ button:hover {
     outline: none;
 }
 
-.arma-events-filter button,
-.arma-events-pagination button {
+.arma-events-filter .arma-events-pagination button {
     width: auto;
     max-width: none;
     margin-top: 0;
@@ -1543,6 +1554,7 @@ button:hover {
 }
 
 @media (max-width: 760px) {
+
     .arma-events-filter,
     .arma-events-summary,
     .arma-events-pagination {
@@ -1555,4 +1567,54 @@ button:hover {
         display: block;
         overflow-x: auto;
     }
+
+    .arma-events-filter small {
+        position: static;
+        margin-top: 0;
+    }
+}
+
+.arma_script_error {
+    white-space: normal;
+    /* stop inheriting pre-wrap from .arma-event-message */
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+}
+
+.arma_script_error p {
+    margin: 0;
+    width: auto;
+    max-width: none;
+    font-size: inherit;
+    line-height: 1.4;
+}
+
+.arma_script_error p:first-of-type {
+    color: var(--error-text);
+    margin-bottom: 6px;
+}
+
+/* Line/Pos: header bar attached to the code block */
+.arma_script_error p:nth-of-type(2) {
+    padding: 4px 12px;
+    background: #161b22;
+    border-left: 3px solid var(--accent);
+    color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.75rem;
+}
+
+.arma_script_error pre {
+    margin: 0;
+}
+
+.arma_script_error pre code.hljs {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    border-left: 3px solid var(--accent);
+    white-space: pre;
+    max-height: 12rem;
+    overflow: auto;
 }

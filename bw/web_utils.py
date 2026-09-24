@@ -282,7 +282,13 @@ async def load_template_from_disk(*, template_path: Path | str, base_path: str =
 
 
 def html_endpoint(
-    *, template_path: Path | str, title: str | None = None, return_partial: bool = False, mimetype: str = 'text/html'
+    *,
+    template_path: Path | str,
+    title: str | None = None,
+    return_partial: bool = False,
+    mimetype: str = 'text/html',
+    injected_headers: list[str] | None = None,
+    injected_response_headers: dict[str, str] | None = None,
 ):
     """
     ### Decorator for HTML endpoint functions with template caching and rendering
@@ -348,19 +354,22 @@ def html_endpoint(
                 logger.warning(e)
                 inner_html = await load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
 
+            response_headers = injected_response_headers if injected_response_headers else {}
+
             if has_request_context():
                 headers = request.headers
             else:
                 headers = {}
+
             if 'HX-Request' in headers:
                 if isinstance(inner_html, str):
-                    return chunk_text_response(inner_html, mimetype=mimetype)
+                    return chunk_text_response(inner_html, mimetype=mimetype, headers=response_headers)
                 else:
                     return inner_html
 
             if return_partial:
                 if isinstance(inner_html, str):
-                    return chunk_text_response(inner_html, mimetype=mimetype)
+                    return chunk_text_response(inner_html, mimetype=mimetype, headers=response_headers)
                 else:
                     return inner_html
 
@@ -370,10 +379,11 @@ def html_endpoint(
                 inner_html=inner_html,
                 title=title if title is not None else 'Bourbon Warfare',
                 logged_in=is_logged_in,
+                injected_headers=injected_headers if injected_headers else [],
             )
 
             if isinstance(inner_html, str):
-                return chunk_text_response(full_page, mimetype=mimetype)
+                return chunk_text_response(full_page, mimetype=mimetype, headers=response_headers)
             else:
                 return inner_html
 
