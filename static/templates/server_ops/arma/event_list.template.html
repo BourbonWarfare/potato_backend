@@ -1,0 +1,38 @@
+<div class="arma-events-summary">
+    <p>{{ total }} event{% if total != 1 %}s{% endif %}{% if tags %} tagged {{ tags|join(', ') }}{% endif %}</p>
+    <p>Page {{ page }} of {{ total_pages if total_pages else 1 }}</p>
+</div>
+
+{% if events %}
+<table class="arma-events-table">
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Tag</th>
+            <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for event in events %}
+        <tr>
+            <td><time datetime="{{ event.creation_date }}">{{ event.creation_date }}</time></td>
+            <td><span class="arma-event-tag">{{ event.tag }}</span></td>
+            <td class="arma-event-message">{{ event.message }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="arma-events-empty">No Arma events found.</div>
+{% endif %}
+
+<div class="arma-events-pagination">
+    {% set previous_page = page - 1 %}
+    {% set next_page = page + 1 %}
+    <button type="button" {% if not has_previous %}disabled{% endif %}
+        hx-get="/api/v1/html/server_ops/arma/events/list?page={{ previous_page }}&page_size={{ page_size }}{% if tag_query %}&tags={{ tag_query }}{% endif %}"
+        hx-target="#arma-events-results" hx-swap="innerHTML">Previous</button>
+    <button type="button" {% if not has_next %}disabled{% endif %}
+        hx-get="/api/v1/html/server_ops/arma/events/list?page={{ next_page }}&page_size={{ page_size }}{% if tag_query %}&tags={{ tag_query }}{% endif %}"
+        hx-target="#arma-events-results" hx-swap="innerHTML">Next</button>
+</div>

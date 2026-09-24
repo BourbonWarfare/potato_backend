@@ -1,0 +1,28 @@
+<div class="section-header arma-events-header">
+    <h1>Arma Events</h1>
+    <i>Script errors and server messages</i>
+</div>
+
+<section class="container-card arma-events-card">
+    <div class="card-content arma-events-content">
+        <form id="arma-events-filter" class="arma-events-filter" hx-get="/api/v1/html/server_ops/arma/events/list" hx-target="#arma-events-results" hx-trigger="submit, change from:#arma-events-page-size" hx-swap="innerHTML">
+            <input type="hidden" name="page" value="1" />
+            <label>
+                Tags
+                <input type="text" name="tags" placeholder="script_error, server_message" />
+            </label>
+            <label>
+                Page size
+                <select id="arma-events-page-size" name="page_size">
+                    <option value="25">25</option>
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                    <option value="250">250</option>
+                </select>
+            </label>
+            <button type="submit">Filter</button>
+        </form>
+
+        <div id="arma-events-results" class="arma-events-results" hx-get="/api/v1/html/server_ops/arma/events/list" hx-trigger="load" hx-swap="innerHTML"></div>
+    </div>
+</section>

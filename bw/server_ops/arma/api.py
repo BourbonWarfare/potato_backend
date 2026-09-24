@@ -24,7 +24,8 @@ from bw.error import (
     ServerConfigNotFound,
     SubprocessFailed,
 )
-from bw.response import ChunkedResponse, Created, JsonResponse, Ok, WebResponse
+from bw.response import BadRequest, ChunkedResponse, Created, JsonResponse, Ok, WebResponse
+from bw.server_ops.arma.event_store import ArmaEventStore
 from bw.server_ops.arma.mod import (
     MODLISTS,
     MODS,
@@ -63,6 +64,21 @@ logger = logging.getLogger('bw.server_ops.arma')
 
 
 class ArmaApi:
+    @define_api
+    def create_event(self, state: State, tag: str, message: str) -> JsonResponse | WebResponse:
+        tag = tag.strip() if isinstance(tag, str) else tag
+        if not isinstance(tag, str) or not tag:
+            return BadRequest('tag is required')
+        if not isinstance(message, str) or not message:
+            return BadRequest('message is required')
+
+        event = ArmaEventStore().create_event(state, tag=tag, message=message)
+        return JsonResponse({'event': event.to_json()}, status=201)
+
+    @define_api
+    def get_events(self, state: State, page: int = 1, page_size: int = 50, tags: list[str] | None = None) -> JsonResponse:
+        return JsonResponse(ArmaEventStore().get_events_paginated(state, page=page, page_size=page_size, tags=tags))
+
     def get_server_from_string(self, server: str) -> Server:
         if server not in SERVER_MAP:
             raise ServerConfigNotFound(server)
