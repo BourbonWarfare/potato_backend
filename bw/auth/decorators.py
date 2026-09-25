@@ -3,6 +3,7 @@ import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
+from typing import Any
 
 from quart import request
 
@@ -129,23 +130,26 @@ def require_session(
         validate_session(State.state, session_token, require_authentication=require_authenticated)
         return SessionStore().get_user_from_session_token(State.state, session_token=session_token)
 
-    def decorator(func):
-        additional_kwargs = {}
+    def _kwargs() -> dict[str, Any]:
+        kwargs = {}
         if require_user:
-            additional_kwargs['session_user'] = _session_user()
+            kwargs['session_user'] = _session_user()
         if pass_session_token:
-            additional_kwargs['session_token'] = _session_token()
+            kwargs['session_token'] = _session_token()
+        return kwargs
+
+    def decorator(func):
         if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
-                return await func(*args, **additional_kwargs, **kwargs)
+                return await func(*args, **_kwargs(), **kwargs)
 
         else:
 
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
-                return func(*args, **additional_kwargs, **kwargs)
+                return func(*args, **_kwargs(), **kwargs)
 
         return wrapper
 
