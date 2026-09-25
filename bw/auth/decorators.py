@@ -1,7 +1,7 @@
 import functools
 import inspect
 import logging
-from collections.abc import Awaitable, Callable, Generator
+from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
 
 from quart import request
@@ -115,35 +115,37 @@ def require_session(
     *,
     require_authenticated: bool = True,
     require_user: bool = True,
+    pass_session_token: bool = False,
 ):
-    @contextmanager
-    def _session_user() -> Generator[User]:
+    def _session_token() -> str:
         try:
             session_token = session_token_from_cookie(AuthApi())
         except CannotDetermineSession:
             session_token = session_token_from_bearer(request.headers)
+        return session_token
 
+    def _session_user() -> User:
+        session_token = _session_token()
         validate_session(State.state, session_token, require_authentication=require_authenticated)
-        yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)
+        return SessionStore().get_user_from_session_token(State.state, session_token=session_token)
 
     def decorator(func):
+        additional_kwargs = {}
+        if require_user:
+            additional_kwargs['session_user'] = _session_user()
+        if pass_session_token:
+            additional_kwargs['session_token'] = _session_token()
         if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
-                if require_user:
-                    with _session_user() as session_user:
-                        return await func(*args, session_user=session_user, **kwargs)
-                return await func(*args, **kwargs)
+                return await func(*args, **additional_kwargs, **kwargs)
 
         else:
 
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
-                if require_user:
-                    with _session_user() as session_user:
-                        return func(*args, session_user=session_user, **kwargs)
-                return func(*args, **kwargs)
+                return func(*args, **additional_kwargs, **kwargs)
 
         return wrapper
 

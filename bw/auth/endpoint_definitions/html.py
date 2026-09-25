@@ -52,9 +52,10 @@ def define_html(frontend: Blueprint, parts: Blueprint):
 
     @frontend.get('/discord')
     @url_endpoint
-    @require_session(require_authenticated=False, require_user=False)
-    async def login_discord() -> WebResponse:
-        state = secure_token_urlsafe()
+    @verify_csrf_from_form
+    @require_session(require_authenticated=False, require_user=False, pass_session_token=True)
+    async def login_discord(session_token: str) -> WebResponse:
+        state = AuthApi().set_session_state(State.state, session_token).state
         redirect_url = urllib.parse.quote(ENVIRONMENT.discord_oauth_redirect(), safe='')
         redirect = (
             'https://discord.com/oauth2/authorize?'
