@@ -44,10 +44,13 @@
 
         <!-- Normal navigation — will redirect to Discord OAuth -->
         <div class="oauth-grid">
-            <a href="/auth/discord" class="oauth-btn discord">
-                <img src="/static/svg/discord.svg" class="discord-logo" alt="Discord logo" />
-                Sign in with Discord
-            </a>
+            <form method="GET" autocomplete="on">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="oauth-btn discord">
+                    <img src="/static/svg/discord.svg" class="discord-logo" alt="Discord logo" />
+                    Sign in with Discord
+                </button>
+            </form>
         </div>
 
         <div class="auth-footer">
