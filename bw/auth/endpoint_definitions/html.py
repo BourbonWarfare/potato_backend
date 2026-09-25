@@ -23,7 +23,7 @@ from bw.auth.remarks import Remark
 from bw.auth.roles import Roles
 from bw.auth.utils import secure_token_urlsafe
 from bw.environment import ENVIRONMENT
-from bw.error import AuthError, ReauthNeededError
+from bw.error import AuthError, ForbiddenError, ReauthNeededError
 from bw.models.auth import User
 from bw.response import ChunkedResponse, Forbidden, Found, JsonResponse, WebResponse
 from bw.state import State
@@ -50,10 +50,9 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/discord')
+    @url_endpoint
     @require_session(require_authenticated=False, require_user=False)
-    async def login_discord(html: str) -> WebResponse:
-        # Pass in client id via envvar
-        # pass in redirect via envvar
+    async def login_discord() -> WebResponse:
         state = secure_token_urlsafe()
         redirect = (
             'https://discord.com/oauth2/authorize?'
@@ -86,12 +85,9 @@ def define_html(frontend: Blueprint, parts: Blueprint):
                 json = await response.json()
         except aiohttp.ClientResponseError as err:
             logger.warning(f'Discord OAuth failed: {err}')
-            return '403'
+            raise ForbiddenError('oauth failed') from err
 
-        try:
-            response = AuthApi().login_with_discord(State.state, json.get('access_token', ''))
-        except (ReauthNeededError, AuthError):
-            return '403'
+        response = AuthApi().login_with_discord(State.state, json.get('access_token', ''))
 
         session = response['session_token']
         AuthApi().store_session_cookie(session, permanent=True)
