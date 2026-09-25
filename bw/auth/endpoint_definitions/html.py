@@ -2,6 +2,7 @@
 
 import logging
 import secrets
+import urllib.parse
 import uuid
 from datetime import timedelta
 
@@ -54,11 +55,12 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     @require_session(require_authenticated=False, require_user=False)
     async def login_discord() -> WebResponse:
         state = secure_token_urlsafe()
+        redirect_url = urllib.parse.quote(ENVIRONMENT.discord_oauth_redirect(), safe='')
         redirect = (
             'https://discord.com/oauth2/authorize?'
             f'client_id={ENVIRONMENT.discord_client_id()}'
             '&response_type=code'
-            f'&redirect_uri={ENVIRONMENT.discord_oauth_redirect()}'
+            f'&redirect_uri={redirect_url}'
             f'&state={state}'
         )
         response = Found(redirect)
