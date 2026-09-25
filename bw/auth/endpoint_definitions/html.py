@@ -19,7 +19,7 @@ from bw.auth.permissions import Permissions
 from bw.auth.remarks import Remark
 from bw.auth.roles import Roles
 from bw.models.auth import User
-from bw.response import ChunkedResponse, JsonResponse, WebResponse
+from bw.response import ChunkedResponse, Found, JsonResponse, WebResponse
 from bw.state import State
 from bw.web_utils import (
     chunk_text_response,
@@ -42,6 +42,11 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
         AuthApi().store_session_cookie(session_token)
         return await render_template_string(html, csrf_token=csrf_token)
+
+    @frontend.get('/discord')
+    @url_endpoint
+    async def login_discord(html: str) -> WebResponse:
+        return Found('')
 
     @frontend.get('/verify')
     @html_endpoint(template_path='auth/verify.html', title='Verified your Bourbon Warfare account')
@@ -74,7 +79,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
             return await render_template_string(html, csrf_token=csrf_token, token=token)
         return await render_template_string(html, csrf_token=csrf_token)
 
-    @frontend.get('/login/discord')
+    @frontend.get('/login/discord/bot')
     @html_endpoint(template_path='auth/oauth/discord.html', title='Logged in with Discord')
     async def login_discord_redirect(html: str) -> str:
         """

@@ -105,6 +105,11 @@ class BadRequest(WebResponse):
         super().__init__(400, response=data)
 
 
+class Found(WebResponse):
+    def __init__(self, location: str):
+        super().__init__(302, response='', headers={'Location': location})
+
+
 class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'application/json'
