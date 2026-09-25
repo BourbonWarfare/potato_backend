@@ -20,11 +20,21 @@ async def format_arma_script_error(message: str) -> str:
     line_number = int(line_number)
     content = nh3.clean(content).splitlines()
     error_position = int(error_position)
-    while content and (not content[0] or content[0].isspace() or content[0][0] == '#'):
-        error_position -= len(content.pop(0).encode())
+
+    # if it starts with a # then we are needing to remove ARMAs bullshit with includes
+    if content and content[0][0] == '#':
+        error_position -= len(content.pop(0).encode()) + 1
+        while content and (not content[0] or content[0].isspace() or content[0][0] == '#'):
+            to_ignore = content.pop(0)
+            error_position -= len(to_ignore.encode()) + 1
+            if source_file and source_file in to_ignore:
+                break
 
     if content:
-        error_position -= sum([len(s.encode()) for s in content[:line_number]])
+        # line number - 2 because:
+        # line number starts at 1, not 0 (-1)
+        # we want to remove the positions before the target line (-1)
+        error_position -= sum([1 + len(s.encode()) for s in content[: line_number - 2]])
 
         if source_file:
             error_info = f'{source_file}:{line_number}:{error_position}'
