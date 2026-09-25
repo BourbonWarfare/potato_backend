@@ -29,7 +29,7 @@ async def format_arma_script_error(message: str) -> str:
 
     array_idx = max(0, line_number - 1)
     error_start = max(0, array_idx - NEGATIVE_OFFSET)
-    content_relevant = [line for line in content[error_start : array_idx + POSITIVE_OFFSET] if line.strip()]
+    content_relevant = content[error_start : array_idx + POSITIVE_OFFSET]
 
     error_line_length = len(content_relevant[array_idx - 1])
     error_line_start = max(0, error_position + ERROR_START)
