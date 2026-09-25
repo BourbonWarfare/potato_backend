@@ -90,7 +90,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
             logger.warning(f'Discord OAuth failed: {err}')
             raise ForbiddenError('oauth failed') from err
 
-        response = AuthApi().login_with_discord(State.state, json.get('access_token', ''))
+        response = await AuthApi().login_with_discord(State.state, json.get('access_token', ''))
 
         session = response['session_token']
         AuthApi().store_session_cookie(session, permanent=True)
