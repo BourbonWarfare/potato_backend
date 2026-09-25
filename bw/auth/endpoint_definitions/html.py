@@ -63,7 +63,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
             f'&state={state}'
         )
         response = Found(redirect)
-        response.set_cookie('discord_oauth_state', state, max_age=timedelta(minutes=3), secure=True)
+        response.set_cookie('state', state, max_age=timedelta(minutes=3), secure=True)
         return response
 
     @frontend.get('/login/discord')
