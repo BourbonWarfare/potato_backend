@@ -38,7 +38,7 @@ async def format_arma_script_error(message: str) -> str:
         error_line_length = len(content_relevant[relative_line_number])
         error_line_start = max(0, error_position + ERROR_START)
         error_line_context_length = error_line_length - error_line_start
-        content_relevant.insert(relative_line_number, '-' * error_line_start + '^' * error_line_context_length)
+        content_relevant.insert(relative_line_number + 1, '-' * error_line_start + '^' * error_line_context_length)
         content_relevant = '\n'.join(content_relevant)
     else:
         content_relevant = 'No script found within event.'
