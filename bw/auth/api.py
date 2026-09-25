@@ -57,6 +57,12 @@ class AuthApi:
         return WithState(state=csrf_token)
 
     @define_api
+    def set_session_state(self, state: State, session_token: str) -> WebResponse:
+        secure_state = secure_token_urlsafe()
+        SessionStore().set_state(state, session_token, secure_state)
+        return WithState(state=secure_state)
+
+    @define_api
     def send_recovery_email(self, state: State, email: str) -> WebResponse:
         """
         ### Send recovery email for the user

@@ -474,3 +474,16 @@ class SessionStore:
             if not csrf_token:
                 csrf_token = ''
         return csrf_token
+
+    def set_state(self, state: State, session_token: str, secure_state: str):
+        with state.Session.begin() as session:
+            query = update(Session).where(Session.token == session_token).values(state=secure_state)
+            session.execute(query)
+
+    def get_state(self, state: State, session_token: str):
+        with state.Session.begin() as session:
+            query = select(Session.state).where(Session.token == session_token)
+            secure_state = session.scalar(query)
+            if not secure_state:
+                secure_state = ''
+        return secure_state

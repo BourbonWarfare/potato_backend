@@ -125,6 +125,11 @@ class CsrfTokenDoesntMatch(AuthError):
         super().__init__('csrf token does not match')
 
 
+class StateDoesntMatch(AuthError):
+    def __init__(self):
+        super().__init__('state does not match')
+
+
 class BourbonUserAlreadyExists(AuthError):
     def status(self) -> int:
         return 400

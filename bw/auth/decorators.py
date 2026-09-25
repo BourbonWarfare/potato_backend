@@ -1,5 +1,5 @@
-import asyncio
 import functools
+import inspect
 import logging
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
@@ -19,6 +19,7 @@ from bw.error import (
     NonLocalIpAccessingLocalOnlyAddress,
     NotEnoughPermissions,
     SessionExpired,
+    StateDoesntMatch,
 )
 from bw.models.auth import User
 from bw.response import WebResponse
@@ -55,7 +56,7 @@ def with_token(func):
             raise CannotDetermineSession()
 
         session_token = auth[len(bearer_header) :]  # Remove 'Bearer ' prefix
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             async def afnc():
                 return await func(token=session_token, **kwargs)
@@ -96,7 +97,7 @@ def require_local(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         with _validate_local():
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
 
                 async def afnc():
                     return await func(*args, **kwargs)
@@ -126,7 +127,7 @@ def require_session(
         yield SessionStore().get_user_from_session_token(State.state, session_token=session_token)
 
     def decorator(func):
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -195,7 +196,7 @@ def with_default_session(func):
     @functools.wraps(func)
     def wrapper(**kwargs):
         with _session_token() as session_token:
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
 
                 async def afnc():
                     return await func(session_token=session_token, **kwargs)
@@ -237,7 +238,7 @@ def require_group_permission(*required_permissions: str):
         @functools.wraps(func)
         def wrapper(session_user: User, **kwargs):
             with _validate_permissions(session_user):
-                if asyncio.iscoroutinefunction(func):
+                if inspect.iscoroutinefunction(func):
 
                     async def afnc():
                         return await func(session_user=session_user, **kwargs)
@@ -284,7 +285,7 @@ def require_user_role(*required_roles: str):
         @functools.wraps(func)
         def wrapper(session_user: User, **kwargs):
             with _validate_roles(session_user):
-                if asyncio.iscoroutinefunction(func):
+                if inspect.iscoroutinefunction(func):
 
                     async def afnc():
                         return await func(session_user=session_user, **kwargs)
@@ -295,6 +296,53 @@ def require_user_role(*required_roles: str):
 
         return wrapper
 
+    return decorator
+
+
+def verify_session_state(func: Callable | None = None):
+    def decorator(func):
+        @contextmanager
+        def _session_state():
+            session_token: str = ''
+            try:
+                session_token = session_token_from_cookie(AuthApi())
+            except CannotDetermineSession:
+                pass
+
+            if not session_token:
+                try:
+                    session_token = session_token_from_bearer(headers=request.headers)
+                except CannotDetermineSession:
+                    pass
+
+            try:
+                if not session_token:
+                    logger.error('Cannot extact token from form when required')
+                    raise NeedsAuthenticatedSession()
+
+                validate_session(State.state, session_token)
+            except (SessionExpired, NeedsAuthenticatedSession):
+                pass
+
+            yield SessionStore().get_state(State.state, session_token)
+
+        @functools.wraps(func)
+        async def wrapper(**kwargs):
+            with _session_state() as secure_state:
+                sent_state = request.args.get('state')
+                if sent_state != secure_state:
+                    logger.error('Possible CSRF attempt, state mismatch')
+                    raise StateDoesntMatch()
+
+            if inspect.iscoroutinefunction(func):
+                return await func(**kwargs)
+            else:
+                return func(**kwargs)
+
+        return wrapper
+
+    if callable(func):
+        return decorator(func)
     return decorator
 
 
@@ -335,7 +383,7 @@ def verify_csrf_from_form(func: Callable | None = None, /, *, form_id: str = 'cs
 
             if form_id in kwargs:
                 kwargs.pop(form_id)
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 return await func(**kwargs)
             else:
                 return func(**kwargs)

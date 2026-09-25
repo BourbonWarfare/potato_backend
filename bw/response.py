@@ -110,6 +110,11 @@ class Found(WebResponse):
         super().__init__(302, response='', headers={'Location': location})
 
 
+class Forbidden(WebResponse):
+    def __init__(self):
+        super().__init__(403)
+
+
 class JsonResponse(WebResponse):
     def content_type(self) -> str:
         return 'application/json'

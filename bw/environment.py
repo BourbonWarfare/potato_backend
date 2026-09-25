@@ -39,6 +39,21 @@ class Environment:
         assert isinstance(discord_api_url, str)
         return discord_api_url.strip('/')
 
+    def discord_client_id(self) -> str:
+        discord_client_id = GC.require('discord_client_id').get()
+        assert isinstance(discord_client_id, str)
+        return discord_client_id
+
+    def discord_client_secret(self) -> str:
+        discord_client_secret = GC.require('discord_client_secret').get()
+        assert isinstance(discord_client_secret, str)
+        return discord_client_secret
+
+    def discord_oauth_redirect(self) -> str:
+        discord_oauth_redirect = GC.require('discord_oauth_redirect').get()
+        assert isinstance(discord_oauth_redirect, str)
+        return discord_oauth_redirect
+
     def arma_mod_config_path(self) -> Path:
         return Path(GC.require('arma_mod_configs').get())  # ty: ignore[invalid-argument-type]
 

@@ -106,6 +106,7 @@ class Session(Base):
 
     user_id: Mapped[int | None] = mapped_column(ForeignKey(User.id, name='linked_user_for_session'), unique=False)
     csrf_token: Mapped[str | None] = mapped_column(String(TOKEN_LENGTH), default=None)
+    state: Mapped[str | None] = mapped_column(String(TOKEN_LENGTH), default=None)
 
     @staticmethod
     def now():

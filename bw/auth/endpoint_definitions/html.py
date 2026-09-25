@@ -3,7 +3,9 @@
 import logging
 import secrets
 import uuid
+from datetime import timedelta
 
+import aiohttp
 from quart import Blueprint, render_template_string, request
 
 from bw.auth.api import AuthApi
@@ -12,14 +14,18 @@ from bw.auth.decorators import (
     require_session,
     require_user_role,
     verify_csrf_from_form,
+    verify_session_state,
     with_default_session,
     with_token,
 )
 from bw.auth.permissions import Permissions
 from bw.auth.remarks import Remark
 from bw.auth.roles import Roles
+from bw.auth.utils import secure_token_urlsafe
+from bw.environment import ENVIRONMENT
+from bw.error import AuthError, ReauthNeededError
 from bw.models.auth import User
-from bw.response import ChunkedResponse, Found, JsonResponse, WebResponse
+from bw.response import ChunkedResponse, Forbidden, Found, JsonResponse, WebResponse
 from bw.state import State
 from bw.web_utils import (
     chunk_text_response,
@@ -44,9 +50,53 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/discord')
-    @url_endpoint
+    @require_session(require_authenticated=False, require_user=False)
     async def login_discord(html: str) -> WebResponse:
-        return Found('')
+        # Pass in client id via envvar
+        # pass in redirect via envvar
+        state = secure_token_urlsafe()
+        redirect = (
+            'https://discord.com/oauth2/authorize?'
+            f'client_id={ENVIRONMENT.discord_client_id()}'
+            '&response_type=code'
+            f'&redirect_uri={ENVIRONMENT.discord_oauth_redirect()}'
+            f'&state={state}'
+        )
+        response = Found(redirect)
+        response.set_cookie('discord_oauth_state', state, max_age=timedelta(minutes=3), secure=True)
+        return response
+
+    @frontend.get('/login/discord')
+    @html_endpoint(template_path='auth/oauth/discord.html', title='Logged in with Discord')
+    @require_session(require_authenticated=False, require_user=False)
+    @verify_session_state
+    async def login_discord_redirect(html: str) -> str:
+        discord_code = request.args.get('code', default='', type=str)
+        logger.info('OAuth redirect (Website)')
+
+        auth = aiohttp.BasicAuth(ENVIRONMENT.discord_client_id(), ENVIRONMENT.discord_client_secret())
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        data = {'grant_type': 'authorization_code', 'code': discord_code, 'redirect_uri': ENVIRONMENT.discord_oauth_redirect()}
+        try:
+            async with (
+                aiohttp.ClientSession(ENVIRONMENT.discord_api_url()) as session,
+                session.post('oauth2/token', data=data, headers=headers, auth=auth) as response,
+            ):
+                response.raise_for_status()
+                json = await response.json()
+        except aiohttp.ClientResponseError as err:
+            logger.warning(f'Discord OAuth failed: {err}')
+            return '403'
+
+        try:
+            response = AuthApi().login_with_discord(State.state, json.get('access_token', ''))
+        except (ReauthNeededError, AuthError):
+            return '403'
+
+        session = response['session_token']
+        AuthApi().store_session_cookie(session, permanent=True)
+
+        return html
 
     @frontend.get('/verify')
     @html_endpoint(template_path='auth/verify.html', title='Verified your Bourbon Warfare account')
@@ -80,8 +130,8 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         return await render_template_string(html, csrf_token=csrf_token)
 
     @frontend.get('/login/discord/bot')
-    @html_endpoint(template_path='auth/oauth/discord.html', title='Logged in with Discord')
-    async def login_discord_redirect(html: str) -> str:
+    @html_endpoint(template_path='auth/oauth/discord_bot.html', title='Logged in with Discord')
+    async def login_discord_redirect_bot(html: str) -> str:
         """
         ### Discord OAuth2 redirect endpoint
 
