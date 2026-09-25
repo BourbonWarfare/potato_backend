@@ -23,12 +23,15 @@ async def format_arma_script_error(message: str) -> str:
 
     # if it starts with a # then we are needing to remove ARMAs bullshit with includes
     if content and content[0][0] == '#':
+        source_line_number = 0
         error_position -= len(content.pop(0).encode()) + 1
         while content and (not content[0] or content[0].isspace() or content[0][0] == '#'):
             to_ignore = content.pop(0)
             error_position -= len(to_ignore.encode()) + 1
             if source_file and source_file in to_ignore:
-                break
+                source_line_number = int(to_ignore.removeprefix('#line ').split(' ')[0])
+
+        content = [''] * source_line_number + content
 
     if content:
         # line number - 2 because:
