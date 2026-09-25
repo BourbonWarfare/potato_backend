@@ -60,13 +60,17 @@ def _events_html(payload: dict) -> str:
 def define_arma(api: Blueprint):
     @api.post('events')
     @json_endpoint
-    async def create_event(tag: str, message: str) -> WebResponse:
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def create_event(session_user: User, tag: str, message: str) -> WebResponse:
         logger.info(f'Recording Arma event tagged {tag}')
         return ArmaApi().create_event(State.state, tag=tag, message=message)
 
     @api.get('events')
     @url_endpoint
-    async def get_events() -> WebResponse:
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def get_events(session_user: User) -> WebResponse:
         page = request.args.get('page', default=1, type=int)
         page_size = request.args.get('page_size', default=50, type=int)
         tags = _requested_event_tags()
