@@ -81,7 +81,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         data = {'grant_type': 'authorization_code', 'code': discord_code, 'redirect_uri': ENVIRONMENT.discord_oauth_redirect()}
         try:
             async with (
-                aiohttp.ClientSession(ENVIRONMENT.discord_api_url()) as session,
+                aiohttp.ClientSession(ENVIRONMENT.discord_api_url(strip=False)) as session,
                 session.post('oauth2/token', data=data, headers=headers, auth=auth) as response,
             ):
                 response.raise_for_status()

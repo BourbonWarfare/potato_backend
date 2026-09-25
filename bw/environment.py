@@ -34,10 +34,13 @@ class Environment:
             return Path(GC['server_config_directory'])
         return Path('./server_configs')
 
-    def discord_api_url(self) -> str:
+    def discord_api_url(self, strip: bool = True) -> str:
         discord_api_url = GC.require('discord_api_url').get()
         assert isinstance(discord_api_url, str)
-        return discord_api_url.strip('/')
+        if strip:
+            return discord_api_url.strip('/')
+        else:
+            return discord_api_url
 
     def discord_client_id(self) -> str:
         discord_client_id = GC.require('discord_client_id').get()
