@@ -19,23 +19,28 @@ async def format_arma_script_error(message: str) -> str:
     source_file = nh3.clean(source_file)
     line_number = int(line_number)
     content = nh3.clean(content).splitlines()
+    while content and (not content[0] or content[0].isspace() or content[0][0] == '#'):
+        content.pop(0)
 
-    error_position = int(error_position) - sum([len(s.encode()) for s in content[:line_number]])
+    if content:
+        error_position = int(error_position) - sum([len(s.encode()) for s in content[:line_number]])
 
-    if source_file:
-        error_info = f'{source_file}:{line_number}:{error_position}'
+        if source_file:
+            error_info = f'{source_file}:{line_number}:{error_position}'
+        else:
+            error_info = f'Line/Pos:{line_number}:{error_position}'
+
+        array_idx = max(0, line_number - 1)
+        error_start = max(0, array_idx - NEGATIVE_OFFSET)
+        content_relevant = content[error_start : array_idx + POSITIVE_OFFSET]
+
+        error_line_length = len(content_relevant[NEGATIVE_OFFSET - 1])
+        error_line_start = max(0, error_position + ERROR_START)
+        error_line_context_length = error_line_length - error_line_start
+        content_relevant.insert(NEGATIVE_OFFSET, '-' * error_line_start + '^' * error_line_context_length)
+        content_relevant = '\n'.join(content_relevant)
     else:
-        error_info = f'Line/Pos:{line_number}:{error_position}'
-
-    array_idx = max(0, line_number - 1)
-    error_start = max(0, array_idx - NEGATIVE_OFFSET)
-    content_relevant = content[error_start : array_idx + POSITIVE_OFFSET]
-
-    error_line_length = len(content_relevant[max(0, array_idx - 1)])
-    error_line_start = max(0, error_position + ERROR_START)
-    error_line_context_length = error_line_length - error_line_start
-    content_relevant.insert(NEGATIVE_OFFSET, '-' * error_line_start + '^' * error_line_context_length)
-    content_relevant = '\n'.join(content_relevant)
+        content_relevant = 'No script found within event.'
 
     template = await load_template_from_disk(template_path='server_ops/arma/script_error.template.html')
     return await render_template_string(template, script_error=error_text, code_context=error_info, code=content_relevant)
