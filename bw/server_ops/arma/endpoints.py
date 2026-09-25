@@ -62,9 +62,9 @@ def define_arma(api: Blueprint):
     @json_endpoint
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def create_event(session_user: User, tag: str, message: str) -> WebResponse:
+    async def create_event(session_user: User, tag: str, message: str, server: str) -> WebResponse:
         logger.info(f'Recording Arma event tagged {tag}')
-        return ArmaApi().create_event(State.state, tag=tag, message=message)
+        return ArmaApi().create_event(State.state, tag=tag, message=message, server=server)
 
     @api.get('events')
     @url_endpoint
@@ -73,8 +73,9 @@ def define_arma(api: Blueprint):
     async def get_events(session_user: User) -> WebResponse:
         page = request.args.get('page', default=1, type=int)
         page_size = request.args.get('page_size', default=50, type=int)
+        server = request.args.get('server', default=None, type=str)
         tags = _requested_event_tags()
-        response = ArmaApi().get_events(State.state, page=page, page_size=page_size, tags=tags)
+        response = ArmaApi().get_events(State.state, page=page, page_size=page_size, tags=tags, server=server)
         if _client_prefers_html():
             return chunk_text_response(_events_html(response.contained_json), mimetype='text/html')
         return response
