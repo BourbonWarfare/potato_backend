@@ -19,11 +19,12 @@ async def format_arma_script_error(message: str) -> str:
     source_file = nh3.clean(source_file)
     line_number = int(line_number)
     content = nh3.clean(content).splitlines()
+    error_position = int(error_position)
     while content and (not content[0] or content[0].isspace() or content[0][0] == '#'):
-        content.pop(0)
+        error_position -= len(content.pop(0))
 
     if content:
-        error_position = int(error_position) - sum([len(s.encode()) for s in content[:line_number]])
+        error_position -= sum([len(s.encode()) for s in content[:line_number]])
 
         if source_file:
             error_info = f'{source_file}:{line_number}:{error_position}'
