@@ -52,7 +52,6 @@ def define_html(frontend: Blueprint, parts: Blueprint):
 
     @frontend.get('/discord')
     @url_endpoint
-    @verify_csrf_from_form
     @require_session(require_authenticated=False, require_user=False, pass_session_token=True)
     async def login_discord(session_token: str) -> WebResponse:
         state = AuthApi().set_session_state(State.state, session_token).state
