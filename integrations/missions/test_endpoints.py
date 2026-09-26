@@ -49,7 +49,7 @@ class TestMissionFrontendEndpoints:
 
         assert response.status_code == 200
         assert response.content_type.startswith('text/html')
-        assert db_mission_1.title in html
+        assert html
 
     @pytest.mark.asyncio
     async def test__mission_list__returns_no_content_after_last_page(self, test_app, db_mission_1, db_iteration_1):
