@@ -90,6 +90,15 @@ def csrf_token_from_html(html: str) -> str:
     return match.group(1)
 
 
+class TestWellKnownEndpoints:
+    @pytest.mark.asyncio
+    async def test__well_known_change_password__redirects_to_profile_password(self, test_app):
+        response = await test_app.get('/.well-known/change-password')
+
+        assert response.status_code == 302
+        assert response.headers['Location'] == '/user/profile#profile-password'
+
+
 class TestLoginBourbonEndpoints:
     @pytest.mark.asyncio
     async def test__login_bourbon__stores_session_cookie_without_remember(

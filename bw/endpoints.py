@@ -7,7 +7,7 @@ from bw.environment import ENVIRONMENT
 from bw.missions.endpoints import define as missions_define
 from bw.missions.endpoints import define_html as missions_define_html
 from bw.realtime.endpoints import define as realtime_define
-from bw.response import Ok, WebResponse
+from bw.response import Found, Ok, WebResponse
 from bw.server_ops.endpoints import define as server_ops_define
 from bw.server_ops.endpoints import define_html as server_ops_define_html
 from bw.session.endpoints import define as sessions_define
@@ -19,6 +19,10 @@ def define(app: Quart):
     @app.get('/healthcheck')
     async def healthcheck() -> Ok:
         return Ok()
+
+    @app.get('/.well-known/change-password')
+    async def well_known_change_password() -> Found:
+        return Found('/user/profile#profile-password')
 
     if not ENVIRONMENT.has_nginx():
 
