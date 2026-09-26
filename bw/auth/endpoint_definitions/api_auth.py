@@ -37,6 +37,12 @@ from bw.web_utils import (
 logger = logging.getLogger('bw.auth')
 
 
+def _safe_login_redirect(redirect: str) -> str:
+    if not redirect.startswith('/') or redirect.startswith('//') or '\r' in redirect or '\n' in redirect:
+        return '/'
+    return redirect
+
+
 def define_auth(api: Blueprint):
     @api.get('/login/discord')
     @url_endpoint
@@ -101,7 +107,7 @@ def define_auth(api: Blueprint):
     @api.post('/login')
     @form_endpoint
     @verify_csrf_from_form
-    async def login_bourbon(username: str, password: str, remember: str = 'off') -> WebResponse:
+    async def login_bourbon(username: str, password: str, remember: str = 'off', redirect: str = '/') -> WebResponse:
         """
         ### Log in with Bourbon Warfare account
 
@@ -127,7 +133,9 @@ def define_auth(api: Blueprint):
         ```
         """
         logger.info('Creating new session (Bourbon)')
-        response = AuthApi().login_with_bourbon(state=State.state, username=username, password=password, redirect='/')
+        response = AuthApi().login_with_bourbon(
+            state=State.state, username=username, password=password, redirect=_safe_login_redirect(redirect)
+        )
         if response.status_code >= 400:
             return WebResponse(status=401, response='Password does not match login')
 
