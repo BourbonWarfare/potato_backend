@@ -267,6 +267,19 @@ class TestProfileEndpoints:
         assert remark['remark'] == 'Great teammate.'
 
 
+class TestRegistrationPageEndpoints:
+    @pytest.mark.asyncio
+    async def test__register_page__offers_discord_oauth_and_bourbon_form(self, test_app):
+        response = await test_app.get('/auth/register')
+        html = await response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert response.content_type.startswith('text/html')
+        assert 'href="/auth/discord"' in html
+        assert 'hx-post="/api/v1/user/register"' in html
+        assert 'Continue with Discord' in html
+
+
 class TestRecoveryEndpoints:
     @pytest.mark.asyncio
     async def test__recover_page__renders_recovery_form(self, test_app, frontend_recover_url):

@@ -13,7 +13,7 @@ from bw.error import ServerConfigNotFound
 from bw.missions.api import MissionsApi, TestApi
 from bw.missions.test_status import TestStatus
 from bw.models.auth import User
-from bw.response import JsonResponse, NotFound, WebResponse
+from bw.response import JsonResponse, WebResponse
 from bw.server_ops.arma.server import SERVER_MAP
 from bw.state import State
 from bw.web_utils import form_endpoint, html_endpoint, json_endpoint, load_template_from_disk, url_endpoint
@@ -303,9 +303,11 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         current_page = max(1, current_page)
         items_per_page = int(request.args.get('count_per_page', '10'))
         items_per_page = max(10, items_per_page)
+        mission_count = MissionsApi().mission_count(State.state)
+        offset = (current_page - 1) * items_per_page
 
-        if (current_page - 1) * items_per_page > MissionsApi().mission_count(State.state):
-            return NotFound()
+        if current_page > 1 and offset >= mission_count:
+            return WebResponse(204)
 
         card_template = await load_template_from_disk(template_path='missions/mission_card.template.html')
         mission_cards = []
@@ -342,4 +344,9 @@ def define_html(frontend: Blueprint, parts: Blueprint):
                 )
             )
 
-        return await render_template_string(html, mission_cards=mission_cards, page_number=current_page + 1)
+        return await render_template_string(
+            html,
+            mission_cards=mission_cards,
+            page_number=current_page + 1,
+            has_more=(current_page * items_per_page) < mission_count,
+        )

@@ -39,6 +39,10 @@ def _tag_query(tags: list[str]) -> str:
     return urllib.parse.quote(','.join(tags), safe=',')
 
 
+def _server_query(server: str | None) -> str:
+    return urllib.parse.quote(server, safe='') if server else ''
+
+
 def _events_html(payload: dict) -> str:
     event_items = ''.join(
         '<li>'
@@ -982,6 +986,7 @@ def define_arma_html(frontend: Blueprint, parts: Blueprint):
             total_pages=payload['total_pages'],
             tags=payload['tags'],
             tag_query=_tag_query(payload['tags']),
+            server_query=_server_query(server),
             has_previous=payload['page'] > 1,
             has_next=payload['page'] < payload['total_pages'],
         )

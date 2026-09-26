@@ -30,9 +30,9 @@
     {% set previous_page = page - 1 %}
     {% set next_page = page + 1 %}
     <button type="button" {% if not has_previous %}disabled{% endif %}
-        hx-get="/api/v1/html/server_ops/arma/events/list?page={{ previous_page }}&page_size={{ page_size }}{% if tag_query %}&tags={{ tag_query }}{% endif %}"
+        hx-get="/api/v1/html/server_ops/arma/events/list?page={{ previous_page }}&page_size={{ page_size }}{% if tag_query %}&tags={{ tag_query }}{% endif %}{% if server_query %}&server={{ server_query }}{% endif %}"
         hx-target="#arma-events-results" hx-swap="innerHTML">Previous</button>
     <button type="button" {% if not has_next %}disabled{% endif %}
-        hx-get="/api/v1/html/server_ops/arma/events/list?page={{ next_page }}&page_size={{ page_size }}{% if tag_query %}&tags={{ tag_query }}{% endif %}"
+        hx-get="/api/v1/html/server_ops/arma/events/list?page={{ next_page }}&page_size={{ page_size }}{% if tag_query %}&tags={{ tag_query }}{% endif %}{% if server_query %}&server={{ server_query }}{% endif %}"
         hx-target="#arma-events-results" hx-swap="innerHTML">Next</button>
 </div>

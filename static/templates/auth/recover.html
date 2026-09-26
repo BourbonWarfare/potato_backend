@@ -1,3 +1,4 @@
+<div id="recover-status" class="auth-error" aria-live="polite"></div>
 <div class="container-card auth-card" id="auth-card">
     <div class="card-content" id="auth-card-content">
 
@@ -6,7 +7,7 @@
             <p>An e-mail will be sent to the email address with instructions on how to recover the account.</p>
         </div>
 
-        <form method="POST" hx-post="/api/v1/user/recover" hx-target="#auth-card-content" hx-trigger="submit"
+        <form method="POST" hx-post="/api/v1/user/recover" hx-target="#recover-status" hx-trigger="submit"
             class="auth-form" autocomplete="on">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
             <div class="form-group">

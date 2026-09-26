@@ -1,28 +1,28 @@
 <div class="container-card auth-card" id="auth-card">
     <div class="card-content" id="auth-card-content">
         <div class="auth-header">
-            <h2>
-                {% if verified %}
-                Successfully registered your account
-                {% else %}
-                An error has occured
-                {% endif %}
-            </h2>
+            {% if verified %}
+            <h2>Successfully registered your account</h2>
+            <p>Your account is verified. You can now sign in.</p>
+            {% else %}
+            <h2>An error has occurred</h2>
+            <p>This verification link is invalid or expired. Try recovering your account to request a fresh email.</p>
+            {% endif %}
+        </div>
+        <div class="auth-footer">
             {% if verified %}
             <p>
-                You may now close this page and login.
+                <a href="/auth/login" hx-get="/auth/login" hx-target="#auth-card" hx-swap="outerHTML"
+                    hx-push-url="true">Back to login</a>
             </p>
             {% else %}
             <p>
-                You will have to re-verify.
-            </p>
-            <p>
                 <a href="/auth/recover" class="forgot-link" hx-get="/auth/recover" hx-target="#auth-card"
                     hx-swap="outerHTML" hx-push-url="true">
-                    Click here to recover your account.
+                    Recover your account
                 </a>
-                {% endif %}
             </p>
+            {% endif %}
         </div>
     </div>
 </div>

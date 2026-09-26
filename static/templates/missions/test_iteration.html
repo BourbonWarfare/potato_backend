@@ -1,5 +1,6 @@
 <div class="mission-test-page">
-    <p><a href="/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}">← Back to {{ mission.title }}</a></p>
+    <p><a href="/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}" hx-get="/missions/{{ mission.uuid }}" hx-target="#view"
+            hx-push-url="/missions/{{ mission.uuid }}#iteration-{{ iteration.uuid }}">← Back to {{ mission.title }}</a></p>
 
     <section class="mission-test-hero">
         <div>
