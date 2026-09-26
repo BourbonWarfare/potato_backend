@@ -30,6 +30,17 @@ from bw.web_utils import (
 # ==============================================================================
 
 
+class AwaitableForm:
+    def __init__(self, values: dict[str, Any] | None = None):
+        self.values = values or {}
+
+    def __await__(self):
+        async def _form():
+            return self.values
+
+        return _form().__await__()
+
+
 @pytest.fixture
 def mock_request(mocker):
     """Mocks the quart.request context object."""
@@ -38,11 +49,7 @@ def mock_request(mocker):
     request_mock.get_json = AsyncMock(return_value=None)
     request_mock.headers = {}
     request_mock.accept_mimetypes = {'text/event-stream': 'text/event-stream'}
-
-    async def form():
-        return {}
-
-    request_mock.form = form()
+    request_mock.form = AwaitableForm()
 
     mocker.patch('bw.web_utils.request', request_mock)
     return request_mock
@@ -227,10 +234,7 @@ async def test__form_endpoint__form_values_are_inserted(mock_request, mock_error
         assert arg2 == 'blah'
         return expected
 
-    async def mock_form():
-        return {'arg1': 52, 'arg2': 'blah'}
-
-    mock_request.form = mock_form()
+    mock_request.form = AwaitableForm({'arg1': 52, 'arg2': 'blah'})
     response = await endpoint()
     assert response == expected
 
@@ -241,10 +245,7 @@ async def test__form_endpoint__missing_arg_type_error(mock_request, mock_error):
     async def endpoint(arg1: int, arg2: str, arg3: Any):
         pass
 
-    async def mock_form():
-        return {'arg1': 52, 'arg2': 'blah'}
-
-    mock_request.form = mock_form()
+    mock_request.form = AwaitableForm({'arg1': 52, 'arg2': 'blah'})
     response = await endpoint()
     assert response.status == '400 BAD REQUEST'
 
