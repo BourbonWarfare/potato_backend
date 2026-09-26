@@ -9,6 +9,13 @@ from bw.state import State
 
 
 class ArmaEventStore:
+    def get_event(self, state: State, event_id: int) -> ArmaEvent | None:
+        with state.Session.begin() as session:
+            event = session.get(ArmaEvent, event_id)
+            if event is not None:
+                session.expunge(event)
+            return event
+
     def create_event(self, state: State, tag: str, message: str, server: str) -> ArmaEvent:
         with state.Session.begin() as session:
             event = ArmaEvent(tag=tag, message=message, server=server)
@@ -33,6 +40,7 @@ class ArmaEventStore:
                 events_query = events_query.where(ArmaEvent.tag.in_(tags))
 
             if server:
+                count_query = count_query.where(ArmaEvent.server == server)
                 events_query = events_query.where(ArmaEvent.server == server)
 
             total = session.scalar(count_query) or 0

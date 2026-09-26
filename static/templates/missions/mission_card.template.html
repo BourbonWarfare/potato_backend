@@ -1,21 +1,29 @@
-<a class="mission-card" href="/missions/{{ mission_uuid }}" {% if logged_in %}hx-get="/missions/{{ mission_uuid }}"
-    hx-target="#view" hx-push-url="true" {% endif %}>
-    <div class="mission-header">
-        {% if logged_in %}
-        <span class="mission-card-view">View</span>
+{% if logged_in %}
+<a class="mission-card" href="/missions/{{ mission_uuid }}" hx-get="/missions/{{ mission_uuid }}" hx-target="#view"
+    hx-push-url="true">
+    {% else %}
+    <div class="mission-card" aria-disabled="true">
         {% endif %}
-        <h2 title="{{ mission_name }}">{{ mission_name }}</h2>
-        <div class="mission-tag">
-            <b>[{{ mission_type }}]</b>
+        <div class="mission-header">
+            {% if logged_in %}
+            <span class="mission-card-view">View</span>
+            {% endif %}
+            <h2 title="{{ mission_name }}">{{ mission_name }}</h2>
+            <div class="mission-tag">
+                <b>[{{ mission_type }}]</b>
+            </div>
         </div>
-    </div>
-    <div class="mission-info">
-        <div class="mission-test-info">
-            <h4>{% if signed_off %}Signed Off{% else %}Needs Testing {% endif %}</h4>
-            <p>({{ passed_signoffs }} passed, {{ failed_signoffs }} failed)</p>
-            <p>Iteration #{{ iteration_count }}</p>
+        <div class="mission-info">
+            <div class="mission-test-info">
+                <h4>{% if signed_off %}Signed Off{% else %}Needs Testing {% endif %}</h4>
+                <p>({{ passed_signoffs }} passed, {{ failed_signoffs }} failed)</p>
+                <p>Iteration #{{ iteration_count }}</p>
+            </div>
+            <p>Map: <i>{{ mission_map }}</i></p>
+            <p>Made by <i>{{ mission_author }}</i></p>
         </div>
-        <p>Map: <i>{{ mission_map }}</i></p>
-        <p>Made by <i>{{ mission_author }}</i></p>
-    </div>
+        {% if logged_in %}
 </a>
+{% else %}
+</div>
+{% endif %}

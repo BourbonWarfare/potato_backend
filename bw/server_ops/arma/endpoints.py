@@ -8,6 +8,7 @@ from quart import Blueprint, render_template_string, request
 from bw.auth.decorators import require_session, require_user_role
 from bw.auth.roles import Roles
 from bw.environment import ENVIRONMENT
+from bw.error import NotFoundError
 from bw.models.auth import User
 from bw.response import ChunkedResponse, JsonResponse, NotFound, WebResponse
 from bw.server_ops.arma import utils
@@ -16,7 +17,7 @@ from bw.server_ops.arma.mod import MODS, Mod
 from bw.server_ops.arma.types import WorkshopId
 from bw.settings import TIMEZONE
 from bw.state import State
-from bw.web_utils import chunk_text_response, html_endpoint, json_endpoint, url_endpoint
+from bw.web_utils import chunk_text_response, html_endpoint, htmx_response, json_endpoint, url_endpoint
 
 logger = logging.getLogger('bw.server_ops.arma')
 
@@ -41,6 +42,34 @@ def _tag_query(tags: list[str]) -> str:
 
 def _server_query(server: str | None) -> str:
     return urllib.parse.quote(server, safe='') if server else ''
+
+
+def _events_query_string(*, page: int, page_size: int, tags: list[str] | None = None, server: str | None = None) -> str:
+    query: dict[str, str | int] = {'page': page, 'page_size': page_size}
+    if tags:
+        query['tags'] = ','.join(tags)
+    if server:
+        query['server'] = server
+    return urllib.parse.urlencode(query)
+
+
+def _events_page_url(*, page: int, page_size: int, tags: list[str] | None = None, server: str | None = None) -> str:
+    return f'/server_ops/arma/events?{_events_query_string(page=page, page_size=page_size, tags=tags, server=server)}'
+
+
+def _events_list_url(*, page: int, page_size: int, tags: list[str] | None = None, server: str | None = None) -> str:
+    query = _events_query_string(page=page, page_size=page_size, tags=tags, server=server)
+    return f'/api/v1/html/server_ops/arma/events/list?{query}'
+
+
+async def _event_template_context(event: dict) -> dict:
+    return {
+        **event,
+        'creation_date_human': datetime.datetime.fromisoformat(event['creation_date'])
+        .replace(tzinfo=TIMEZONE)
+        .strftime('%Y, %B %d - %H:%M:%S'),
+        'formatted_message': await utils.format_arma_event(event['tag'], event['message']),
+    }
 
 
 def _events_html(payload: dict) -> str:
@@ -83,6 +112,13 @@ def define_arma(api: Blueprint):
         if _client_prefers_html():
             return chunk_text_response(_events_html(response.contained_json), mimetype='text/html')
         return response
+
+    @api.get('events/<int:event_id>')
+    @url_endpoint
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def get_event(session_user: User, event_id: int) -> WebResponse:
+        return ArmaApi().get_event(State.state, event_id)
 
     @api.get('servers')
     @url_endpoint
@@ -952,34 +988,54 @@ def define_arma_html(frontend: Blueprint, parts: Blueprint):
     @require_user_role(Roles.can_manage_server)
     async def events_page(session_user: User, html: str) -> str:
         all_servers = ArmaApi().get_all_servers().contained_json['servers']
-        return await render_template_string(html, servers=all_servers)
+        tags = _requested_event_tags()
+        page = request.args.get('page', default=1, type=int)
+        page_size = request.args.get('page_size', default=50, type=int)
+        server = request.args.get('server', default=all_servers[0] if all_servers else None, type=str)
+        return await render_template_string(
+            html,
+            servers=all_servers,
+            tags=', '.join(tags),
+            server=server or '',
+            page=page,
+            page_size=page_size,
+            list_url=_events_list_url(page=page, page_size=page_size, tags=tags, server=server),
+        )
+
+    @frontend.get('/arma/events/<int:event_id>')
+    @html_endpoint(
+        template_path='server_ops/arma/event_detail.html',
+        title='Arma Event',
+        injected_headers=[
+            '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">',
+            '<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>',
+            '<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sqf.min.js"></script>',
+        ],
+    )
+    @require_session
+    @require_user_role(Roles.can_manage_server)
+    async def event_page(session_user: User, html: str, event_id: int) -> str | WebResponse:
+        response = ArmaApi().get_event(State.state, event_id)
+        if response.status_code == 404:
+            raise NotFoundError(f'Arma event {event_id}')
+        return await render_template_string(html, event=await _event_template_context(response.contained_json['event']))
 
     @parts.get('/arma/events/list')
     @html_endpoint(
         template_path='server_ops/arma/event_list.template.html',
         return_partial=True,
-        injected_response_headers={'HX-Trigger': 'highlight'},
     )
     @require_session
     @require_user_role(Roles.can_manage_server)
-    async def events_list(session_user: User, html: str) -> str:
+    async def events_list(session_user: User, html: str) -> WebResponse:
         page = request.args.get('page', default=1, type=int)
         page_size = request.args.get('page_size', default=50, type=int)
         server = request.args.get('server', default=None, type=str)
         tags = _requested_event_tags()
         payload = ArmaApi().get_events(State.state, page=page, page_size=page_size, tags=tags, server=server).contained_json
-        return await render_template_string(
+        rendered = await render_template_string(
             html,
-            events=[
-                {
-                    **event,
-                    'creation_date_human': datetime.datetime.fromisoformat(event['creation_date'])
-                    .replace(tzinfo=TIMEZONE)
-                    .strftime('%Y, %B %d - %H:%M:%S'),
-                    'formatted_message': await utils.format_arma_event(event['tag'], event['message']),
-                }
-                for event in payload['events']
-            ],
+            events=[await _event_template_context(event) for event in payload['events']],
             page=payload['page'],
             page_size=payload['page_size'],
             total=payload['total'],
@@ -989,4 +1045,13 @@ def define_arma_html(frontend: Blueprint, parts: Blueprint):
             server_query=_server_query(server),
             has_previous=payload['page'] > 1,
             has_next=payload['page'] < payload['total_pages'],
+        )
+        return htmx_response(
+            rendered,
+            trigger='highlight',
+            headers={
+                'HX-Push-Url': _events_page_url(
+                    page=payload['page'], page_size=payload['page_size'], tags=payload['tags'], server=server
+                )
+            },
         )
