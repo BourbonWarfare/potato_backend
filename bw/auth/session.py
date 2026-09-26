@@ -84,7 +84,7 @@ class SessionStore:
 
         return {'session_token': token, 'expire_time': expire_time}
 
-    def start_user_session(self, state: State, user: User, *, authenticated: bool = True) -> dict:
+    def start_user_session(self, state: State, user: User, *, authenticated: bool = True, via_discord_bot: bool = False) -> dict:
         """
         ### Start a new human session for a user
 
@@ -112,10 +112,11 @@ class SessionStore:
         ```
         """
         token = secure_token_urlsafe()
+        expire_time_expression = Session.discord_bot_session_length() if via_discord_bot else Session.human_session_length()
         with state.Session.begin() as session:
             query = (
                 insert(Session)
-                .values(user_id=user.id, token=token, expire_time=Session.human_session_length(), authenticated=authenticated)
+                .values(user_id=user.id, token=token, expire_time=expire_time_expression, authenticated=authenticated)
                 .returning(Session.expire_time)
             )
             expire_time = session.scalar(query)

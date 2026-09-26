@@ -95,8 +95,8 @@ def define_auth(api: Blueprint):
         Authorization: Bearer discord_access_token_here
         ```
         """
-        logger.info('Creating new session (Discord)')
-        return await AuthApi().login_with_discord(state=State.state, token=token)
+        logger.info('Creating new session (Discord bot)')
+        return await AuthApi().login_with_discord(state=State.state, token=token, via_discord_bot=True)
 
     @api.post('/login')
     @form_endpoint

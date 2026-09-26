@@ -11,6 +11,7 @@ from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
+from bw.response import JsonResponse
 from integrations.auth.fixtures import (
     db_bot_user_1,
     db_bourbon_code_1,
@@ -915,7 +916,7 @@ class TestDiscordEndpoints:
         mock_response = make_mock_discord_response(discord_id_1)
 
         mocker.patch('secrets.token_urlsafe', return_value=token_1)
-        mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
+        mocker.patch('bw.models.auth.Session.discord_bot_session_length', return_value=expire_valid)
         mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
         mocker.patch('bw.auth.api.aiohttp.ClientSession.get', return_value=mock_response)
 
@@ -924,7 +925,7 @@ class TestDiscordEndpoints:
         assert response.status_code == 200
         data = await response.get_json()
         assert 'session_token' in data
-        assert 'expire_time' in data
+        assert data['expire_time'] == expire_valid.replace(' ', 'T')
 
     @pytest.mark.asyncio
     async def test__login_discord__creates_new_user_for_new_discord_id(
@@ -933,7 +934,7 @@ class TestDiscordEndpoints:
         mock_response = make_mock_discord_response(new_discord_id)
 
         mocker.patch('secrets.token_urlsafe', return_value=token_1)
-        mocker.patch('bw.models.auth.Session.human_session_length', return_value=expire_valid)
+        mocker.patch('bw.models.auth.Session.discord_bot_session_length', return_value=expire_valid)
         mocker.patch('bw.auth.api.ENVIRONMENT.discord_api_url', return_value='https://discord.com/api')
         mocker.patch('bw.auth.api.aiohttp.ClientSession.get', return_value=mock_response)
 
@@ -942,7 +943,28 @@ class TestDiscordEndpoints:
         assert response.status_code == 200
         data = await response.get_json()
         assert 'session_token' in data
-        assert 'expire_time' in data
+        assert data['expire_time'] == expire_valid.replace(' ', 'T')
+
+    @pytest.mark.asyncio
+    async def test__login_discord_redirect_bot__stores_code_and_session_cookie(
+        self, mocker, state, test_app, oauth_code_1, oauth_state_1, token_1, expire_valid
+    ):
+        login = mocker.patch(
+            'bw.auth.endpoint_definitions.html._login_discord_from_oauth_code',
+            return_value=JsonResponse({'session_token': token_1, 'expire_time': expire_valid}),
+        )
+        mocker.patch(
+            'bw.auth.endpoint_definitions.html.ENVIRONMENT.discord_bot_oauth_redirect', return_value='https://example.com/bot'
+        )
+
+        response = await test_app.get(f'/auth/login/discord/bot?code={oauth_code_1}&state={oauth_state_1}')
+        cookies = response.headers.getlist('Set-Cookie')
+
+        assert response.status_code == 200
+        assert response.content_type.startswith('text/html')
+        assert any(cookie.startswith('session=') for cookie in cookies)
+        assert SessionStore().get_discord_oauth_code(state, oauth_state_1) == oauth_code_1
+        login.assert_awaited_once_with(oauth_code_1, unittest.mock.ANY, via_discord_bot=True)
 
     @pytest.mark.asyncio
     async def test__login_discord__returns_401_for_invalid_token(

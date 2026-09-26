@@ -254,6 +254,15 @@ class TestStartApiSession:
         session_data = SessionStore().start_user_session(state, db_user_1)
         assert SessionStore().is_session_authenticated(state, session_data['session_token'])
 
+    def test__start_user_session__can_use_discord_bot_expiry(self, mocker, token_1, expire_valid, state, db_user_1):
+        mocker.patch('secrets.token_urlsafe', return_value=token_1)
+        mocker.patch('bw.models.auth.Session.discord_bot_session_length', return_value=expire_valid)
+
+        session_data = SessionStore().start_user_session(state, db_user_1, via_discord_bot=True)
+
+        assert session_data['session_token'] == token_1
+        assert session_data['expire_time'] == datetime.fromisoformat(expire_valid)
+
     def test__start_user_session__does_not_expire_existing(self, mocker, token_1, token_2, expire_valid, state, db_user_1):
         """Test that start_user_session does NOT expire existing sessions (unlike start_api_session)"""
         mocker.patch('secrets.token_urlsafe', return_value=token_1)

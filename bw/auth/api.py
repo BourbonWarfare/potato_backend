@@ -271,7 +271,7 @@ class AuthApi:
         return JsonResponse({'bot_token': bot.bot_token}, status=201)
 
     @define_api
-    async def login_with_discord(self, state: State, token: str) -> JsonResponse:
+    async def login_with_discord(self, state: State, token: str, *, via_discord_bot: bool = False) -> JsonResponse:
         """
         ### Log in with Discord access token
 
@@ -320,7 +320,7 @@ class AuthApi:
         except NoUserWithGivenCredentials:
             user = UserStore().create_user(state)
             UserStore().link_discord_user(state, discord_id, user)
-        return JsonResponse(SessionStore().start_user_session(state, user))
+        return JsonResponse(SessionStore().start_user_session(state, user, via_discord_bot=via_discord_bot))
 
     @define_api
     def login_with_bot(self, state: State, bot_token: str) -> JsonResponse:

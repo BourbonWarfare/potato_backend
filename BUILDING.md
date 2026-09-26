@@ -53,7 +53,9 @@ db_address=localhost
 db_name=bw_backend
 
 default_session_length=3600
+website_session_length=3600
 api_session_length=300
+discord_bot_session_length=300
 
 single_log_size=52428800
 log_backup_count=3
@@ -68,6 +70,7 @@ arma_modlist_configs=./server_configs/modlists
 discord_api_url=https://discord.com/api/v10
 discord_client_id=...
 discord_client_secret=...
+discord_bot_oauth_redirect=...
 
 cron_token=...
 cron_path=./crons

@@ -114,7 +114,15 @@ class Session(Base):
 
     @classmethod
     def human_session_length(cls):
-        return cls.now() + datetime.timedelta(seconds=int(GLOBAL_CONFIGURATION['default_session_length']))
+        return cls.now() + datetime.timedelta(
+            seconds=int(GLOBAL_CONFIGURATION.get('website_session_length') or GLOBAL_CONFIGURATION['default_session_length'])
+        )
+
+    @classmethod
+    def discord_bot_session_length(cls):
+        return cls.now() + datetime.timedelta(
+            seconds=int(GLOBAL_CONFIGURATION.get('discord_bot_session_length') or GLOBAL_CONFIGURATION['api_session_length'])
+        )
 
     @classmethod
     def api_session_length(cls):

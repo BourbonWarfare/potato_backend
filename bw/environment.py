@@ -57,6 +57,11 @@ class Environment:
         assert isinstance(discord_oauth_redirect, str)
         return discord_oauth_redirect
 
+    def discord_bot_oauth_redirect(self) -> str:
+        discord_bot_oauth_redirect = GC.get('discord_bot_oauth_redirect') or self.discord_oauth_redirect()
+        assert isinstance(discord_bot_oauth_redirect, str)
+        return discord_bot_oauth_redirect
+
     def arma_mod_config_path(self) -> Path:
         return Path(GC.require('arma_mod_configs').get())  # ty: ignore[invalid-argument-type]
 

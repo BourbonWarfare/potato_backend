@@ -41,6 +41,28 @@ from bw.web_utils import (
 logger = logging.getLogger('bw.auth')
 
 
+async def _exchange_discord_oauth_code(discord_code: str, redirect_uri: str) -> str:
+    auth = aiohttp.BasicAuth(ENVIRONMENT.discord_client_id(), ENVIRONMENT.discord_client_secret())
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    data = {'grant_type': 'authorization_code', 'code': discord_code, 'redirect_uri': redirect_uri}
+    try:
+        async with (
+            aiohttp.ClientSession(ENVIRONMENT.discord_api_url(strip=False)) as session,
+            session.post('oauth2/token', data=data, headers=headers, auth=auth) as response,
+        ):
+            response.raise_for_status()
+            token_json = await response.json()
+    except aiohttp.ClientResponseError as err:
+        logger.warning(f'Discord OAuth failed: {err}')
+        raise ForbiddenError('oauth failed') from err
+    return token_json.get('access_token', '')
+
+
+async def _login_discord_from_oauth_code(discord_code: str, redirect_uri: str, *, via_discord_bot: bool = False) -> JsonResponse:
+    access_token = await _exchange_discord_oauth_code(discord_code, redirect_uri)
+    return await AuthApi().login_with_discord(State.state, access_token, via_discord_bot=via_discord_bot)
+
+
 def define_html(frontend: Blueprint, parts: Blueprint):
     @frontend.get('/login')
     @html_endpoint(template_path='auth/login.html', title='Sign in to Bourbon Warfare')
@@ -76,21 +98,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         discord_code = request.args.get('code', default='', type=str)
         logger.info('OAuth redirect (Website)')
 
-        auth = aiohttp.BasicAuth(ENVIRONMENT.discord_client_id(), ENVIRONMENT.discord_client_secret())
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        data = {'grant_type': 'authorization_code', 'code': discord_code, 'redirect_uri': ENVIRONMENT.discord_oauth_redirect()}
-        try:
-            async with (
-                aiohttp.ClientSession(ENVIRONMENT.discord_api_url(strip=False)) as session,
-                session.post('oauth2/token', data=data, headers=headers, auth=auth) as response,
-            ):
-                response.raise_for_status()
-                json = await response.json()
-        except aiohttp.ClientResponseError as err:
-            logger.warning(f'Discord OAuth failed: {err}')
-            raise ForbiddenError('oauth failed') from err
-
-        response = await AuthApi().login_with_discord(State.state, json.get('access_token', ''))
+        response = await _login_discord_from_oauth_code(discord_code, ENVIRONMENT.discord_oauth_redirect())
 
         session = response['session_token']
         AuthApi().store_session_cookie(session, permanent=True)
@@ -156,11 +164,12 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         """
         code = request.args.get('code', default='', type=str)
         state = request.args.get('state', default=secrets.token_urlsafe(32), type=str)
-        logger.info('OAuth redirect (Discord)')
-        try:
-            AuthApi().register_access_code(state=State.state, code=code, code_state=state)
-        finally:
-            return html  # noqa: B012
+        logger.info('OAuth redirect (Discord bot)')
+        AuthApi().register_access_code(state=State.state, code=code, code_state=state)
+        response = await _login_discord_from_oauth_code(code, ENVIRONMENT.discord_bot_oauth_redirect(), via_discord_bot=True)
+        session = response['session_token']
+        AuthApi().store_session_cookie(session)
+        return html
 
     @frontend.get('/remarks')
     @html_endpoint(template_path='squad.xml', title='Bourbon Warfare Squad XML', return_partial=True, mimetype='text/xml')
