@@ -300,6 +300,62 @@ def is_htmx_partial_request() -> bool:
     return request_type != 'full' and not boosted
 
 
+def htmx_headers(
+    *,
+    retarget: str | None = None,
+    reswap: str | None = None,
+    redirect: str | None = None,
+    location: str | None = None,
+    push_url: str | None = None,
+    replace_url: str | None = None,
+    trigger: str | dict[str, Any] | None = None,
+) -> dict[str, str]:
+    headers = {}
+    if retarget is not None:
+        headers['HX-Retarget'] = retarget
+    if reswap is not None:
+        headers['HX-Reswap'] = reswap
+    if redirect is not None:
+        headers['HX-Redirect'] = redirect
+    if location is not None:
+        headers['HX-Location'] = location
+    if push_url is not None:
+        headers['HX-Push-Url'] = push_url
+    if replace_url is not None:
+        headers['HX-Replace-Url'] = replace_url
+    if trigger is not None:
+        headers['HX-Trigger'] = json.dumps(trigger) if isinstance(trigger, dict) else trigger
+    return headers
+
+
+def htmx_response(
+    html: str,
+    *,
+    retarget: str | None = None,
+    reswap: str | None = None,
+    trigger: str | dict[str, Any] | None = None,
+    headers: dict[str, Any] | None = None,
+    mimetype: str = 'text/html',
+) -> ChunkedResponse:
+    response_headers = dict(headers or {})
+    response_headers.update(htmx_headers(retarget=retarget, reswap=reswap, trigger=trigger))
+    return chunk_text_response(html, mimetype=mimetype, headers=response_headers)
+
+
+async def htmx_template_response(
+    template_path: Path | str,
+    *,
+    context: dict[str, Any] | None = None,
+    retarget: str | None = None,
+    reswap: str | None = None,
+    trigger: str | dict[str, Any] | None = None,
+    headers: dict[str, Any] | None = None,
+) -> ChunkedResponse:
+    html = await load_template_from_disk(template_path=template_path)
+    rendered = await render_template_string(html, **(context or {}))
+    return htmx_response(rendered, retarget=retarget, reswap=reswap, trigger=trigger, headers=headers)
+
+
 def htmx_redirect(location: str, *, status: int = 303) -> WebResponse:
     """Return a redirect response that works for both HTMX and regular form submissions.
 
@@ -308,7 +364,7 @@ def htmx_redirect(location: str, *, status: int = 303) -> WebResponse:
     with a 3xx status.
     """
     if is_htmx_request():
-        return WebResponse(status=204, headers={'HX-Redirect': location})
+        return WebResponse(status=204, headers=htmx_headers(redirect=location))
     return WebResponse(status=status, headers={'Location': location})
 
 

@@ -14,7 +14,10 @@ from bw.web_utils import (
     define_api,
     form_endpoint,
     html_endpoint,
+    htmx_headers,
     htmx_redirect,
+    htmx_response,
+    htmx_template_response,
     is_htmx_partial_request,
     json_endpoint,
     sse_endpoint,
@@ -347,6 +350,47 @@ async def test__json_endpoint__bad_arguments_return_bad_request(mock_request, mo
 
     response = await endpoint()
     assert response.status == '400 BAD REQUEST'
+
+
+# ==============================================================================
+# UNIT UNDER TEST: htmx helpers
+# ==============================================================================
+
+
+def test__htmx_headers__builds_common_response_headers():
+    headers = htmx_headers(retarget='#card', reswap='outerHTML', trigger={'saved': True}, push_url='/next')
+
+    assert headers == {
+        'HX-Retarget': '#card',
+        'HX-Reswap': 'outerHTML',
+        'HX-Trigger': '{"saved": true}',
+        'HX-Push-Url': '/next',
+    }
+
+
+@pytest.mark.asyncio
+async def test__htmx_response__returns_html_with_headers():
+    response = htmx_response('<p>Saved</p>', retarget='#status', reswap='innerHTML')
+    body = b''.join(await consume_generator(response)).decode()
+
+    assert body == '<p>Saved</p>'
+    assert response.media_type == 'text/html'
+    assert response.headers['HX-Retarget'] == '#status'
+    assert response.headers['HX-Reswap'] == 'innerHTML'
+
+
+@pytest.mark.asyncio
+async def test__htmx_template_response__renders_template_and_headers(mocker, mock_render_template):
+    mocker.patch('bw.web_utils.load_template_from_disk', return_value='<p>{{ message }}</p>')
+    mock_render_template.return_value = '<p>Saved</p>'
+
+    response = await htmx_template_response('status.html', context={'message': 'Saved'}, retarget='#card', reswap='outerHTML')
+    body = b''.join(await consume_generator(response)).decode()
+
+    assert body == '<p>Saved</p>'
+    assert response.headers['HX-Retarget'] == '#card'
+    assert response.headers['HX-Reswap'] == 'outerHTML'
+    mock_render_template.assert_called_once_with('<p>{{ message }}</p>', message='Saved')
 
 
 # ==============================================================================

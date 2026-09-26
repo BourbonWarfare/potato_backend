@@ -27,8 +27,8 @@ from bw.web_utils import (
     chunk_text_response,
     form_endpoint,
     html_endpoint,
+    htmx_template_response,
     json_endpoint,
-    load_template_from_disk,
     unwrap_headers,
     url_endpoint,
 )
@@ -107,9 +107,8 @@ def define_user(api: Blueprint, local: Blueprint):
         if response.status_code >= 400:
             return response
 
-        html = await load_template_from_disk(template_path='auth/recover_sent.html')
-        return chunk_text_response(
-            html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        return await htmx_template_response(
+            'auth/recover_sent.html', retarget='#auth-card', reswap='outerHTML', headers=response.headers
         )
 
     @api.post('/recover/reset')
@@ -121,9 +120,8 @@ def define_user(api: Blueprint, local: Blueprint):
         if response.status_code >= 400:
             return response
 
-        html = await load_template_from_disk(template_path='auth/recover_success.html')
-        return chunk_text_response(
-            html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        return await htmx_template_response(
+            'auth/recover_success.html', retarget='#auth-card', reswap='outerHTML', headers=response.headers
         )
 
     @api.post('/verify/resend')
@@ -135,9 +133,8 @@ def define_user(api: Blueprint, local: Blueprint):
         if response.status_code >= 400:
             return response
 
-        html = await load_template_from_disk(template_path='auth/verification_resent.html')
-        return chunk_text_response(
-            html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        return await htmx_template_response(
+            'auth/verification_resent.html', retarget='#auth-card', reswap='outerHTML', headers=response.headers
         )
 
     @api.post('/register')
@@ -149,10 +146,12 @@ def define_user(api: Blueprint, local: Blueprint):
         if response.status_code >= 400:
             return response
 
-        html = await load_template_from_disk(template_path='auth/registration_success.html')
-        final_html = await render_template_string(html, username=username, email=email, csrf_token=csrf_token)
-        return chunk_text_response(
-            final_html, mimetype='text/html', headers={'HX-Reswap': 'outerHTML', 'HX-Retarget': '#auth-card', **response.headers}
+        return await htmx_template_response(
+            'auth/registration_success.html',
+            context={'username': username, 'email': email, 'csrf_token': csrf_token},
+            retarget='#auth-card',
+            reswap='outerHTML',
+            headers=response.headers,
         )
 
     @api.get('/list')
