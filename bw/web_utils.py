@@ -281,6 +281,24 @@ async def load_template_from_disk(*, template_path: Path | str, base_path: str =
         return await file.read()
 
 
+def is_htmx_request() -> bool:
+    if not has_request_context():
+        return False
+    return request.headers.get('HX-Request', '').lower() == 'true' or 'HX-Request' in request.headers
+
+
+def htmx_redirect(location: str, *, status: int = 303) -> WebResponse:
+    """Return a redirect response that works for both HTMX and regular form submissions.
+
+    HTMX intentionally ignores response headers on 3xx responses, so HX-Redirect must be
+    sent on a non-redirect status. Regular browser submissions still need a Location header
+    with a 3xx status.
+    """
+    if is_htmx_request():
+        return WebResponse(status=204, headers={'HX-Redirect': location})
+    return WebResponse(status=status, headers={'Location': location})
+
+
 def html_endpoint(
     *,
     template_path: Path | str,
@@ -338,12 +356,15 @@ def html_endpoint(
                 html = await load_template_from_disk(template_path=template_path)
             kwargs['html'] = html
 
-            try:
-                session_token = AuthApi().get_session_cookie()
-                validate_session(State.state, session_token)
-                is_logged_in = True
-            except (CannotDetermineSession, SessionExpired, NeedsAuthenticatedSession):
-                is_logged_in = False
+            def session_is_logged_in() -> bool:
+                try:
+                    session_token = AuthApi().get_session_cookie()
+                    validate_session(State.state, session_token)
+                    return True
+                except (CannotDetermineSession, SessionExpired, NeedsAuthenticatedSession):
+                    return False
+
+            is_logged_in = session_is_logged_in()
 
             if inject_logged_in:
                 kwargs['logged_in'] = is_logged_in
@@ -352,16 +373,18 @@ def html_endpoint(
                 inner_html = await func(*args, **kwargs)
             except BwServerError as e:
                 logger.warning(e)
-                inner_html = await load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
+                try:
+                    inner_html = await load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
+                except FileNotFoundError:
+                    inner_html = f'<h1>{e.status()}</h1><p>{e!s}</p>'
 
             response_headers = injected_response_headers if injected_response_headers else {}
 
-            if has_request_context():
-                headers = request.headers
-            else:
-                headers = {}
+            # The endpoint may mutate the session (OAuth login, logout redirects, etc.).
+            # Recompute before rendering the full shell so the navbar is not stale.
+            is_logged_in = session_is_logged_in()
 
-            if 'HX-Request' in headers:
+            if is_htmx_request():
                 if isinstance(inner_html, str):
                     return chunk_text_response(inner_html, mimetype=mimetype, headers=response_headers)
                 else:

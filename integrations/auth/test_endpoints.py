@@ -104,7 +104,8 @@ class TestLoginBourbonEndpoints:
         )
         cookies = response.headers.getlist('Set-Cookie')
 
-        assert response.status_code == 200
+        assert response.status_code == 303
+        assert response.headers['Location'] == '/'
         assert any(cookie.startswith('session=') for cookie in cookies)
 
     @pytest.mark.asyncio
@@ -118,8 +119,24 @@ class TestLoginBourbonEndpoints:
         )
         cookies = response.headers.getlist('Set-Cookie')
 
-        assert response.status_code == 200
+        assert response.status_code == 303
+        assert response.headers['Location'] == '/'
         assert any(cookie.startswith('session=') and 'Expires=' in cookie for cookie in cookies)
+
+    @pytest.mark.asyncio
+    async def test__login_bourbon__htmx_redirects_without_3xx(self, test_app, db_bourbon_user_1, username_1, password_1):
+        page = await test_app.get('/auth/login')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1},
+            headers={'HX-Request': 'true'},
+        )
+
+        assert response.status_code == 204
+        assert response.headers['HX-Redirect'] == '/'
+        assert 'Location' not in response.headers
 
 
 class TestLogoutEndpoints:
@@ -127,7 +144,19 @@ class TestLogoutEndpoints:
     async def test__logout__expires_session(self, state, test_app, token_1, db_session_1):
         response = await test_app.post('/api/v1/auth/logout', headers={'Authorization': f'Bearer {token_1}'})
 
-        assert response.status_code == 302
+        assert response.status_code == 303
+        assert response.headers['Location'] == '/auth/login'
+        assert not SessionStore().is_session_active(state, token_1)
+
+    @pytest.mark.asyncio
+    async def test__logout__htmx_redirects_without_3xx(self, state, test_app, token_1, db_session_1):
+        response = await test_app.post(
+            '/api/v1/auth/logout', headers={'Authorization': f'Bearer {token_1}', 'HX-Request': 'true'}
+        )
+
+        assert response.status_code == 204
+        assert response.headers['HX-Redirect'] == '/auth/login'
+        assert 'Location' not in response.headers
         assert not SessionStore().is_session_active(state, token_1)
 
     @pytest.mark.asyncio

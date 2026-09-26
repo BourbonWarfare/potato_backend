@@ -27,6 +27,7 @@ from bw.web_utils import (
     chunk_text_response,
     form_endpoint,
     html_endpoint,
+    htmx_redirect,
     json_endpoint,
     load_template_from_disk,
     unwrap_headers,
@@ -133,7 +134,7 @@ def define_auth(api: Blueprint):
         session_token = response.state['session_token']
         AuthApi().store_session_cookie(session_token, permanent=remember == 'on')
 
-        return response
+        return htmx_redirect(response.headers.get('Location', '/'))
 
     @api.post('/logout')
     @url_endpoint
@@ -145,7 +146,7 @@ def define_auth(api: Blueprint):
         response = AuthApi().logout(State.state, session_token=session_token)
         if response.status_code >= 400:
             return response
-        return WebResponse(status=302, headers={'Location': '/auth/login', 'HX-Redirect': '/auth/login'})
+        return htmx_redirect('/auth/login')
 
     @api.post('/login/bot')
     @json_endpoint

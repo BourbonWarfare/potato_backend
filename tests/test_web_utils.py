@@ -14,6 +14,7 @@ from bw.web_utils import (
     define_api,
     form_endpoint,
     html_endpoint,
+    htmx_redirect,
     json_endpoint,
     sse_endpoint,
     unwrap_headers,
@@ -345,6 +346,32 @@ async def test__json_endpoint__bad_arguments_return_bad_request(mock_request, mo
 
     response = await endpoint()
     assert response.status == '400 BAD REQUEST'
+
+
+# ==============================================================================
+# UNIT UNDER TEST: htmx_redirect
+# ==============================================================================
+
+
+def test__htmx_redirect__uses_204_hx_redirect_for_htmx(mock_request, mocker):
+    mocker.patch('bw.web_utils.has_request_context', return_value=True)
+    mock_request.headers = {'HX-Request': 'true'}
+
+    response = htmx_redirect('/auth/login')
+
+    assert response.status_code == 204
+    assert response.headers['HX-Redirect'] == '/auth/login'
+    assert 'Location' not in response.headers
+
+
+def test__htmx_redirect__uses_303_location_for_regular_request(mock_request, mocker):
+    mocker.patch('bw.web_utils.has_request_context', return_value=True)
+    mock_request.headers = {}
+
+    response = htmx_redirect('/auth/login')
+
+    assert response.status_code == 303
+    assert response.headers['Location'] == '/auth/login'
 
 
 # ==============================================================================
