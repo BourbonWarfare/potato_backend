@@ -287,6 +287,19 @@ def is_htmx_request() -> bool:
     return request.headers.get('HX-Request', '').lower() == 'true' or 'HX-Request' in request.headers
 
 
+def is_htmx_partial_request() -> bool:
+    """Return True when HTMX is asking for a fragment rather than a full document.
+
+    HTMX 4 adds HX-Request-Type and hx-boost sends HX-Boosted. Treat those full-page
+    navigation requests like normal browser navigation so we render the complete shell.
+    """
+    if not is_htmx_request():
+        return False
+    request_type = request.headers.get('HX-Request-Type', '').lower()
+    boosted = request.headers.get('HX-Boosted', '').lower() == 'true'
+    return request_type != 'full' and not boosted
+
+
 def htmx_redirect(location: str, *, status: int = 303) -> WebResponse:
     """Return a redirect response that works for both HTMX and regular form submissions.
 
@@ -384,7 +397,7 @@ def html_endpoint(
             # Recompute before rendering the full shell so the navbar is not stale.
             is_logged_in = session_is_logged_in()
 
-            if is_htmx_request():
+            if is_htmx_partial_request():
                 if isinstance(inner_html, str):
                     return chunk_text_response(inner_html, mimetype=mimetype, headers=response_headers)
                 else:

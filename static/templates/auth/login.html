@@ -32,7 +32,7 @@
                 </label>
                 <!-- HTMX: loads forgot password form into the same card -->
                 <a href="/auth/recover" class="forgot-link" hx-get="/auth/recover" hx-target="#auth-card"
-                    hx-swap="outerHTML" hx-push-url="true" hx-browser-indicator="true">
+                    hx-swap="outerHTML" hx-push-url="true">
                     Forgot password?
                 </a>
             </div>
@@ -54,7 +54,7 @@
             <p>Need an account?
                 <!-- HTMX: loads registration form into the same card -->
                 <a href="/auth/register" hx-get="/auth/register" hx-target="#auth-card" hx-swap="outerHTML"
-                    hx-push-url="true" hx-browser-indicator="true">
+                    hx-push-url="true">
                     Create one
                 </a>
             </p>

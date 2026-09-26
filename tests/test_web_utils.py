@@ -15,6 +15,7 @@ from bw.web_utils import (
     form_endpoint,
     html_endpoint,
     htmx_redirect,
+    is_htmx_partial_request,
     json_endpoint,
     sse_endpoint,
     unwrap_headers,
@@ -372,6 +373,32 @@ def test__htmx_redirect__uses_303_location_for_regular_request(mock_request, moc
 
     assert response.status_code == 303
     assert response.headers['Location'] == '/auth/login'
+
+
+# ==============================================================================
+# UNIT UNDER TEST: is_htmx_partial_request
+# ==============================================================================
+
+
+def test__is_htmx_partial_request__true_for_targeted_htmx_request(mock_request, mocker):
+    mocker.patch('bw.web_utils.has_request_context', return_value=True)
+    mock_request.headers = {'HX-Request': 'true', 'HX-Request-Type': 'partial'}
+
+    assert is_htmx_partial_request()
+
+
+def test__is_htmx_partial_request__false_for_htmx_full_request(mock_request, mocker):
+    mocker.patch('bw.web_utils.has_request_context', return_value=True)
+    mock_request.headers = {'HX-Request': 'true', 'HX-Request-Type': 'full'}
+
+    assert not is_htmx_partial_request()
+
+
+def test__is_htmx_partial_request__false_for_boosted_request(mock_request, mocker):
+    mocker.patch('bw.web_utils.has_request_context', return_value=True)
+    mock_request.headers = {'HX-Request': 'true', 'HX-Boosted': 'true'}
+
+    assert not is_htmx_partial_request()
 
 
 # ==============================================================================
