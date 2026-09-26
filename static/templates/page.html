@@ -20,6 +20,12 @@
             <ul class="nav-links">
                 <li><a href="/" hx-get="/" hx-target="#view" hx-push-url="true">Home</a></li>
                 <li><a href="/missions/" hx-get="/missions/" hx-target="#view" hx-push-url="true">Missions</a></li>
+                {% for nav_link in nav_links %}
+                <li>
+                    <a href="{{ nav_link.href }}" {% if nav_link.htmx %}hx-get="{{ nav_link.hx_get }}" hx-target="#view"
+                        hx-push-url="true" {% endif %}>{{ nav_link.label }}</a>
+                </li>
+                {% endfor %}
             </ul>
             <div class="nav-profile">
                 {% if logged_in %}

@@ -403,7 +403,10 @@ def html_endpoint(
     ```
     """
     from bw.auth.api import AuthApi
+    from bw.auth.session import SessionStore
+    from bw.auth.user import UserStore
     from bw.auth.validators import validate_session
+    from bw.navigation import visible_nav_links
     from bw.state import State
 
     if isinstance(template_path, str):
@@ -425,15 +428,19 @@ def html_endpoint(
                 html = await load_template_from_disk(template_path=template_path)
             kwargs['html'] = html
 
-            def session_is_logged_in() -> bool:
+            def session_template_context() -> dict[str, Any]:
                 try:
                     session_token = AuthApi().get_session_cookie()
                     validate_session(State.state, session_token)
-                    return True
+                    user = SessionStore().get_user_from_session_token(State.state, session_token=session_token)
                 except (CannotDetermineSession, SessionExpired, NeedsAuthenticatedSession):
-                    return False
+                    return {'logged_in': False, 'role_grants': None, 'nav_links': []}
 
-            is_logged_in = session_is_logged_in()
+                role_grants = UserStore().get_users_role(State.state, user)
+                return {'logged_in': True, 'role_grants': role_grants, 'nav_links': visible_nav_links(role_grants)}
+
+            template_context = session_template_context()
+            is_logged_in = template_context['logged_in']
 
             if inject_logged_in:
                 kwargs['logged_in'] = is_logged_in
@@ -451,7 +458,8 @@ def html_endpoint(
 
             # The endpoint may mutate the session (OAuth login, logout redirects, etc.).
             # Recompute before rendering the full shell so the navbar is not stale.
-            is_logged_in = session_is_logged_in()
+            template_context = session_template_context()
+            is_logged_in = template_context['logged_in']
 
             if is_htmx_partial_request():
                 if isinstance(inner_html, str):
@@ -471,6 +479,8 @@ def html_endpoint(
                 inner_html=inner_html,
                 title=title if title is not None else 'Bourbon Warfare',
                 logged_in=is_logged_in,
+                nav_links=template_context['nav_links'],
+                role_grants=template_context['role_grants'],
                 injected_headers=injected_headers if injected_headers else [],
             )
 

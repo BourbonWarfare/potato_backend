@@ -26,6 +26,7 @@ from integrations.auth.fixtures import (
     db_role_1,
     db_role_2,
     db_role_assigner,
+    db_server_manager,
     db_session_1,
     db_unverified_bourbon_user,
     db_user_1,
@@ -77,6 +78,8 @@ from integrations.auth.fixtures import (
     role_name_2,
     salt_1,
     salt_2,
+    server_manager,
+    server_manager_name,
     token_1,
     token_2,
     username_1,
@@ -168,6 +171,29 @@ class TestLoginBourbonEndpoints:
         assert 'href="/user/profile"' in html
         assert 'Logout' in html
         assert 'href="/auth/login"' not in html
+        assert 'Server Management' not in html
+
+    @pytest.mark.asyncio
+    async def test__login_bourbon__shows_role_nav_links_after_login(
+        self, state, test_app, db_user_1, db_bourbon_user_1, db_server_manager, username_1, password_1
+    ):
+        UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+        page = await test_app.get('/auth/login')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1},
+            headers={'HX-Request': 'true'},
+        )
+        assert response.status_code == 204
+
+        redirected_page = await test_app.get('/')
+        html = await redirected_page.get_data(as_text=True)
+
+        assert 'Server Management' in html
+        assert 'href="/server_ops/arma/events"' in html
+        assert 'hx-get="/server_ops/arma/events"' in html
 
 
 class TestLogoutEndpoints:
