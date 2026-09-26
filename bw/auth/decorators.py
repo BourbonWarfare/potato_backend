@@ -25,6 +25,7 @@ from bw.error import (
 from bw.models.auth import User
 from bw.response import WebResponse
 from bw.state import State
+from bw.web_utils import accept_parameters, hide_parameters
 
 logger = logging.getLogger('bw.auth')
 
@@ -66,7 +67,7 @@ def with_token(func):
         else:
             return func(token=session_token, **kwargs)
 
-    return wrapper
+    return hide_parameters(wrapper, func, 'token')
 
 
 def require_local(func):
@@ -107,6 +108,7 @@ def require_local(func):
             else:
                 return func(*args, **kwargs)
 
+    # Injects nothing, so the wrapped signature is already correct
     return wrapper
 
 
@@ -138,6 +140,12 @@ def require_session(
             kwargs['session_token'] = _session_token()
         return kwargs
 
+    injected: list[str] = []
+    if require_user:
+        injected.append('session_user')
+    if pass_session_token:
+        injected.append('session_token')
+
     def decorator(func):
         if inspect.iscoroutinefunction(func):
 
@@ -151,7 +159,7 @@ def require_session(
             def wrapper(*args, **kwargs):
                 return func(*args, **_kwargs(), **kwargs)
 
-        return wrapper
+        return hide_parameters(wrapper, func, *injected)
 
     if callable(func):
         return decorator(func)
@@ -211,7 +219,7 @@ def with_default_session(func):
             else:
                 return func(session_token=session_token, **kwargs)
 
-    return wrapper
+    return hide_parameters(wrapper, func, 'session_token')
 
 
 def require_group_permission(*required_permissions: str):
@@ -253,6 +261,7 @@ def require_group_permission(*required_permissions: str):
                 else:
                     return func(session_user=session_user, **kwargs)
 
+        # Passes session_user through unchanged, so the wrapped signature is already correct
         return wrapper
 
     return decorator
@@ -260,17 +269,17 @@ def require_group_permission(*required_permissions: str):
 
 def require_user_role(*required_roles: str):
     """
-    ### Require group permissions
+    ### Require user roles
 
-    Decorator factory that enforces group-based permissions for the decorated function.
+    Decorator factory that enforces role-based permissions for the decorated function.
 
     **Raises:**
-    - `NotEnoughPermissions`: If any required permission is missing from the user's group permissions.
+    - `NotEnoughPermissions`: If the user has no role, or their role is missing any required role.
 
     **Example:**
     ```python
-    @require_group_permission(Permissions.can_upload_mission, Permissions.can_test_mission)
-    def my_view(session_token, ...):
+    @require_user_role(Roles.can_manage_server)
+    def my_view(session_user, ...):
         ...
     ```
     """
@@ -300,6 +309,7 @@ def require_user_role(*required_roles: str):
                 else:
                     return func(session_user=session_user, **kwargs)
 
+        # Passes session_user through unchanged, so the wrapped signature is already correct
         return wrapper
 
     return decorator
@@ -345,6 +355,7 @@ def verify_session_state(func: Callable | None = None):
             else:
                 return func(**kwargs)
 
+        # Reads state from the query string, not from kwargs, so the wrapped signature is already correct
         return wrapper
 
     if callable(func):
@@ -394,7 +405,8 @@ def verify_csrf_from_form(func: Callable | None = None, /, *, form_id: str = 'cs
             else:
                 return func(**kwargs)
 
-        return wrapper
+        # form_endpoint merges the whole form into kwargs, including the CSRF token this wrapper strips out
+        return accept_parameters(wrapper, func, form_id)
 
     if callable(func):
         return decorator(func)

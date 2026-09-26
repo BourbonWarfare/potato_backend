@@ -348,6 +348,11 @@ def endpoint_servers_url(endpoint_arma_base_url):
     return f'{endpoint_arma_base_url}/servers'
 
 
+@pytest.fixture(scope='session')
+def endpoint_events_url(endpoint_arma_base_url):
+    return f'{endpoint_arma_base_url}/events'
+
+
 @pytest.fixture
 def mock_server_1(mocker, server_name_1):
     mock_server = mocker.Mock(spec=Server)

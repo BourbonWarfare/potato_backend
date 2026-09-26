@@ -20,6 +20,7 @@ from integrations.auth.fixtures import (
 from integrations.fixtures import test_app
 from integrations.server_ops.arma.fixtures import (
     endpoint_arma_base_url,
+    endpoint_events_url,
     endpoint_modlists_url,
     endpoint_mods_url,
     endpoint_reload_modlists_url,
@@ -916,3 +917,216 @@ async def test__update_specific_mod__updates_matching_mod(
     assert response.status_code == 200
     update_mods.assert_called_once()
     assert update_mods.call_args.args[1] == [mock_mod_1]
+
+
+@pytest.mark.asyncio
+async def test__create_event__records_event(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that POST /events records a tagged Arma event."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    response = await test_app.post(
+        endpoint_events_url,
+        json={'tag': 'script_error', 'message': 'Undefined variable _unit', 'server': ''},
+        headers=auth_header_1,
+    )
+
+    assert response.status_code == 201
+    data = await response.get_json()
+    assert data['event']['tag'] == 'script_error'
+    assert data['event']['message'] == 'Undefined variable _unit'
+
+
+@pytest.mark.asyncio
+async def test__create_event__requires_json(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that POST /events requires a JSON body."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    response = await test_app.post(endpoint_events_url, data='not json', headers=auth_header_1)
+
+    assert response.status_code == 415
+
+
+@pytest.mark.asyncio
+async def test__create_event__rejects_missing_message(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that POST /events rejects payloads without a message."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    response = await test_app.post(endpoint_events_url, json={'tag': 'server_message', 'server': 'main'}, headers=auth_header_1)
+
+    assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test__get_events__returns_json_by_default(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that GET /events returns paginated JSON by default."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    await test_app.post(
+        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'}, headers=auth_header_1
+    )
+
+    response = await test_app.get(f'{endpoint_events_url}?page=1&page_size=10', headers=auth_header_1)
+
+    assert response.status_code == 200
+    assert response.content_type.startswith('application/json')
+    data = await response.get_json()
+    assert data['total'] == 1
+    assert data['page'] == 1
+    assert data['page_size'] == 10
+    assert data['events'][0]['tag'] == 'server_message'
+    assert data['events'][0]['message'] == 'Mission started'
+
+
+@pytest.mark.asyncio
+async def test__get_events__filters_by_repeated_tag_params(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that GET /events can filter by repeated tag query parameters."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    await test_app.post(
+        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'}, headers=auth_header_1
+    )
+    await test_app.post(
+        endpoint_events_url,
+        json={'tag': 'script_error', 'message': 'Undefined variable', 'server': 'main'},
+        headers=auth_header_1,
+    )
+    await test_app.post(
+        endpoint_events_url, json={'tag': 'admin_message', 'message': 'Admin note', 'server': 'main'}, headers=auth_header_1
+    )
+
+    response = await test_app.get(f'{endpoint_events_url}?tag=script_error&tag=admin_message', headers=auth_header_1)
+
+    assert response.status_code == 200
+    data = await response.get_json()
+    assert data['total'] == 2
+    assert data['tags'] == ['script_error', 'admin_message']
+    assert {event['tag'] for event in data['events']} == {'script_error', 'admin_message'}
+
+
+@pytest.mark.asyncio
+async def test__get_events__filters_by_comma_separated_tags_param(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that GET /events can filter by comma-separated tags query parameter."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    await test_app.post(
+        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'}, headers=auth_header_1
+    )
+    await test_app.post(
+        endpoint_events_url,
+        json={'tag': 'script_error', 'message': 'Undefined variable', 'server': 'main'},
+        headers=auth_header_1,
+    )
+
+    response = await test_app.get(f'{endpoint_events_url}?tags=script_error', headers=auth_header_1)
+
+    assert response.status_code == 200
+    data = await response.get_json()
+    assert data['total'] == 1
+    assert data['tags'] == ['script_error']
+    assert data['events'][0]['tag'] == 'script_error'
+
+
+@pytest.mark.asyncio
+async def test__get_events__returns_html_when_requested(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that GET /events returns an HTML fragment when requested by Accept header."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    await test_app.post(
+        endpoint_events_url, json={'tag': 'script_error', 'message': 'Bad thing <happened>', 'server': ''}, headers=auth_header_1
+    )
+
+    response = await test_app.get(endpoint_events_url, headers={'Accept': 'text/html', **auth_header_1})
+
+    html_body = await response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert response.content_type.startswith('text/html')
+    assert html_body
+
+
+@pytest.mark.asyncio
+async def test__get_events__returns_html_when_accepts_header_is_used(
+    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that GET /events also supports the Accepts header spelling."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    await test_app.post(
+        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission ended', 'server': 'main'}, headers=auth_header_1
+    )
+
+    response = await test_app.get(endpoint_events_url, headers={'Accepts': 'text/html', **auth_header_1})
+
+    html_body = await response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert response.content_type.startswith('text/html')
+    assert html_body
+
+
+@pytest.mark.asyncio
+async def test__events_page__requires_authentication(test_app):
+    """Test that the Arma events frontend requires a logged-in session."""
+    response = await test_app.get('/server_ops/arma/events')
+
+    html = await response.get_data(as_text=True)
+
+    assert response.status_code == 401
+    assert response.content_type.startswith('text/html')
+    assert html
+
+
+@pytest.mark.asyncio
+async def test__events_page__requires_manage_server_role(
+    state, test_app, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that the Arma events frontend requires the server manager role."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    response = await test_app.get('/server_ops/arma/events', headers=auth_header_1)
+
+    html = await response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert response.content_type.startswith('text/html')
+    assert html
+
+
+@pytest.mark.asyncio
+async def test__events_page__renders_for_server_manager(
+    test_app, state, db_user_1, db_session_1, auth_header_1, db_server_manager
+):
+    """Test that server managers can view the Arma events frontend."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+
+    response = await test_app.get('/server_ops/arma/events', headers=auth_header_1)
+    html = await response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert response.content_type.startswith('text/html')
+    assert html
+
+
+@pytest.mark.asyncio
+async def test__events_list_partial__renders_filtered_events_for_server_manager(
+    test_app, state, db_user_1, db_session_1, db_server_manager, endpoint_events_url
+):
+    """Test that the HTMX event list partial is restricted and renders filtered rows."""
+    UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
+    await test_app.post(endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'})
+    await test_app.post(endpoint_events_url, json={'tag': 'script_error', 'message': 'Undefined variable', 'server': 'main'})
+
+    response = await test_app.get(
+        '/api/v1/html/server_ops/arma/events/list?tags=script_error',
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
+    html = await response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert response.content_type.startswith('text/html')
+    assert html

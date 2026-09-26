@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import inspect
 import json
@@ -28,6 +27,104 @@ from bw.response import ChunkedResponse, JsonResponse, ServerSentEventResponse, 
 from bw.web_event import BaseEvent
 
 logger = logging.getLogger('bw.web_utils')
+
+
+@functools.cache
+def _signature(func: Callable[..., Any]) -> inspect.Signature:
+    return inspect.signature(func)  # follows __wrapped__ through decorators
+
+
+def check_call(func: Callable[..., Any], *args: Any, **kwargs: Any) -> inspect.BoundArguments:
+    """
+    Verify that `func(*args, **kwargs)` matches `func`'s signature without calling it.
+
+    Raises:
+        BadArguments: If the arguments don't bind to the signature.
+
+    Returns:
+        The bound arguments, in case the caller wants them.
+    """
+    try:
+        return _signature(func).bind(*args, **kwargs)
+    except TypeError as e:
+        _log_bind_failure(func, e, args, kwargs)
+        raise BadArguments() from e
+
+
+def _log_bind_failure(func: Callable[..., Any], error: TypeError, args: tuple, kwargs: dict) -> None:
+    logger.warning(error)
+    logger.warning(f'Call to {getattr(func, "__qualname__", func)!r} failed to bind')
+    logger.warning(f'Passed args: {args}')
+    logger.warning(f'Passed kwargs: {kwargs}')
+
+
+async def call_checked(func: Callable[..., Awaitable[Any]], *args: Any, **kwargs: Any) -> Any:
+    """
+    Await `func(*args, **kwargs)`, reporting a call that doesn't match `func`'s signature as `BadArguments`.
+
+    The arguments are checked up front, but a mismatch is only reported if the call actually
+    fails. That way the decorators that run first (session, role and permission checks) still
+    get to reject the request with their own error, so an unauthorized caller gets 401/403
+    rather than a 400 that describes the endpoint's arguments.
+
+    A `TypeError` raised from inside `func`'s body is never caught: when the arguments bind,
+    the call is made without any `TypeError` handling, and when they don't, the body never runs.
+
+    Raises:
+        BadArguments: If the arguments don't bind and the call fails.
+    """
+    try:
+        _signature(func).bind(*args, **kwargs)
+    except TypeError as bind_error:
+        try:
+            return await func(*args, **kwargs)
+        except TypeError as e:
+            _log_bind_failure(func, bind_error, args, kwargs)
+            raise BadArguments() from e
+
+    return await func(*args, **kwargs)
+
+
+def hide_parameters[F: Callable[..., Any]](wrapper: F, wrapped: Callable[..., Any], *names: str) -> F:
+    """
+    Make `wrapper` advertise `wrapped`'s signature minus the parameters the wrapper injects itself.
+
+    Use this in any decorator that supplies arguments to the function it wraps (a session user,
+    a header value, a template). Without it, `check_call` follows `__wrapped__` down to the inner
+    function and demands arguments the caller was never meant to pass.
+
+    Call it after `functools.wraps`, since `wraps` copies the inner function's `__dict__`
+    (including any `__signature__`) onto the wrapper.
+    """
+    signature = inspect.signature(wrapped)
+    wrapper.__signature__ = signature.replace(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        parameters=[param for param in signature.parameters.values() if param.name not in names]
+    )
+    return wrapper
+
+
+def accept_parameters[F: Callable[..., Any]](wrapper: F, wrapped: Callable[..., Any], *names: str) -> F:
+    """
+    Make `wrapper` advertise `wrapped`'s signature plus optional keyword-only parameters the wrapper consumes.
+
+    The counterpart to `hide_parameters`: use this in any decorator that takes an argument out of
+    the call before passing it on (a CSRF token from a form, for example), so `check_call` does not
+    reject the call for passing something the inner function doesn't accept.
+
+    Call it after `functools.wraps`.
+    """
+    signature = inspect.signature(wrapped)
+    params = list(signature.parameters.values())
+
+    if any(param.kind is inspect.Parameter.VAR_KEYWORD for param in params):
+        # The inner function already accepts anything by keyword
+        wrapper.__signature__ = signature  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        return wrapper
+
+    existing = {param.name for param in params}
+    params.extend(inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None) for name in names if name not in existing)
+    wrapper.__signature__ = signature.replace(parameters=params)  # type: ignore[attr-defined]
+    return wrapper
 
 
 def define_api(func: Callable[..., WebResponse | Awaitable[WebResponse]]):
@@ -93,7 +190,7 @@ def define_api(func: Callable[..., WebResponse | Awaitable[WebResponse]]):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> WebResponse | Awaitable[WebResponse]:
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return asyncfunc(*args, **kwargs)
         else:
             return syncfunc(*args, **kwargs)
@@ -131,20 +228,9 @@ def url_endpoint(func: Callable[..., Awaitable[WebResponse]]):
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         try:
-            result = func(*args, **kwargs)
-        except TypeError as e:
-            logger.warning(e)
-            logger.warning(f'Request passed args: {args}')
-            logger.warning(f'Request payload: {kwargs}')
-            return BadArguments().as_response_code()
+            return await call_checked(func, *args, **kwargs)
         except BwServerError as e:
             logger.warning(f'Error in URL API: {e}')
-            return e.as_response_code()
-
-        try:
-            return await result
-        except BwServerError as e:
-            logger.warning(e)
             return e.as_response_code()
 
     return wrapper
@@ -185,21 +271,9 @@ def form_endpoint(func: Callable[..., Awaitable[WebResponse]]):
         kwargs.update(form_values)
         kwargs = {key.replace('-', '_'): value for key, value in kwargs.items()}
         try:
-            result = func(*args, **kwargs)
-        except TypeError as e:
-            logger.warning(e)
-            logger.warning(f'Request passed args: {args}')
-            logger.warning(f'Request payload: {kwargs}')
-            logger.warning(f'Form values: {form_values}')
-            return BadArguments().as_response_code()
+            return await call_checked(func, *args, **kwargs)
         except BwServerError as e:
-            logger.warning(f'Error in URL API: {e}')
-            return e.as_response_code()
-
-        try:
-            return await result
-        except BwServerError as e:
-            logger.warning(e)
+            logger.warning(f'Error in form API: {e}')
             return e.as_response_code()
 
     return wrapper
@@ -242,32 +316,26 @@ def json_endpoint(func: Callable[..., Awaitable[JsonResponse]]):
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         converted_json = await request.get_json()
-        if converted_json is not None:
-            for key in converted_json:
-                if key in kwargs:
-                    logger.warning(f'Duplicate key found while parsing arguments: {key}')
-                    return JsonPayloadError().as_response_code()
-
-            kwargs.update(converted_json)
-            try:
-                result = func(*args, **kwargs)
-            except TypeError as e:
-                logger.warning(e)
-                logger.warning(f'Request passed args: {args}')
-                logger.warning(f'Request payload: {kwargs}')
-                return BadArguments().as_response_code()
-            except BwServerError as e:
-                logger.warning(e)
-                return e.as_response_code()
-
-            try:
-                return await result
-            except BwServerError as e:
-                logger.warning(e)
-                return e.as_response_code()
-        else:
+        if converted_json is None:
             logger.warning('Endpoint expects Json')
             return ExpectedJson().as_response_code()
+
+        if not isinstance(converted_json, dict):
+            logger.warning('Json payload must be an object')
+            return BadArguments().as_response_code()
+
+        for key in converted_json:
+            if key in kwargs:
+                logger.warning(f'Duplicate key found while parsing arguments: {key}')
+                return JsonPayloadError().as_response_code()
+
+        kwargs.update(converted_json)
+
+        try:
+            return await call_checked(func, *args, **kwargs)
+        except BwServerError as e:
+            logger.warning(e)
+            return e.as_response_code()
 
     return wrapper
 
@@ -445,33 +513,32 @@ def html_endpoint(
             if inject_logged_in:
                 kwargs['logged_in'] = is_logged_in
 
+            error_status: int | None = None
             try:
                 inner_html = await func(*args, **kwargs)
             except BwServerError as e:
                 logger.warning(e)
+                error_status = e.status()
                 try:
-                    inner_html = await load_template_from_disk(template_path=Path('error') / f'{e.status()}.html')
+                    inner_html = await load_template_from_disk(template_path=Path('error') / f'{error_status}.html')
                 except FileNotFoundError:
-                    inner_html = f'<h1>{e.status()}</h1><p>{e!s}</p>'
+                    inner_html = f'<h1>{error_status}</h1><p>{e!s}</p>'
 
             response_headers = injected_response_headers if injected_response_headers else {}
+
+            def respond(body: str) -> ChunkedResponse:
+                response = chunk_text_response(body, mimetype=mimetype, headers=response_headers)
+                if error_status is not None:
+                    response.status_code = error_status
+                return response
 
             # The endpoint may mutate the session (OAuth login, logout redirects, etc.).
             # Recompute before rendering the full shell so the navbar is not stale.
             template_context = session_template_context()
             is_logged_in = template_context['logged_in']
 
-            if is_htmx_partial_request():
-                if isinstance(inner_html, str):
-                    return chunk_text_response(inner_html, mimetype=mimetype, headers=response_headers)
-                else:
-                    return inner_html
-
-            if return_partial:
-                if isinstance(inner_html, str):
-                    return chunk_text_response(inner_html, mimetype=mimetype, headers=response_headers)
-                else:
-                    return inner_html
+            if is_htmx_partial_request() or return_partial:
+                return respond(inner_html) if isinstance(inner_html, str) else inner_html
 
             partial_page = await load_template_from_disk(template_path='page.html')
             full_page = await render_template_string(
@@ -484,12 +551,10 @@ def html_endpoint(
                 injected_headers=injected_headers if injected_headers else [],
             )
 
-            if isinstance(inner_html, str):
-                return chunk_text_response(full_page, mimetype=mimetype, headers=response_headers)
-            else:
-                return inner_html
+            return respond(full_page) if isinstance(inner_html, str) else inner_html
 
-        return wrapper
+        injected = ('html', 'logged_in') if inject_logged_in else ('html',)
+        return hide_parameters(wrapper, func, *injected)
 
     return decorator
 
@@ -573,7 +638,7 @@ def unwrap_headers(*headers: tuple[str, Any]):
                     raise BadHeader()
             return await func(*args, **kwargs)
 
-        return wrapper
+        return hide_parameters(wrapper, func, *(transform(header) for header, _ in headers))
 
     return decorator
 

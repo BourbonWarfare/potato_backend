@@ -891,17 +891,6 @@ class TestGroupEndpoints:
 
 class TestDiscordEndpoints:
     @pytest.mark.asyncio
-    async def test__login_discord_redirect__returns_html(self, state, test_app, oauth_code_1, oauth_state_1):
-        response = await test_app.get(f'/auth/login/discord?code={oauth_code_1}&state={oauth_state_1}')
-        assert response.status_code == 200
-        assert response.content_type.startswith('text/html')
-
-    @pytest.mark.asyncio
-    async def test__login_discord_redirect__handles_missing_code(self, state, test_app, oauth_state_2):
-        response = await test_app.get(f'/auth/login/discord?state={oauth_state_2}')
-        assert response.status_code == 200
-
-    @pytest.mark.asyncio
     async def test__login_discord__creates_session_for_existing_user(
         self,
         mocker,

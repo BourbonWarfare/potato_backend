@@ -1,3 +1,5 @@
+import functools
+import inspect
 import io
 from contextlib import aclosing
 from typing import Any
@@ -5,14 +7,18 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from bw.error import BadHeader, BwServerError
+from bw.error import BadArguments, BadHeader, BwServerError
 from bw.response import JsonResponse, WebResponse
 from bw.web_utils import (
+    accept_parameters,
+    call_checked,
+    check_call,
     chunk_file_response,
     chunk_json_response,
     chunk_text_response,
     define_api,
     form_endpoint,
+    hide_parameters,
     html_endpoint,
     htmx_headers,
     htmx_redirect,
@@ -95,6 +101,326 @@ def mock_error():
             return 500
 
     return DummyError()
+
+
+def passthrough(func):
+    """
+    A decorator whose wrapper accepts any arguments, hiding the real signature at call time.
+
+    Stacking this under an endpoint decorator reproduces the case where a bad call only
+    fails once the coroutine is awaited, not when it is created.
+    """
+
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        return await func(*args, **kwargs)
+
+    return wrapper
+
+
+# ==============================================================================
+# UNIT UNDER TEST: check_call
+# ==============================================================================
+
+
+def test__check_call__returns_bound_arguments_for_valid_call():
+    def func(a: int, b: str = 'x'):
+        pass
+
+    bound = check_call(func, 1, b='y')
+
+    assert isinstance(bound, inspect.BoundArguments)
+    assert bound.arguments == {'a': 1, 'b': 'y'}
+
+
+def test__check_call__raises_bad_arguments_on_missing_argument():
+    def func(a: int, b: str):
+        pass
+
+    with pytest.raises(BadArguments):
+        check_call(func, 1)
+
+
+def test__check_call__raises_bad_arguments_on_unexpected_keyword():
+    def func(a: int):
+        pass
+
+    with pytest.raises(BadArguments):
+        check_call(func, a=1, extra=2)
+
+
+def test__check_call__raises_bad_arguments_on_too_many_positional():
+    def func(a: int):
+        pass
+
+    with pytest.raises(BadArguments):
+        check_call(func, 1, 2)
+
+
+def test__check_call__bad_arguments_chains_original_type_error():
+    def func(a: int):
+        pass
+
+    with pytest.raises(BadArguments) as exc_info:
+        check_call(func)
+
+    assert isinstance(exc_info.value.__cause__, TypeError)
+
+
+def test__check_call__does_not_call_function():
+    calls = []
+
+    def func(a: int):
+        calls.append(a)
+
+    check_call(func, 1)
+
+    assert calls == []
+
+
+def test__check_call__accepts_anything_for_var_keyword_function():
+    def func(**kwargs):
+        pass
+
+    check_call(func, anything=1, at_all=2)
+
+
+def test__check_call__follows_wrapped_signature_through_decorators():
+    @passthrough
+    async def func(a: int):
+        pass
+
+    # The outer wrapper takes *args/**kwargs, but check_call must use the real signature
+    with pytest.raises(BadArguments):
+        check_call(func, not_a=1)
+
+
+def injects_user(func):
+    """A decorator that supplies `session_user` itself, like `require_session`."""
+
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        return await func('the-user', *args, **kwargs)
+
+    return hide_parameters(wrapper, func, 'session_user')
+
+
+def test__hide_parameters__removes_injected_parameter_from_signature():
+    @injects_user
+    async def func(session_user: str, a: int):
+        pass
+
+    assert list(inspect.signature(func).parameters) == ['a']
+
+
+def test__check_call__does_not_require_injected_parameter():
+    @injects_user
+    async def func(session_user: str, a: int):
+        pass
+
+    check_call(func, a=1)
+
+
+def test__check_call__rejects_injected_parameter_passed_by_caller():
+    @injects_user
+    async def func(session_user: str, a: int):
+        pass
+
+    with pytest.raises(BadArguments):
+        check_call(func, session_user='spoofed', a=1)
+
+
+def test__check_call__hidden_parameters_survive_further_wrapping():
+    @passthrough
+    @injects_user
+    async def func(session_user: str, a: int):
+        pass
+
+    check_call(func, a=1)
+    with pytest.raises(BadArguments):
+        check_call(func)
+
+
+def consumes_token(func):
+    """A decorator that strips `csrf_token` out of the call, like `verify_csrf_from_form`."""
+
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        kwargs.pop('csrf_token', None)
+        return await func(*args, **kwargs)
+
+    return accept_parameters(wrapper, func, 'csrf_token')
+
+
+def test__accept_parameters__adds_optional_keyword_parameter():
+    @consumes_token
+    async def func(a: int):
+        pass
+
+    params = inspect.signature(func).parameters
+    assert list(params) == ['a', 'csrf_token']
+    assert params['csrf_token'].kind is inspect.Parameter.KEYWORD_ONLY
+    assert params['csrf_token'].default is None
+
+
+def test__accept_parameters__leaves_var_keyword_signature_alone():
+    @consumes_token
+    async def func(a: int, **kwargs):
+        pass
+
+    assert list(inspect.signature(func).parameters) == ['a', 'kwargs']
+
+
+def test__check_call__allows_consumed_parameter_with_or_without_it():
+    @consumes_token
+    async def func(a: int):
+        pass
+
+    check_call(func, a=1)
+    check_call(func, a=1, csrf_token='abc')
+    with pytest.raises(BadArguments):
+        check_call(func, a=1, other='abc')
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__consumed_form_value_is_not_rejected(mock_request):
+    expected = MockWebResponse()
+
+    @form_endpoint
+    @consumes_token
+    async def endpoint(a: str):
+        return expected
+
+    mock_request.form = AwaitableForm({'a': 'x', 'csrf_token': 'abc'})
+    assert await endpoint() is expected
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__injecting_decorator_is_not_treated_as_missing_argument(mock_request):
+    mock_request.get_json.return_value = {'a': 1}
+    expected = MockJsonResponse()
+
+    @json_endpoint
+    @injects_user
+    async def endpoint(session_user: str, a: int):
+        assert session_user == 'the-user'
+        assert a == 1
+        return expected
+
+    assert await endpoint() is expected
+
+
+def rejects_request(error: BwServerError):
+    """A decorator that injects `session_user` but rejects every request first, like a failing `require_session`."""
+
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            raise error
+
+        return hide_parameters(wrapper, func, 'session_user')
+
+    return decorator
+
+
+@pytest.mark.asyncio
+async def test__call_checked__raises_bad_arguments_when_call_fails():
+    async def func(a: int):
+        pass
+
+    with pytest.raises(BadArguments):
+        await call_checked(func, b=1)
+
+
+@pytest.mark.asyncio
+async def test__call_checked__type_error_in_body_is_not_caught():
+    async def func(a: int):
+        raise TypeError('from the body')
+
+    with pytest.raises(TypeError, match='from the body'):
+        await call_checked(func, a=1)
+
+
+@pytest.mark.asyncio
+async def test__call_checked__decorator_error_wins_over_bad_arguments(mock_error):
+    @rejects_request(mock_error)
+    async def func(session_user: str, event: str):
+        pass
+
+    with pytest.raises(type(mock_error)):
+        await call_checked(func)
+
+
+@pytest.mark.asyncio
+async def test__call_checked__does_not_log_bad_arguments_when_decorator_rejects(mock_error, caplog):
+    @rejects_request(mock_error)
+    async def func(session_user: str, event: str):
+        pass
+
+    with pytest.raises(type(mock_error)):
+        await call_checked(func)
+
+    assert 'failed to bind' not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test__url_endpoint__rejecting_decorator_wins_over_bad_arguments(mock_request, mock_error):
+    @url_endpoint
+    @rejects_request(mock_error)
+    async def endpoint(session_user: str, event: str):
+        pass
+
+    assert await endpoint() is mock_error.as_response_code()
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__rejecting_decorator_wins_over_bad_arguments(mock_request, mock_error):
+    @form_endpoint
+    @rejects_request(mock_error)
+    async def endpoint(session_user: str, event: str):
+        pass
+
+    assert await endpoint() is mock_error.as_response_code()
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__rejecting_decorator_wins_over_bad_arguments(mock_request, mock_error):
+    mock_request.get_json.return_value = {}
+
+    @json_endpoint
+    @rejects_request(mock_error)
+    async def endpoint(session_user: str, event: str):
+        pass
+
+    assert await endpoint() is mock_error.as_response_code()
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__bad_arguments_after_passing_decorator_return_bad_request(mock_request):
+    mock_request.get_json.return_value = {}
+
+    @json_endpoint
+    @injects_user
+    async def endpoint(session_user: str, event: str):
+        pass
+
+    response = await endpoint()
+    assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__unwrap_headers_parameters_are_not_required_from_payload(mock_request):
+    mock_request.get_json.return_value = {'a': 1}
+    mock_request.headers = {'X-Api-Version': '2'}
+    expected = MockJsonResponse()
+
+    @json_endpoint
+    @unwrap_headers(('X-Api-Version', int))
+    async def endpoint(x_api_version: int, a: int):
+        assert x_api_version == 2
+        return expected
+
+    assert await endpoint() is expected
 
 
 # ==============================================================================
@@ -188,6 +514,28 @@ async def test__url_endpoint__bad_arguments_return_bad_request(mock_request, moc
     assert response.status == '400 BAD REQUEST'
 
 
+@pytest.mark.asyncio
+async def test__url_endpoint__bad_arguments_through_stacked_decorator_return_bad_request(mock_request):
+    @url_endpoint
+    @passthrough
+    async def endpoint(my_arg: int):
+        return 'blah'
+
+    response = await endpoint(fake=400)
+    assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__url_endpoint__type_error_through_stacked_decorator_is_not_caught(mock_request):
+    @url_endpoint
+    @passthrough
+    async def endpoint(my_arg: int):
+        raise TypeError()
+
+    with pytest.raises(TypeError):
+        await endpoint(my_arg=1)
+
+
 # ==============================================================================
 # UNIT UNDER TEST: form_endpoint
 # ==============================================================================
@@ -240,6 +588,19 @@ async def test__form_endpoint__form_values_are_inserted(mock_request, mock_error
 
 
 @pytest.mark.asyncio
+async def test__form_endpoint__hyphenated_form_keys_become_underscored(mock_request):
+    expected = MockWebResponse()
+
+    @form_endpoint
+    async def endpoint(first_name: str):
+        assert first_name == 'Alice'
+        return expected
+
+    mock_request.form = AwaitableForm({'first-name': 'Alice'})
+    assert await endpoint() is expected
+
+
+@pytest.mark.asyncio
 async def test__form_endpoint__missing_arg_type_error(mock_request, mock_error):
     @form_endpoint
     async def endpoint(arg1: int, arg2: str, arg3: Any):
@@ -258,6 +619,30 @@ async def test__form_endpoint__bad_arguments_return_bad_request(mock_request, mo
 
     response = await endpoint(fake=400)
     assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__bad_arguments_through_stacked_decorator_return_bad_request(mock_request):
+    @form_endpoint
+    @passthrough
+    async def endpoint(my_arg: int):
+        return 'blah'
+
+    mock_request.form = AwaitableForm({'not_real_arg': 'blah'})
+    response = await endpoint()
+    assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__form_endpoint__type_error_through_stacked_decorator_is_not_caught(mock_request):
+    @form_endpoint
+    @passthrough
+    async def endpoint(my_arg: int):
+        raise TypeError()
+
+    mock_request.form = AwaitableForm({'my_arg': 1})
+    with pytest.raises(TypeError):
+        await endpoint()
 
 
 # ==============================================================================
@@ -351,6 +736,57 @@ async def test__json_endpoint__bad_arguments_return_bad_request(mock_request, mo
 
     response = await endpoint()
     assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__bad_arguments_through_stacked_decorator_return_bad_request(mock_request):
+    mock_request.get_json.return_value = {'not_real_arg': 'blah'}
+
+    @json_endpoint
+    @passthrough
+    async def endpoint(my_arg: int):
+        return {}
+
+    response = await endpoint()
+    assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__type_error_through_stacked_decorator_is_not_caught(mock_request):
+    mock_request.get_json.return_value = {'my_arg': 1}
+
+    @json_endpoint
+    @passthrough
+    async def endpoint(my_arg: int):
+        raise TypeError()
+
+    with pytest.raises(TypeError):
+        await endpoint()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('payload', [['a', 'b'], 'a string', 42, True])
+async def test__json_endpoint__non_object_payload_returns_bad_request(mock_request, payload):
+    mock_request.get_json.return_value = payload
+
+    @json_endpoint
+    async def endpoint():
+        return MockJsonResponse()
+
+    response = await endpoint()
+    assert response.status == '400 BAD REQUEST'
+
+
+@pytest.mark.asyncio
+async def test__json_endpoint__empty_object_payload_is_accepted(mock_request):
+    mock_request.get_json.return_value = {}
+    expected = MockJsonResponse()
+
+    @json_endpoint
+    async def endpoint():
+        return expected
+
+    assert await endpoint() is expected
 
 
 # ==============================================================================
@@ -777,3 +1213,16 @@ async def test__chunk_file_response__passes_headers():
     test_headers = {'X-Test-Headers': 'true'}
     response = chunk_file_response(file_obj, headers=test_headers)
     assert response.headers == test_headers
+
+
+@pytest.mark.asyncio
+async def test__html_endpoint__error_page_uses_error_status(mocker, mock_error, mock_render_template):
+    mocker.patch('bw.web_utils.load_template_from_disk', return_value='Error Page HTML')
+    mock_render_template.return_value = 'FINAL ERROR PAGE'
+
+    @html_endpoint(template_path='dashboard.html')
+    async def endpoint(html: str):
+        raise mock_error
+
+    response = await endpoint()
+    assert response.status_code == 500
