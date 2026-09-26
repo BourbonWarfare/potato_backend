@@ -147,6 +147,27 @@ class TestLoginBourbonEndpoints:
         assert response.headers['HX-Redirect'] == '/'
         assert 'Location' not in response.headers
 
+    @pytest.mark.asyncio
+    async def test__login_bourbon__next_page_header_shows_authenticated_nav(
+        self, test_app, db_bourbon_user_1, username_1, password_1
+    ):
+        page = await test_app.get('/auth/login')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1},
+            headers={'HX-Request': 'true'},
+        )
+        assert response.status_code == 204
+
+        redirected_page = await test_app.get('/')
+        html = await redirected_page.get_data(as_text=True)
+
+        assert 'href="/user/profile"' in html
+        assert 'Logout' in html
+        assert 'href="/auth/login"' not in html
+
 
 class TestLogoutEndpoints:
     @pytest.mark.asyncio
