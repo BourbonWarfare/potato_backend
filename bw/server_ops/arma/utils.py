@@ -1,4 +1,3 @@
-import nh3
 from quart import render_template_string
 
 from bw.web_utils import load_template_from_disk
@@ -83,9 +82,9 @@ async def format_arma_script_error(message: str) -> str:
     template = await load_template_from_disk(template_path='server_ops/arma/script_error.template.html')
     return await render_template_string(
         template,
-        script_error=nh3.clean(error_text.strip()),
-        code_context=nh3.clean(error_info),
-        code=nh3.clean(content_relevant),
+        script_error=error_text.strip(),
+        code_context=error_info,
+        code=content_relevant,
     )
 
 
