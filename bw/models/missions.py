@@ -89,6 +89,8 @@ class Review(Base):
 
 
 class TestResult(Base):
+    __test__ = False
+
     __tablename__ = 'test_results'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -101,6 +103,8 @@ class TestResult(Base):
 
 
 class TestCosign(Base):
+    __test__ = False
+
     __tablename__ = 'test_cosigns'
 
     id: Mapped[int] = mapped_column(primary_key=True)

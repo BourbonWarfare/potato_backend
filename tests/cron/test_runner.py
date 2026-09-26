@@ -10,6 +10,8 @@ from crons.cron import Cron
 
 
 class TestCron(Cron):
+    __test__ = False
+
     runs = 0
     callbacks = []  # noqa: RUF012
 

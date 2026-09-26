@@ -5,6 +5,8 @@ from uuid import UUID
 
 
 class TestStatus(StrEnum):
+    __test__ = False
+
     FAILED = 'Failed'
     PASSED = 'Passed'
 
