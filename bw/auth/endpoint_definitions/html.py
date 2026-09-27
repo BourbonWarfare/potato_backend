@@ -182,9 +182,6 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         state = request.args.get('state', default=secrets.token_urlsafe(32), type=str)
         logger.info('OAuth redirect (Discord bot)')
         AuthApi().register_access_code(state=State.state, code=code, code_state=state)
-        response = await _login_discord_from_oauth_code(code, ENVIRONMENT.discord_bot_oauth_redirect(), via_discord_bot=True)
-        session = response['session_token']
-        AuthApi().store_session_cookie(session)
         return html
 
     @frontend.get('/remarks')

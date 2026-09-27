@@ -13,6 +13,7 @@ from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
 from bw.environment import ENVIRONMENT
+from bw.error import ForbiddenError
 from bw.response import JsonResponse
 from integrations.auth.fixtures import (
     db_bot_user_1,
@@ -988,25 +989,35 @@ class TestDiscordEndpoints:
         login.assert_called_once_with(oauth_code_1, ENVIRONMENT.discord_oauth_redirect())
 
     @pytest.mark.asyncio
-    async def test__login_discord_redirect_bot__stores_code_and_session_cookie(
-        self, mocker, state, test_app, oauth_code_1, oauth_state_1, token_1, expire_valid
+    async def test__login_discord_redirect_bot__stores_code_without_consuming_it(
+        self, mocker, state, test_app, oauth_code_1, oauth_state_1
     ):
-        login = mocker.patch(
-            'bw.auth.endpoint_definitions.html._login_discord_from_oauth_code',
-            return_value=JsonResponse({'session_token': token_1, 'expire_time': expire_valid}),
-        )
-        mocker.patch(
-            'bw.auth.endpoint_definitions.html.ENVIRONMENT.discord_bot_oauth_redirect', return_value='https://example.com/bot'
-        )
+        login = mocker.patch('bw.auth.endpoint_definitions.html._login_discord_from_oauth_code')
 
         response = await test_app.get(f'/auth/login/discord/bot?code={oauth_code_1}&state={oauth_state_1}')
         cookies = response.headers.getlist('Set-Cookie')
 
         assert response.status_code == 200
         assert response.content_type.startswith('text/html')
-        assert any(cookie.startswith('session=') for cookie in cookies)
+        assert not any(cookie.startswith('session=') for cookie in cookies)
         assert SessionStore().get_discord_oauth_code(state, oauth_state_1) == oauth_code_1
-        login.assert_awaited_once_with(oauth_code_1, unittest.mock.ANY, via_discord_bot=True)
+        login.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test__login_discord_redirect_bot__does_not_403_when_browser_code_exchange_would_fail(
+        self, mocker, state, test_app, oauth_code_1, oauth_state_1
+    ):
+        login = mocker.patch(
+            'bw.auth.endpoint_definitions.html._login_discord_from_oauth_code',
+            side_effect=ForbiddenError('oauth failed'),
+        )
+
+        response = await test_app.get(f'/auth/login/discord/bot?code={oauth_code_1}&state={oauth_state_1}')
+
+        assert response.status_code == 200
+        assert response.content_type.startswith('text/html')
+        assert SessionStore().get_discord_oauth_code(state, oauth_state_1) == oauth_code_1
+        login.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test__login_discord__returns_401_for_invalid_token(

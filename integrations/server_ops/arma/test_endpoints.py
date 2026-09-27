@@ -62,14 +62,24 @@ from integrations.server_ops.arma.fixtures import (
 
 @pytest.mark.asyncio
 async def test__get_latest_rpt__returns_stream_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_arma_base_url,
+    server_name_1,
 ):
     """Test that GET /<server>/rpt successfully returns the latest RPT stream"""
     # Arrange
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
 
     mock_response = WebResponse(200, response='arma 3 server log data chunk')
-    mock_get_rpt = mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_latest_rpt', return_value=mock_response)
+    mock_get_rpt = mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.get_latest_rpt',
+        return_value=mock_response,
+    )
 
     # Act
     url = f'{endpoint_arma_base_url}/{server_name_1}/rpt'
@@ -83,14 +93,24 @@ async def test__get_latest_rpt__returns_stream_successfully(
 
 @pytest.mark.asyncio
 async def test__get_latest_rpt__returns_404_when_not_found(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_arma_base_url, server_name_2
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_arma_base_url,
+    server_name_2,
 ):
     """Test that GET /<server>/rpt returns 404 when server or RPT logs are missing"""
     # Arrange
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
 
     mock_response = WebResponse(404)
-    mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_latest_rpt', return_value=mock_response)
+    mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.get_latest_rpt',
+        return_value=mock_response,
+    )
 
     # Act
     url = f'{endpoint_arma_base_url}/{server_name_2}/rpt'
@@ -126,7 +146,14 @@ async def test__get_latest_rpt__requires_permission(
 
 @pytest.mark.asyncio
 async def test__get_latest_rpt__rejects_expired_session(
-    mocker, state, test_app, db_user_1, db_expired_session_1, db_server_manager, endpoint_arma_base_url, server_name_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_expired_session_1,
+    db_server_manager,
+    endpoint_arma_base_url,
+    server_name_1,
 ):
     """Test that GET /<server>/rpt rejects expired sessions"""
     # Arrange
@@ -282,14 +309,26 @@ async def test__get_server_modlist__returns_404_for_nonexistent_server(
 
 @pytest.mark.asyncio
 async def test__reload_mods__reloads_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_reload_mods_url
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_reload_mods_url,
 ):
     """Test that POST /mods/reload reloads mod configuration"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
-    mocker.patch('bw.server_ops.arma.endpoints.ENVIRONMENT.arma_mod_config_path', return_value='/test/path')
+    mocker.patch(
+        'bw.server_ops.arma.endpoints.ENVIRONMENT.arma_mod_config_path',
+        return_value='/test/path',
+    )
     mocker.patch('bw.server_ops.arma.api.load_mod_configs', return_value=None)
 
-    response = await test_app.post(endpoint_reload_mods_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
+    response = await test_app.post(
+        endpoint_reload_mods_url,
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
 
     assert response.status_code == 200
 
@@ -305,19 +344,31 @@ async def test__reload_mods__requires_authentication(state, test_app, endpoint_r
 @pytest.mark.asyncio
 async def test__reload_mods__requires_permission(state, test_app, db_user_1, db_session_1, endpoint_reload_mods_url):
     """Test that POST /mods/reload requires can_manage_server role"""
-    response = await test_app.post(endpoint_reload_mods_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
+    response = await test_app.post(
+        endpoint_reload_mods_url,
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
 
     assert response.status_code == 403
 
 
 @pytest.mark.asyncio
 async def test__reload_mods__rejects_expired_session(
-    mocker, state, test_app, db_user_1, db_expired_session_1, db_server_manager, endpoint_reload_mods_url
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_expired_session_1,
+    db_server_manager,
+    endpoint_reload_mods_url,
 ):
     """Test that POST /mods/reload rejects expired sessions"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
 
-    response = await test_app.post(endpoint_reload_mods_url, headers={'Authorization': f'Bearer {db_expired_session_1.token}'})
+    response = await test_app.post(
+        endpoint_reload_mods_url,
+        headers={'Authorization': f'Bearer {db_expired_session_1.token}'},
+    )
 
     assert response.status_code == 401
 
@@ -327,14 +378,26 @@ async def test__reload_mods__rejects_expired_session(
 
 @pytest.mark.asyncio
 async def test__reload_modlists__reloads_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_reload_modlists_url
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_reload_modlists_url,
 ):
     """Test that POST /mods/lists/reload reloads modlist configuration"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     mock_load_modlists = mocker.patch('bw.server_ops.arma.api.load_modlists')
-    mocker.patch('bw.server_ops.arma.endpoints.ENVIRONMENT.arma_modlist_config_path', return_value='/test/path')
+    mocker.patch(
+        'bw.server_ops.arma.endpoints.ENVIRONMENT.arma_modlist_config_path',
+        return_value='/test/path',
+    )
 
-    response = await test_app.post(endpoint_reload_modlists_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
+    response = await test_app.post(
+        endpoint_reload_modlists_url,
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
 
     assert response.status_code == 200
     mock_load_modlists.assert_called_once()
@@ -351,7 +414,10 @@ async def test__reload_modlists__requires_authentication(state, test_app, endpoi
 @pytest.mark.asyncio
 async def test__reload_modlists__requires_permission(state, test_app, db_user_1, db_session_1, endpoint_reload_modlists_url):
     """Test that POST /mods/lists/reload requires can_manage_server role"""
-    response = await test_app.post(endpoint_reload_modlists_url, headers={'Authorization': f'Bearer {db_session_1.token}'})
+    response = await test_app.post(
+        endpoint_reload_modlists_url,
+        headers={'Authorization': f'Bearer {db_session_1.token}'},
+    )
 
     assert response.status_code == 403
 
@@ -409,7 +475,13 @@ async def test__add_new_mod__requires_authentication(state, test_app, endpoint_m
 
 @pytest.mark.asyncio
 async def test__add_new_mod__requires_permission(
-    state, test_app, db_user_1, db_session_1, endpoint_mods_url, mock_mod_name_3, mock_workshop_id_3
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    endpoint_mods_url,
+    mock_mod_name_3,
+    mock_workshop_id_3,
 ):
     """Test that POST /mods requires can_manage_server role"""
     response = await test_app.post(
@@ -492,7 +564,14 @@ async def test__add_new_mod__rejects_invalid_kind(
 
 @pytest.mark.asyncio
 async def test__add_new_mod__rejects_missing_workshop_id(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_mods_url, mock_mod_name_3
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_mods_url,
+    mock_mod_name_3,
 ):
     """Test that POST /mods rejects non-manual mod without workshop_id"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -531,7 +610,10 @@ async def test__add_new_modlist__creates_modlist_successfully(
 ):
     """Test that POST /mods/lists creates a new modlist"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
-    mocker.patch('bw.server_ops.arma.api.MODS', {mock_mod_1.name: mock_mod_1, mock_mod_2.name: mock_mod_2})
+    mocker.patch(
+        'bw.server_ops.arma.api.MODS',
+        {mock_mod_1.name: mock_mod_1, mock_mod_2.name: mock_mod_2},
+    )
     mocker.patch('bw.server_ops.arma.api.MODLISTS', {})
 
     response = await test_app.post(
@@ -545,11 +627,17 @@ async def test__add_new_modlist__creates_modlist_successfully(
 
 @pytest.mark.asyncio
 async def test__add_new_modlist__requires_authentication(
-    state, test_app, endpoint_modlists_url, mock_mod_name_1, mock_mod_name_2, mock_modlist_name_4
+    state,
+    test_app,
+    endpoint_modlists_url,
+    mock_mod_name_1,
+    mock_mod_name_2,
+    mock_modlist_name_4,
 ):
     """Test that POST /mods/lists requires authentication"""
     response = await test_app.post(
-        endpoint_modlists_url, json={'name': mock_modlist_name_4, 'mods': [mock_mod_name_1, mock_mod_name_2]}
+        endpoint_modlists_url,
+        json={'name': mock_modlist_name_4, 'mods': [mock_mod_name_1, mock_mod_name_2]},
     )
 
     assert response.status_code == 401
@@ -631,7 +719,14 @@ async def test__add_new_modlist__rejects_nonexistent_mod(
 
 @pytest.mark.asyncio
 async def test__add_new_modlist__creates_empty_modlist(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_modlists_url, mock_modlist_name_6
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_modlists_url,
+    mock_modlist_name_6,
 ):
     """Test that POST /mods/lists can create empty modlist"""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -743,13 +838,22 @@ def auth_header_1(token_1):
 
 @pytest.mark.asyncio
 async def test__start_server__starts_server_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_start_server_url, auth_header_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_start_server_url,
+    auth_header_1,
 ):
     """Test that POST /<server>/start starts a server for server managers."""
     # Not yet reviewed
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     start_server = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.start_server', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.start_server',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.post(endpoint_start_server_url, headers=auth_header_1)
@@ -778,13 +882,22 @@ async def test__start_server__requires_permission(test_app, db_session_1, endpoi
 
 @pytest.mark.asyncio
 async def test__stop_server__stops_server_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_stop_server_url, auth_header_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_stop_server_url,
+    auth_header_1,
 ):
     """Test that POST /<server>/stop stops a server for server managers."""
     # Not yet reviewed
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     stop_server = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.stop_server', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.stop_server',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.post(endpoint_stop_server_url, headers=auth_header_1)
@@ -795,13 +908,22 @@ async def test__stop_server__stops_server_successfully(
 
 @pytest.mark.asyncio
 async def test__restart_server__restarts_server_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_restart_server_url, auth_header_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_restart_server_url,
+    auth_header_1,
 ):
     """Test that POST /<server>/restart restarts a server for server managers."""
     # Not yet reviewed
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     restart_server = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.restart_server', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.restart_server',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.post(endpoint_restart_server_url, headers=auth_header_1)
@@ -812,13 +934,22 @@ async def test__restart_server__restarts_server_successfully(
 
 @pytest.mark.asyncio
 async def test__update_server__updates_server_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_update_server_url, auth_header_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_update_server_url,
+    auth_header_1,
 ):
     """Test that POST /<server>/update updates a server for server managers."""
     # Not yet reviewed
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     update_server = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.update_server', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.update_server',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.post(endpoint_update_server_url, headers=auth_header_1)
@@ -829,13 +960,22 @@ async def test__update_server__updates_server_successfully(
 
 @pytest.mark.asyncio
 async def test__update_server_mods__updates_mods_successfully(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_update_server_mods_url, auth_header_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_update_server_mods_url,
+    auth_header_1,
 ):
     """Test that POST /<server>/update_mods updates server mods for server managers."""
     # Not yet reviewed
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     update_server_mods = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.update_server_mods', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.update_server_mods',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.post(endpoint_update_server_mods_url, headers=auth_header_1)
@@ -851,9 +991,14 @@ async def test__healthcheck_server__checks_health_successfully(
     """Test that GET /<server>/healthcheck checks the configured server health."""
     # Not yet reviewed
     mock_server_1.server_port.return_value = 2302
-    mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_server_from_string', return_value=mock_server_1)
+    mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.get_server_from_string',
+        return_value=mock_server_1,
+    )
     server_ping = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.server_ping', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.server_ping',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.get(endpoint_healthcheck_server_url)
@@ -867,9 +1012,14 @@ async def test__server_status__checks_status_successfully(mocker, test_app, endp
     """Test that GET /<server>/status checks the configured server status."""
     # Not yet reviewed
     mock_server_1.server_port.return_value = 2302
-    mocker.patch('bw.server_ops.arma.endpoints.ArmaApi.get_server_from_string', return_value=mock_server_1)
+    mocker.patch(
+        'bw.server_ops.arma.endpoints.ArmaApi.get_server_from_string',
+        return_value=mock_server_1,
+    )
     server_steam_status = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.server_steam_status', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.server_steam_status',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.get(endpoint_status_server_url)
@@ -880,7 +1030,14 @@ async def test__server_status__checks_status_successfully(mocker, test_app, endp
 
 @pytest.mark.asyncio
 async def test__update_specific_mod__returns_404_for_unknown_workshop_id(
-    mocker, state, test_app, db_user_1, db_session_1, db_server_manager, endpoint_update_specific_mod_url, auth_header_1
+    mocker,
+    state,
+    test_app,
+    db_user_1,
+    db_session_1,
+    db_server_manager,
+    endpoint_update_specific_mod_url,
+    auth_header_1,
 ):
     """Test that POST /mod/<workshop_id>/update returns not found for unknown mods."""
     # Not yet reviewed
@@ -909,7 +1066,9 @@ async def test__update_specific_mod__updates_matching_mod(
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     mocker.patch('bw.server_ops.arma.endpoints.MODS', {mock_mod_1.name: mock_mod_1})
     update_mods = mocker.patch(
-        'bw.server_ops.arma.endpoints.ArmaApi.update_mods', new_callable=AsyncMock, return_value=WebResponse(200)
+        'bw.server_ops.arma.endpoints.ArmaApi.update_mods',
+        new_callable=AsyncMock,
+        return_value=WebResponse(200),
     )
 
     response = await test_app.post(endpoint_update_specific_mod_url, headers=auth_header_1)
@@ -921,13 +1080,23 @@ async def test__update_specific_mod__updates_matching_mod(
 
 @pytest.mark.asyncio
 async def test__create_event__records_event(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that POST /events records a tagged Arma event."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     response = await test_app.post(
         endpoint_events_url,
-        json={'tag': 'script_error', 'message': 'Undefined variable _unit', 'server': ''},
+        json={
+            'tag': 'script_error',
+            'message': 'Undefined variable _unit',
+            'server': '',
+        },
         headers=auth_header_1,
     )
 
@@ -939,7 +1108,13 @@ async def test__create_event__records_event(
 
 @pytest.mark.asyncio
 async def test__create_event__requires_json(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that POST /events requires a JSON body."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
@@ -950,23 +1125,41 @@ async def test__create_event__requires_json(
 
 @pytest.mark.asyncio
 async def test__create_event__rejects_missing_message(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that POST /events rejects payloads without a message."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
-    response = await test_app.post(endpoint_events_url, json={'tag': 'server_message', 'server': 'main'}, headers=auth_header_1)
+    response = await test_app.post(
+        endpoint_events_url,
+        json={'tag': 'server_message', 'server': 'main'},
+        headers=auth_header_1,
+    )
 
     assert response.status_code == 400
 
 
 @pytest.mark.asyncio
 async def test__get_events__returns_json_by_default(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that GET /events returns paginated JSON by default."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     await test_app.post(
-        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'}, headers=auth_header_1
+        endpoint_events_url,
+        json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'},
+        headers=auth_header_1,
     )
 
     response = await test_app.get(f'{endpoint_events_url}?page=1&page_size=10', headers=auth_header_1)
@@ -983,12 +1176,20 @@ async def test__get_events__returns_json_by_default(
 
 @pytest.mark.asyncio
 async def test__get_events__filters_by_repeated_tag_params(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that GET /events can filter by repeated tag query parameters."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     await test_app.post(
-        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'}, headers=auth_header_1
+        endpoint_events_url,
+        json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'},
+        headers=auth_header_1,
     )
     await test_app.post(
         endpoint_events_url,
@@ -996,26 +1197,42 @@ async def test__get_events__filters_by_repeated_tag_params(
         headers=auth_header_1,
     )
     await test_app.post(
-        endpoint_events_url, json={'tag': 'admin_message', 'message': 'Admin note', 'server': 'main'}, headers=auth_header_1
+        endpoint_events_url,
+        json={'tag': 'admin_message', 'message': 'Admin note', 'server': 'main'},
+        headers=auth_header_1,
     )
 
-    response = await test_app.get(f'{endpoint_events_url}?tag=script_error&tag=admin_message', headers=auth_header_1)
+    response = await test_app.get(
+        f'{endpoint_events_url}?tag=script_error&tag=admin_message',
+        headers=auth_header_1,
+    )
 
     assert response.status_code == 200
     data = await response.get_json()
     assert data['total'] == 2
     assert data['tags'] == ['script_error', 'admin_message']
-    assert {event['tag'] for event in data['events']} == {'script_error', 'admin_message'}
+    assert {event['tag'] for event in data['events']} == {
+        'script_error',
+        'admin_message',
+    }
 
 
 @pytest.mark.asyncio
 async def test__get_events__filters_by_comma_separated_tags_param(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that GET /events can filter by comma-separated tags query parameter."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     await test_app.post(
-        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'}, headers=auth_header_1
+        endpoint_events_url,
+        json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'},
+        headers=auth_header_1,
     )
     await test_app.post(
         endpoint_events_url,
@@ -1034,12 +1251,20 @@ async def test__get_events__filters_by_comma_separated_tags_param(
 
 @pytest.mark.asyncio
 async def test__get_events__returns_html_when_requested(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that GET /events returns an HTML fragment when requested by Accept header."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     await test_app.post(
-        endpoint_events_url, json={'tag': 'script_error', 'message': 'Bad thing <happened>', 'server': ''}, headers=auth_header_1
+        endpoint_events_url,
+        json={'tag': 'script_error', 'message': 'Bad thing <happened>', 'server': ''},
+        headers=auth_header_1,
     )
 
     response = await test_app.get(endpoint_events_url, headers={'Accept': 'text/html', **auth_header_1})
@@ -1053,12 +1278,20 @@ async def test__get_events__returns_html_when_requested(
 
 @pytest.mark.asyncio
 async def test__get_events__returns_html_when_accepts_header_is_used(
-    state, test_app, endpoint_events_url, db_user_1, db_session_1, auth_header_1, db_server_manager
+    state,
+    test_app,
+    endpoint_events_url,
+    db_user_1,
+    db_session_1,
+    auth_header_1,
+    db_server_manager,
 ):
     """Test that GET /events also supports the Accepts header spelling."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
     await test_app.post(
-        endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission ended', 'server': 'main'}, headers=auth_header_1
+        endpoint_events_url,
+        json={'tag': 'server_message', 'message': 'Mission ended', 'server': 'main'},
+        headers=auth_header_1,
     )
 
     response = await test_app.get(endpoint_events_url, headers={'Accepts': 'text/html', **auth_header_1})
@@ -1077,8 +1310,8 @@ async def test__events_page__requires_authentication(test_app):
 
     html = await response.get_data(as_text=True)
 
-    assert response.status_code == 401
-    assert response.content_type.startswith('text/html')
+    assert response.status_code == 303
+    assert response.content_type.startswith('text/plain')
     assert html
 
 
@@ -1118,8 +1351,14 @@ async def test__events_list_partial__renders_filtered_events_for_server_manager(
 ):
     """Test that the HTMX event list partial is restricted and renders filtered rows."""
     UserStore().assign_user_role(state, db_user_1, db_server_manager.name)
-    await test_app.post(endpoint_events_url, json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'})
-    await test_app.post(endpoint_events_url, json={'tag': 'script_error', 'message': 'Undefined variable', 'server': 'main'})
+    await test_app.post(
+        endpoint_events_url,
+        json={'tag': 'server_message', 'message': 'Mission started', 'server': 'main'},
+    )
+    await test_app.post(
+        endpoint_events_url,
+        json={'tag': 'script_error', 'message': 'Undefined variable', 'server': 'main'},
+    )
 
     response = await test_app.get(
         '/api/v1/html/server_ops/arma/events/list?tags=script_error',
