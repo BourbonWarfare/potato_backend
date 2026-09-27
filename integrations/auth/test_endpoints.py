@@ -3,6 +3,7 @@
 import re
 import unittest
 import unittest.mock
+import urllib.parse
 
 import pytest
 
@@ -11,6 +12,7 @@ from bw.auth.group import GroupStore
 from bw.auth.roles import Roles
 from bw.auth.session import SessionStore
 from bw.auth.user import UserStore
+from bw.environment import ENVIRONMENT
 from bw.response import JsonResponse
 from integrations.auth.fixtures import (
     db_bot_user_1,
@@ -153,7 +155,8 @@ class TestLoginBourbonEndpoints:
 
     @pytest.mark.asyncio
     async def test__login_bourbon__redirects_to_requested_safe_page(self, test_app, db_bourbon_user_1, username_1, password_1):
-        page = await test_app.get('/auth/login?next=/user/profile')
+        await test_app.get('/user/profile')
+        page = await test_app.get('/auth/login')
         csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
 
         response = await test_app.post(
@@ -163,6 +166,7 @@ class TestLoginBourbonEndpoints:
 
         assert response.status_code == 303
         assert response.headers['Location'] == '/user/profile'
+        assert 'login_redirect=;' in response.headers['Set-Cookie']
 
     @pytest.mark.asyncio
     async def test__login_bourbon__next_page_header_shows_authenticated_nav(
@@ -261,7 +265,8 @@ class TestProfileEndpoints:
         response = await test_app.get('/user/profile')
 
         assert response.status_code == 303
-        assert response.headers['Location'] == '/auth/login?next=%2Fuser%2Fprofile'
+        assert response.headers['Location'] == '/auth/login'
+        assert response.headers['Set-Cookie'].startswith('login_redirect=/user/profile;')
 
     @pytest.mark.asyncio
     async def test__profile_page__renders_account_forms(self, test_app, token_1, db_session_1, db_user_1, db_bourbon_user_1):
@@ -954,6 +959,33 @@ class TestDiscordEndpoints:
         data = await response.get_json()
         assert 'session_token' in data
         assert data['expire_time'] == expire_valid.replace(' ', 'T')
+
+    @pytest.mark.asyncio
+    async def test__login_discord_redirect__redirects_to_cookie_target(
+        self, mocker, test_app, oauth_code_1, token_1, expire_valid
+    ):
+        mocker.patch('bw.auth.endpoint_definitions.html.ENVIRONMENT.discord_client_id', return_value='client-id')
+        mocker.patch(
+            'bw.auth.endpoint_definitions.html.ENVIRONMENT.discord_oauth_redirect', return_value='https://example.com/oauth'
+        )
+        await test_app.get('/user/profile')
+        await test_app.get('/auth/login')
+        discord_start = await test_app.get('/auth/discord')
+        parsed_redirect = urllib.parse.urlparse(discord_start.headers['Location'])
+        oauth_state = urllib.parse.parse_qs(parsed_redirect.query)['state'][0]
+        login = mocker.patch(
+            'bw.auth.endpoint_definitions.html._login_discord_from_oauth_code',
+            return_value=JsonResponse({'session_token': token_1, 'expire_time': expire_valid}),
+        )
+
+        response = await test_app.get(f'/auth/login/discord?code={oauth_code_1}&state={oauth_state}')
+        cookies = response.headers.getlist('Set-Cookie')
+
+        assert response.status_code == 303
+        assert response.headers['Location'] == '/user/profile'
+        assert any(cookie.startswith('session=') for cookie in cookies)
+        assert any(cookie.startswith('login_redirect=;') for cookie in cookies)
+        login.assert_called_once_with(oauth_code_1, ENVIRONMENT.discord_oauth_redirect())
 
     @pytest.mark.asyncio
     async def test__login_discord_redirect_bot__stores_code_and_session_cookie(

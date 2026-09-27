@@ -43,6 +43,15 @@ def _safe_login_redirect(redirect: str) -> str:
     return redirect
 
 
+def _login_redirect() -> str:
+    return _safe_login_redirect(request.cookies.get('login_redirect', '/'))
+
+
+def _expire_login_redirect_cookie(response: WebResponse) -> WebResponse:
+    response.delete_cookie('login_redirect', secure=True, httponly=True, samesite='Lax')
+    return response
+
+
 def define_auth(api: Blueprint):
     @api.get('/login/discord')
     @url_endpoint
@@ -107,7 +116,7 @@ def define_auth(api: Blueprint):
     @api.post('/login')
     @form_endpoint
     @verify_csrf_from_form
-    async def login_bourbon(username: str, password: str, remember: str = 'off', redirect: str = '/') -> WebResponse:
+    async def login_bourbon(username: str, password: str, remember: str = 'off', redirect: str = '') -> WebResponse:
         """
         ### Log in with Bourbon Warfare account
 
@@ -133,16 +142,15 @@ def define_auth(api: Blueprint):
         ```
         """
         logger.info('Creating new session (Bourbon)')
-        response = AuthApi().login_with_bourbon(
-            state=State.state, username=username, password=password, redirect=_safe_login_redirect(redirect)
-        )
+        redirect = _safe_login_redirect(redirect or _login_redirect())
+        response = AuthApi().login_with_bourbon(state=State.state, username=username, password=password, redirect=redirect)
         if response.status_code >= 400:
             return WebResponse(status=401, response='Password does not match login')
 
         session_token = response.state['session_token']
         AuthApi().store_session_cookie(session_token, permanent=remember == 'on')
 
-        return htmx_redirect(response.headers.get('Location', '/'))
+        return _expire_login_redirect_cookie(htmx_redirect(response.headers.get('Location', '/')))
 
     @api.post('/logout')
     @url_endpoint

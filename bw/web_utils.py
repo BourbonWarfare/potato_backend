@@ -7,7 +7,6 @@ from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, 
 from inspect import isawaitable
 from pathlib import Path
 from typing import IO, Any
-from urllib.parse import quote
 
 import aiofiles
 from quart import has_request_context, render_template_string, request
@@ -442,7 +441,9 @@ def _login_redirect_for_current_request() -> WebResponse:
     if not isinstance(next_url, str) or not next_url:
         next_url = '/'
     next_url = next_url.removesuffix('?')
-    return htmx_redirect(f'/auth/login?next={quote(next_url, safe="")}')
+    response = htmx_redirect('/auth/login')
+    response.set_cookie('login_redirect', next_url, httponly=True, samesite='Lax', secure=True, max_age=300)
+    return response
 
 
 def html_endpoint(

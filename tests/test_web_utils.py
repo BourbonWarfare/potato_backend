@@ -931,7 +931,8 @@ async def test__html_endpoint__redirects_401_to_login(mock_request, mocker):
     response = await endpoint()
 
     assert response.status_code == 303
-    assert response.headers['Location'] == '/auth/login?next=%2Fmissions%2F123%3Ftab%3Dreviews'
+    assert response.headers['Location'] == '/auth/login'
+    assert response.headers['Set-Cookie'].startswith('login_redirect=/missions/123?tab=reviews;')
 
 
 @pytest.mark.asyncio
@@ -948,7 +949,8 @@ async def test__html_endpoint__redirects_htmx_401_to_login(mock_request, mocker)
     response = await endpoint()
 
     assert response.status_code == 204
-    assert response.headers['HX-Redirect'] == '/auth/login?next=%2Fmissions%2F123'
+    assert response.headers['HX-Redirect'] == '/auth/login'
+    assert response.headers['Set-Cookie'].startswith('login_redirect=/missions/123;')
 
 
 @pytest.mark.asyncio

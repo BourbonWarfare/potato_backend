@@ -32,6 +32,7 @@ from bw.web_utils import (
     chunk_text_response,
     form_endpoint,
     html_endpoint,
+    htmx_redirect,
     json_endpoint,
     load_template_from_disk,
     unwrap_headers,
@@ -39,6 +40,21 @@ from bw.web_utils import (
 )
 
 logger = logging.getLogger('bw.auth')
+
+
+def safe_login_redirect(redirect: str) -> str:
+    if not redirect.startswith('/') or redirect.startswith('//') or '\r' in redirect or '\n' in redirect:
+        return '/'
+    return redirect
+
+
+def login_redirect_cookie() -> str:
+    return safe_login_redirect(request.cookies.get('login_redirect', '/'))
+
+
+def expire_login_redirect_cookie(response: WebResponse) -> WebResponse:
+    response.delete_cookie('login_redirect', secure=True, httponly=True, samesite='Lax')
+    return response
 
 
 async def _exchange_discord_oauth_code(discord_code: str, redirect_uri: str) -> str:
@@ -70,7 +86,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     async def login_page(session_token: str, html: str) -> str:
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
         AuthApi().store_session_cookie(session_token)
-        return await render_template_string(html, csrf_token=csrf_token, redirect=request.args.get('next', '/'))
+        return await render_template_string(html, csrf_token=csrf_token, redirect=login_redirect_cookie())
 
     @frontend.get('/discord')
     @url_endpoint
@@ -103,7 +119,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
         session = response['session_token']
         AuthApi().store_session_cookie(session, permanent=True)
 
-        return html
+        return expire_login_redirect_cookie(htmx_redirect(login_redirect_cookie()))
 
     @frontend.get('/verify')
     @html_endpoint(template_path='auth/verify.html', title='Verified your Bourbon Warfare account')
