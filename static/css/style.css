@@ -1547,6 +1547,66 @@ button:hover {
     word-break: break-word;
 }
 
+.arma-event-detail-card {
+    padding: 48px 24px;
+    text-align: left;
+}
+
+.arma-event-detail-content {
+    max-width: 1100px;
+    align-items: stretch;
+    gap: 24px;
+}
+
+.arma-event-back-link {
+    align-self: flex-start;
+    font-weight: 700;
+}
+
+.arma-event-metadata {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    width: 100%;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+}
+
+.arma-event-metadata dt {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.arma-event-metadata dd {
+    margin: 0;
+}
+
+.arma-event-message-panel {
+    width: 100%;
+}
+
+.arma-event-message-panel h2 {
+    margin-top: 0;
+    text-align: left;
+}
+
+.arma-event-detail-content .arma-event-message {
+    padding: 18px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    overflow-x: auto;
+}
+
+.arma-event-detail-content .arma_script_error pre code.hljs {
+    max-height: none;
+}
+
 .arma-events-empty {
     border: 1px dashed var(--border);
     color: var(--text-secondary);
