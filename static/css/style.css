@@ -1525,6 +1525,18 @@ button:hover {
     text-align: left;
 }
 
+.arma-event-row {
+    cursor: pointer;
+}
+
+.arma-event-row:hover {
+    background-color: color-mix(in srgb, var(--bg) 85%, var(--accent));
+}
+
+.arma-event-row a {
+    cursor: pointer;
+}
+
 .arma-event-tag {
     color: var(--accent);
     font-weight: 700;
