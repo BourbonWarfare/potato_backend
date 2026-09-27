@@ -1547,64 +1547,109 @@ button:hover {
     word-break: break-word;
 }
 
-.arma-event-detail-card {
-    padding: 48px 24px;
+.arma-event-detail-shell {
+    width: min(100%, 1180px);
+    margin: 0 auto;
+    padding: 24px;
     text-align: left;
 }
 
-.arma-event-detail-content {
-    max-width: 1100px;
-    align-items: stretch;
-    gap: 24px;
+.arma-event-detail-nav {
+    margin-bottom: 18px;
 }
 
 .arma-event-back-link {
-    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
     font-weight: 700;
 }
 
-.arma-event-metadata {
+.arma-event-detail-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 28px;
+    background: var(--surface);
+    border-top: 4px solid var(--accent);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.arma-event-detail-heading h1 {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.arma-event-detail-heading time {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.arma-event-detail-heading .eyebrow {
+    width: auto;
+    margin: 0 0 6px;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.arma-event-detail-meta {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
-    width: 100%;
-    margin: 0;
-    padding: 18px;
+    gap: 1px;
+    margin-top: 1px;
+    background: var(--border);
     border: 1px solid var(--border);
+}
+
+.arma-event-detail-meta div {
+    padding: 18px;
     background: var(--bg);
 }
 
-.arma-event-metadata dt {
+.arma-event-detail-meta span {
+    display: block;
+    margin-bottom: 6px;
     color: var(--text-secondary);
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    margin-bottom: 6px;
     text-transform: uppercase;
 }
 
-.arma-event-metadata dd {
+.arma-event-detail-meta strong {
+    overflow-wrap: anywhere;
+}
+
+.arma-event-detail-message {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+
+.arma-event-detail-message h2 {
     margin: 0;
-}
-
-.arma-event-message-panel {
-    width: 100%;
-}
-
-.arma-event-message-panel h2 {
-    margin-top: 0;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
     text-align: left;
 }
 
-.arma-event-detail-content .arma-event-message {
-    padding: 18px;
-    border: 1px solid var(--border);
-    background: var(--bg);
+.arma-event-detail-message .arma-event-message {
+    padding: 20px;
     overflow-x: auto;
+    background: var(--bg);
+    text-align: left;
 }
 
-.arma-event-detail-content .arma_script_error pre code.hljs {
+.arma-event-detail-message .arma_script_error pre code.hljs {
     max-height: none;
+}
+
+.arma-event-detail-message p {
+    max-width: none;
 }
 
 .arma-events-empty {
@@ -1626,6 +1671,17 @@ button:hover {
 }
 
 @media (max-width: 760px) {
+    .arma-event-detail-shell {
+        padding: 12px;
+    }
+
+    .arma-event-detail-heading {
+        flex-direction: column;
+    }
+
+    .arma-event-detail-heading time {
+        white-space: normal;
+    }
 
     .arma-events-filter,
     .arma-events-summary,
