@@ -70,7 +70,7 @@ def define_html(frontend: Blueprint, parts: Blueprint):
     async def login_page(session_token: str, html: str) -> str:
         csrf_token = AuthApi().set_csrf_token(State.state, session_token).state
         AuthApi().store_session_cookie(session_token)
-        return await render_template_string(html, csrf_token=csrf_token)
+        return await render_template_string(html, csrf_token=csrf_token, redirect=request.args.get('next', '/'))
 
     @frontend.get('/discord')
     @url_endpoint

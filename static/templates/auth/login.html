@@ -11,6 +11,7 @@
         <form method="POST" hx-post="/api/v1/auth/login" hx-target="#error-banner" hx-trigger="submit" class="auth-form"
             autocomplete="on">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <input type="hidden" name="redirect" value="{{ redirect }}" />
 
             <div class="form-group">
                 <label for="username">Username or E-Mail</label>

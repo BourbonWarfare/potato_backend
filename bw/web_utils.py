@@ -7,6 +7,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, 
 from inspect import isawaitable
 from pathlib import Path
 from typing import IO, Any
+from urllib.parse import quote
 
 import aiofiles
 from quart import has_request_context, render_template_string, request
@@ -436,6 +437,14 @@ def htmx_redirect(location: str, *, status: int = 303) -> WebResponse:
     return WebResponse(status=status, headers={'Location': location})
 
 
+def _login_redirect_for_current_request() -> WebResponse:
+    next_url = getattr(request, 'full_path', '/')
+    if not isinstance(next_url, str) or not next_url:
+        next_url = '/'
+    next_url = next_url.removesuffix('?')
+    return htmx_redirect(f'/auth/login?next={quote(next_url, safe="")}')
+
+
 def html_endpoint(
     *,
     template_path: Path | str,
@@ -519,6 +528,8 @@ def html_endpoint(
             except BwServerError as e:
                 logger.warning(e)
                 error_status = e.status()
+                if error_status == 401:
+                    return _login_redirect_for_current_request()
                 try:
                     inner_html = await load_template_from_disk(template_path=Path('error') / f'{error_status}.html')
                 except FileNotFoundError:

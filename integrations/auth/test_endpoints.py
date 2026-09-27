@@ -152,6 +152,19 @@ class TestLoginBourbonEndpoints:
         assert 'Location' not in response.headers
 
     @pytest.mark.asyncio
+    async def test__login_bourbon__redirects_to_requested_safe_page(self, test_app, db_bourbon_user_1, username_1, password_1):
+        page = await test_app.get('/auth/login?next=/user/profile')
+        csrf_token = csrf_token_from_html(await page.get_data(as_text=True))
+
+        response = await test_app.post(
+            '/api/v1/auth/login',
+            form={'csrf_token': csrf_token, 'username': username_1, 'password': password_1, 'redirect': '/user/profile'},
+        )
+
+        assert response.status_code == 303
+        assert response.headers['Location'] == '/user/profile'
+
+    @pytest.mark.asyncio
     async def test__login_bourbon__next_page_header_shows_authenticated_nav(
         self, test_app, db_bourbon_user_1, username_1, password_1
     ):
@@ -243,6 +256,13 @@ class TestUserEndpoints:
 
 
 class TestProfileEndpoints:
+    @pytest.mark.asyncio
+    async def test__profile_page__redirects_to_login_when_unauthenticated(self, test_app):
+        response = await test_app.get('/user/profile')
+
+        assert response.status_code == 303
+        assert response.headers['Location'] == '/auth/login?next=%2Fuser%2Fprofile'
+
     @pytest.mark.asyncio
     async def test__profile_page__renders_account_forms(self, test_app, token_1, db_session_1, db_user_1, db_bourbon_user_1):
         response = await test_app.get('/user/profile', headers={'Authorization': f'Bearer {token_1}'})

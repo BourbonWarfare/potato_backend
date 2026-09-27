@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from bw.error import BadArguments, BadHeader, BwServerError
+from bw.error import BadArguments, BadHeader, BwServerError, NeedsAuthenticatedSession
 from bw.response import JsonResponse, WebResponse
 from bw.web_utils import (
     accept_parameters,
@@ -56,6 +56,7 @@ def mock_request(mocker):
     request_mock.headers = {}
     request_mock.accept_mimetypes = {'text/event-stream': 'text/event-stream'}
     request_mock.form = AwaitableForm()
+    request_mock.full_path = '/'
 
     mocker.patch('bw.web_utils.request', request_mock)
     return request_mock
@@ -916,6 +917,38 @@ async def test__html_endpoint__renders_error_template_on_bw_server_error(mocker,
 
     assert result
     mock_render_template.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test__html_endpoint__redirects_401_to_login(mock_request, mocker):
+    mock_request.full_path = '/missions/123?tab=reviews'
+    mocker.patch('bw.web_utils.load_template_from_disk', return_value='Page HTML')
+
+    @html_endpoint(template_path='dashboard.html')
+    async def endpoint(html: str):
+        raise NeedsAuthenticatedSession()
+
+    response = await endpoint()
+
+    assert response.status_code == 303
+    assert response.headers['Location'] == '/auth/login?next=%2Fmissions%2F123%3Ftab%3Dreviews'
+
+
+@pytest.mark.asyncio
+async def test__html_endpoint__redirects_htmx_401_to_login(mock_request, mocker):
+    mocker.patch('bw.web_utils.has_request_context', return_value=True)
+    mock_request.headers = {'HX-Request': 'true'}
+    mock_request.full_path = '/missions/123?'
+    mocker.patch('bw.web_utils.load_template_from_disk', return_value='Page HTML')
+
+    @html_endpoint(template_path='dashboard.html')
+    async def endpoint(html: str):
+        raise NeedsAuthenticatedSession()
+
+    response = await endpoint()
+
+    assert response.status_code == 204
+    assert response.headers['HX-Redirect'] == '/auth/login?next=%2Fmissions%2F123'
 
 
 @pytest.mark.asyncio
